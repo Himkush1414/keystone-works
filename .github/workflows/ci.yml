@@ -32,3 +32,26 @@ jobs:
       - run: npx eslint . --max-warnings=0
       - run: npx prettier --check . --log-level warn
       - run: npm run -s test
+
+  engine:
+    name: Kotlin engine (JVM, real model)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/mobile/modules/lamplight-engine/engine-core-jvm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Cache engine asset pack
+        uses: actions/cache@v4
+        with:
+          path: apps/mobile/modules/lamplight-engine/engine-core-jvm/build/engine-assets/*.zip
+          key: engine-assets-1e49e5788df8bb5655a296cad93c751620124ebbbf36fd504ef196b86dc6bd76
+      - run: gradle --no-daemon test
