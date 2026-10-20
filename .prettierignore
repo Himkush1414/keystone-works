@@ -1,0 +1,11 @@
+node_modules
+dist
+build
+.expo
+.next
+coverage
+_private
+*.min.js
+apps/mobile/android
+apps/mobile/ios
+package-lock.json

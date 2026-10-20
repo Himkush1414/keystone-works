@@ -14,11 +14,19 @@ const PATTERNS = [
   ['AWS key', /\bAKIA[0-9A-Z]{16}\b/],
   ['Google API key', /\bAIza[0-9A-Za-z_-]{35}\b/],
 ];
-const FORBIDDEN_PATHS = [/^\.env(?!\.example$)/, /(^|\/)_private\//, /\.(jks|keystore|p12|p8|pem)$/, /google-services\.json$/, /service-account.*\.json$/];
+const FORBIDDEN_PATHS = [
+  /^\.env(?!\.example$)/,
+  /(^|\/)_private\//,
+  /\.(jks|keystore|p12|p8|pem)$/,
+  /google-services\.json$/,
+  /service-account.*\.json$/,
+];
 
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
 const all = process.argv.includes('--all');
-const files = (all ? git('ls-files') : git('diff', '--cached', '--name-only', '--diff-filter=ACMR')).split('\n').filter(Boolean);
+const files = (all ? git('ls-files') : git('diff', '--cached', '--name-only', '--diff-filter=ACMR'))
+  .split('\n')
+  .filter(Boolean);
 
 const findings = [];
 for (const f of files) {

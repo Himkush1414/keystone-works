@@ -1,0 +1,33 @@
+{
+  "name": "lamplight",
+  "private": true,
+  "description": "Lamplight — books, documents and articles read aloud by natural voices that run on your phone.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "modules/*"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint . --max-warnings=0",
+    "test": "npm run test --workspaces --if-present",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "secret-scan": "node tooling/scripts/secret-scan.mjs",
+    "verify": "node tooling/scripts/verify.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.2",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.0",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^5.0.5"
+  }
+}
