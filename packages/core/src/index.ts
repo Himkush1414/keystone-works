@@ -7,3 +7,5 @@ export * from './text/language';
 export * from './clean/detect';
 export * from './import/pdf';
 export * from './import/html';
+export * from './import/zip';
+export * from './import/epub';
