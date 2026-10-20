@@ -3,38 +3,10 @@
  * diacritic scoring for Latin and Cyrillic text. Small, deterministic, no model files.
  */
 
+// prettier-ignore
 export const VOICE_LANGUAGES = [
-  'en',
-  'ko',
-  'ja',
-  'ar',
-  'bg',
-  'cs',
-  'da',
-  'de',
-  'el',
-  'es',
-  'et',
-  'fi',
-  'fr',
-  'hi',
-  'hr',
-  'hu',
-  'id',
-  'it',
-  'lt',
-  'lv',
-  'nl',
-  'pl',
-  'pt',
-  'ro',
-  'ru',
-  'sk',
-  'sl',
-  'sv',
-  'tr',
-  'uk',
-  'vi',
+  'en', 'ko', 'ja', 'ar', 'bg', 'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'hi', 'hr', 'hu',
+  'id', 'it', 'lt', 'lv', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sv', 'tr', 'uk', 'vi',
 ] as const;
 
 export type VoiceLanguage = (typeof VOICE_LANGUAGES)[number];
