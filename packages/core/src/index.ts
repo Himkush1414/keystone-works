@@ -9,3 +9,5 @@ export * from './import/pdf';
 export * from './import/html';
 export * from './import/zip';
 export * from './import/epub';
+export * from './import/text';
+export * from './import/docx';
