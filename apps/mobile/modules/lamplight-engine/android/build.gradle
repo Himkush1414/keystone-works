@@ -1,0 +1,68 @@
+import java.security.MessageDigest
+
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'app.lamplight.engine'
+version = '1.0.0'
+
+// The voice model ships inside the app so narration works offline from the first launch. The asset pack is
+// published as a GitHub release and verified by SHA-256 before it is packaged.
+def assetsVersion = 'supertonic3-int8-v1'
+def assetsUrl = "https://github.com/Himkush1414/keystone-works/releases/download/engine-assets-v1/lamplight-engine-${assetsVersion}.zip"
+def assetsSha256 = '1e49e5788df8bb5655a296cad93c751620124ebbbf36fd504ef196b86dc6bd76'
+def assetsZip = layout.buildDirectory.file("engine-assets/lamplight-engine-${assetsVersion}.zip")
+def generatedAssets = layout.buildDirectory.dir('generated/lamplight-assets')
+
+def sha256 = { File f ->
+  MessageDigest.getInstance('SHA-256').digest(f.bytes).collect { String.format('%02x', it) }.join()
+}
+
+tasks.register('downloadEngineAssets') {
+  outputs.file(assetsZip)
+  doLast {
+    File target = assetsZip.get().asFile
+    if (target.exists() && sha256(target) == assetsSha256) return
+    target.parentFile.mkdirs()
+    new URL(assetsUrl).withInputStream { input -> target.withOutputStream { it << input } }
+    String actual = sha256(target)
+    if (actual != assetsSha256) {
+      target.delete()
+      throw new GradleException("Engine assets checksum mismatch: ${actual}")
+    }
+  }
+}
+
+tasks.register('extractEngineAssets', Copy) {
+  dependsOn 'downloadEngineAssets'
+  from(zipTree(assetsZip))
+  into(generatedAssets.map { it.dir('engine') })
+}
+
+preBuild.dependsOn 'extractEngineAssets'
+
+android {
+  namespace "app.lamplight.engine"
+  defaultConfig {
+    versionCode 1
+    versionName "1.0.0"
+    consumerProguardFiles 'proguard-rules.pro'
+  }
+  sourceSets {
+    main {
+      assets.srcDirs += generatedAssets
+    }
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.31.0'
+  implementation 'androidx.media3:media3-session:1.11.1'
+  implementation 'androidx.media3:media3-common:1.11.1'
+  implementation 'com.tom-roush:pdfbox-android:2.0.27.0'
+}
