@@ -11,5 +11,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
+  },
+  "devDependencies": {
+    "onnxruntime-node": "^1.30.0"
   }
 }
