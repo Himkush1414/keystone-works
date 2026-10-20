@@ -69,9 +69,10 @@ const config: ExpoConfig = {
   plugins: [
     'expo-router',
     'expo-status-bar',
-    'expo-sqlite',
+    ['expo-sqlite', { enableFTS: true }],
     'expo-localization',
     'expo-sharing',
+    './modules/lamplight-engine/plugin/withLamplightEngine.js',
     ['expo-font', { fonts }],
     [
       'expo-splash-screen',
