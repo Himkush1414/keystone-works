@@ -6,3 +6,4 @@ export * from './text/timing';
 export * from './text/language';
 export * from './clean/detect';
 export * from './import/pdf';
+export * from './import/html';

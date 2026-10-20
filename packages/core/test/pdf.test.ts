@@ -39,7 +39,7 @@ function paper(pages = 5): PdfPage[] {
 describe('joinLines', () => {
   it('repairs words broken by a line-end hyphen', () => {
     expect(joinLines('remem-', 'bered by')).toBe('remembered by');
-    expect(joinLines('remem­', 'bered')).toBe('remembered');
+    expect(joinLines('remem\u00ad', 'bered')).toBe('remembered');
   });
   it('keeps real hyphens and capitalised continuations', () => {
     expect(joinLines('a self-', 'aware mind')).toBe('a self-aware mind');

@@ -81,7 +81,7 @@ export function classifyEdges(pages: readonly PdfPage[]): Map<string, EdgeKind> 
 export function joinLines(left: string, right: string): string {
   const l = left.trimEnd();
   const r = right.trimStart();
-  const m = /(\p{L}+)[-­]$/u.exec(l);
+  const m = /(\p{L}+)[-\u00ad]$/u.exec(l);
   if (m && /^\p{Ll}/u.test(r)) {
     const keep = KEEP_HYPHEN.test(l.slice(0, -1));
     return keep ? `${l}${r}` : `${l.slice(0, -1)}${r}`;
