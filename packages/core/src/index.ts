@@ -11,3 +11,6 @@ export * from './import/zip';
 export * from './import/epub';
 export * from './import/text';
 export * from './import/docx';
+export * from './cast/dialogue';
+export * from './cast/attribute';
+export * from './cast/voices';
