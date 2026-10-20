@@ -32,6 +32,13 @@ export default tseslint.config(
     rules: { 'no-console': 'off' },
   },
   {
+    // Metro bundles static assets through require(); only asset files may be required this way.
+    files: ['apps/mobile/src/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-require-imports': ['error', { allow: ['\\.(ttf|otf|png|jpg|webp|wav|mp3)$'] }],
+    },
+  },
+  {
     // Expo config plugins are CommonJS modules loaded by the Expo CLI.
     files: ['**/plugin/*.js', '**/*.cjs'],
     languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } },
