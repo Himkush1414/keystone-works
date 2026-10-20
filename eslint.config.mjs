@@ -31,4 +31,10 @@ export default tseslint.config(
     files: ['tooling/**/*.mjs'],
     rules: { 'no-console': 'off' },
   },
+  {
+    // Expo config plugins are CommonJS modules loaded by the Expo CLI.
+    files: ['**/plugin/*.js', '**/*.cjs'],
+    languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
 );
