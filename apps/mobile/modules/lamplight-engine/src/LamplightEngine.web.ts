@@ -160,12 +160,6 @@ class LamplightEngineWeb extends NativeModule<LamplightEngineEvents> {
   async extractPdf(): Promise<string> {
     throw new Error('PDF import is not available on the web');
   }
-  /** On the web a "path" is a URL the page can fetch (a blob: or data: URL from the file picker). */
-  async sha256File(path: string): Promise<string> {
-    const data = await (await fetch(path)).arrayBuffer();
-    const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
-    return Array.from(digest, (b) => b.toString(16).padStart(2, '0')).join('');
-  }
 }
 
 export default registerWebModule(LamplightEngineWeb, 'LamplightEngine');
