@@ -16,6 +16,10 @@ export function useImportActions() {
     () => services.toast.getState().show({ message: t('errors.generic'), tone: 'danger' }),
     [services, t],
   );
+  const voiceFailed = useCallback(
+    () => services.toast.getState().show({ message: t('errors.voiceUnavailable'), tone: 'danger' }),
+    [services, t],
+  );
   const open = useCallback((id: string) => router.push(`/player/${id}`), []);
 
   const fromFile = useCallback(() => {
@@ -25,13 +29,13 @@ export function useImportActions() {
       .then((summary) => {
         const message = summary
           ? importMessage(summary, t, (id) => {
-              if (getItem(services.db, id)) playDocument(services, id).catch(failed);
+              if (getItem(services.db, id)?.status === 'ready') playDocument(services, id).catch(voiceFailed);
             })
           : null;
         if (message) services.toast.getState().show(message);
       })
       .catch(failed);
-  }, [services, t, failed]);
+  }, [services, t, failed, voiceFailed]);
 
   // A sample lands in the player already speaking (R-ON-4); a second time opens the copy already there.
   const fromSample = useCallback(
