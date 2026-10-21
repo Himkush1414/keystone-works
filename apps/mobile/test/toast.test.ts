@@ -45,6 +45,14 @@ describe('toast store', () => {
     expect(store.getState().current?.message).toBe('second');
   });
 
+  it('remembers the space a floating element takes, never negative', () => {
+    const store = createToastStore(fakeTimers());
+    store.getState().setBottomInset(68);
+    expect(store.getState().bottomInset).toBe(68);
+    store.getState().setBottomInset(-4);
+    expect(store.getState().bottomInset).toBe(0);
+  });
+
   it('ignores a late dismiss meant for an older toast', () => {
     const store = createToastStore(fakeTimers());
     store.getState().show({ message: 'first' });
