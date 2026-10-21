@@ -39,6 +39,7 @@ function ThemedApp() {
     <ThemeProvider preference={theme} motionPreference={motion}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="player/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="import/compose" options={{ presentation: 'modal' }} />
       </Stack>
       <ToastHost />
     </ThemeProvider>
