@@ -49,6 +49,7 @@ export default function LibraryRoute() {
     () => ({
       onAdd: () => setAdding(true),
       onMore: setSelected,
+      onSearch: () => router.push('/library/search'),
       onOpen: (item: LibraryItem) => {
         if (item.status === 'ready') router.push(`/player/${item.id}`);
       },
