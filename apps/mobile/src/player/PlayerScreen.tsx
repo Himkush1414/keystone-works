@@ -2,11 +2,11 @@ import { DEFAULT_NARRATOR, wordAt, type CleanSettings, type DictionaryRule } fro
 import type { Quality } from '../../modules/lamplight-engine/src/types';
 import { readerThemes } from '@lamplight/tokens';
 import { useEffect, useMemo, useState } from 'react';
-import { ContentsSheet, SleepSheet, VoiceSheet } from './PlayerSheets';
+import { CastSheet, ContentsSheet, SleepSheet, VoiceSheet } from './PlayerSheets';
 import { sleepStatus } from './sheets';
 import { StyleSheet, View } from 'react-native';
 import { useStore } from 'zustand';
-import type { DocumentContent } from '@/data/content';
+import type { CastCharacter, DocumentContent } from '@/data/content';
 import type { LibraryItem } from '@/data/library';
 import { formatDuration } from '@/i18n/translate';
 import { useLocale, useT } from '@/i18n/useLocale';
@@ -31,6 +31,9 @@ export interface PlayerActions {
   setSleepTimer(minutes: number | null, endOfChapter: boolean): void;
   setVoice(voice: string): void;
   setQuality(quality: Quality): void;
+  listCharacters(): CastCharacter[];
+  setCharacterVoice(characterId: string, voice: string | null): void;
+  mergeCharacters(from: string, into: string): void;
   close(): void;
 }
 
@@ -63,7 +66,8 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
   const locale = useLocale();
   const t = useT();
 
-  const [sheet, setSheet] = useState<'sleep' | 'contents' | 'voice' | null>(null);
+  const [sheet, setSheet] = useState<'sleep' | 'contents' | 'voice' | 'cast' | null>(null);
+  const [characters, setCharacters] = useState<CastCharacter[]>([]);
   // This document's own choices, shown in the voice sheet and updated as the listener changes them.
   const [voice, setVoice] = useState(
     () => item.settings.voice ?? settings.getState().voices[item.language] ?? DEFAULT_NARRATOR,
@@ -215,6 +219,23 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
         onQuality={(q) => {
           setQuality(q);
           actions.setQuality(q);
+        }}
+        onCast={() => {
+          setCharacters(actions.listCharacters());
+          setSheet('cast');
+        }}
+      />
+      <CastSheet
+        visible={sheet === 'cast'}
+        characters={characters}
+        onClose={() => setSheet(null)}
+        onVoice={(id, v) => {
+          actions.setCharacterVoice(id, v);
+          setCharacters(actions.listCharacters());
+        }}
+        onMerge={(from, into) => {
+          actions.mergeCharacters(from, into);
+          setCharacters(actions.listCharacters());
         }}
       />
       <ContentsSheet

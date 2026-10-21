@@ -10,7 +10,7 @@ import {
 } from '@lamplight/core';
 import type { StoreApi } from 'zustand/vanilla';
 import type { Quality, QueueFile } from '../../modules/lamplight-engine/src/types';
-import { loadContent, type DocumentContent } from '../data/content';
+import { loadContent, mergeCharacters, setCharacterVoice, type DocumentContent } from '../data/content';
 import type { Db } from '../data/db';
 import { getItem, markOpened, updateSettings, type LibraryItem } from '../data/library';
 import { getPosition, rulesFor, savePosition } from '../data/userdata';
@@ -191,10 +191,49 @@ export async function changeVoice(
   current: number,
 ): Promise<void> {
   updateSettings(deps.db, documentId, { voice });
+  await requeue(deps, documentId, settings, current);
+}
+
+/**
+ * Rebuilds the queue after a change to how a document is voiced (narrator, a character's voice, merged
+ * characters) and hands the engine every sentence after the one being heard, so it applies with no gap.
+ */
+export async function requeue(
+  deps: RevoiceDeps,
+  documentId: string,
+  settings: SessionSettings,
+  current: number,
+): Promise<void> {
   const { queue } = planSession(deps.db, documentId, settings);
   deps.store.getState().setQueue(queue);
   const next = { ...queue, segments: queue.segments.filter((s) => s.i > current) };
   if (next.segments.length) await deps.engine.updateSegments(JSON.stringify(next));
+}
+
+/** Gives one character its own voice (null: back to the automatic choice) and applies it from the next sentence. */
+export async function changeCharacterVoice(
+  deps: RevoiceDeps,
+  documentId: string,
+  characterId: string,
+  voice: string | null,
+  settings: SessionSettings,
+  current: number,
+): Promise<void> {
+  setCharacterVoice(deps.db, documentId, characterId, voice);
+  await requeue(deps, documentId, settings, current);
+}
+
+/** Merges two names for one character ("Lizzy" into "Elizabeth"), then re-voices what follows. */
+export async function mergeCharactersAndRequeue(
+  deps: RevoiceDeps,
+  documentId: string,
+  from: string,
+  into: string,
+  settings: SessionSettings,
+  current: number,
+): Promise<void> {
+  mergeCharacters(deps.db, documentId, from, into);
+  await requeue(deps, documentId, settings, current);
 }
 
 /** Changes the quality for one document: saved on it, and applied by the engine from the next sentence. */

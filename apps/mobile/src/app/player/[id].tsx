@@ -2,12 +2,18 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 import { useStore } from 'zustand';
 import LamplightEngine from '../../../modules/lamplight-engine';
-import { loadContent } from '@/data/content';
+import { listCharacters, loadContent } from '@/data/content';
 import { getItem } from '@/data/library';
 import { rulesFor } from '@/data/userdata';
 import { useT } from '@/i18n/useLocale';
 import { PlayerScreen, type PlayerActions } from '@/player/PlayerScreen';
-import { changeQuality, changeVoice, cleanSettingsFor } from '@/player/session';
+import {
+  changeCharacterVoice,
+  changeQuality,
+  changeVoice,
+  cleanSettingsFor,
+  mergeCharactersAndRequeue,
+} from '@/player/session';
 import { useServices } from '@/services/context';
 import { playDocument } from '@/services/device';
 
@@ -50,6 +56,31 @@ export default function PlayerRoute() {
         ),
       setQuality: (quality) =>
         id && run(changeQuality({ db: services.db, engine: LamplightEngine }, id, quality)),
+      listCharacters: () => (id ? listCharacters(services.db, id) : []),
+      setCharacterVoice: (characterId, voice) =>
+        id &&
+        run(
+          changeCharacterVoice(
+            { db: services.db, store: services.player, engine: LamplightEngine },
+            id,
+            characterId,
+            voice,
+            services.settings.getState(),
+            services.player.getState().progress.index,
+          ),
+        ),
+      mergeCharacters: (from, into) =>
+        id &&
+        run(
+          mergeCharactersAndRequeue(
+            { db: services.db, store: services.player, engine: LamplightEngine },
+            id,
+            from,
+            into,
+            services.settings.getState(),
+            services.player.getState().progress.index,
+          ),
+        ),
       close: () => (router.canGoBack() ? router.back() : router.replace('/library')),
     };
   }, [services, t, id]);
