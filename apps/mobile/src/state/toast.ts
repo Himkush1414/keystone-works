@@ -12,8 +12,11 @@ export interface Toast extends ToastSpec {
 
 export interface ToastState {
   current: Toast | null;
+  /** Space a floating element (the mini player) takes at the bottom; toasts sit above it. */
+  bottomInset: number;
   show(spec: ToastSpec): void;
   dismiss(id?: number): void;
+  setBottomInset(px: number): void;
 }
 
 /** 4 s on screen (design system); 8 s when there's an action, so someone using TalkBack can reach it. */
@@ -36,6 +39,10 @@ export function createToastStore(timers: Timers = realTimers): StoreApi<ToastSta
   let handle: unknown = null;
   return createStore<ToastState>()((set, get) => ({
     current: null,
+    bottomInset: 0,
+    setBottomInset(px) {
+      set({ bottomInset: Math.max(0, px) });
+    },
     show(spec) {
       if (handle !== null) timers.clear(handle);
       const toast = { ...spec, id: nextId++ };

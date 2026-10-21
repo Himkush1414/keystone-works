@@ -155,6 +155,7 @@ export const fr: Catalog = {
     appearance: 'Apparence de lecture',
     find: 'Rechercher dans le texte',
     collapse: 'Réduire le lecteur',
+    expand: 'Ouvre le lecteur complet',
     preparing: 'Préparation de la voix…',
     chapterOf: 'Chapitre {n} sur {total}',
     remaining: 'Encore {time} dans ce chapitre',

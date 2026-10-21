@@ -7,6 +7,7 @@ import { useServices } from '@/services/context';
 import { useTheme } from '@/theme/theme';
 import { Tappable } from './Tappable';
 import { Text } from './Text';
+import { floating } from './elevation';
 import { useGutter } from './Screen';
 
 /**
@@ -16,6 +17,7 @@ import { useGutter } from './Screen';
 export function ToastHost() {
   const { toast } = useServices();
   const current = useStore(toast, (s) => s.current);
+  const lift = useStore(toast, (s) => s.bottomInset);
   const { colors, space, radius, name, reduceMotion } = useTheme();
   const insets = useSafeAreaInsets();
   const gutter = useGutter();
@@ -25,16 +27,6 @@ export function ToastHost() {
   }, [current]);
 
   if (!current) return null;
-  const shadow =
-    name === 'light'
-      ? {
-          shadowColor: 'rgb(40, 28, 12)',
-          shadowOpacity: 0.12,
-          shadowRadius: 24,
-          shadowOffset: { width: 0, height: 6 },
-          elevation: 6,
-        }
-      : { borderTopColor: colors.inkFaint }; // dark: a lighter top edge instead of a shadow
   return (
     <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, styles.layer]}>
       <Animated.View
@@ -43,16 +35,15 @@ export function ToastHost() {
         exiting={reduceMotion ? FadeOut.duration(120) : FadeOutDown.duration(180)}
         style={[
           styles.toast,
-          shadow,
           {
             marginHorizontal: gutter,
-            marginBottom: insets.bottom + space.lg,
+            marginBottom: insets.bottom + space.lg + lift,
             padding: space.md,
             gap: space.md,
             borderRadius: radius.md,
             backgroundColor: colors.surface,
-            borderColor: colors.hairline,
           },
+          floating(name, colors),
         ]}
       >
         <Text variant="callout" tone={current.tone === 'danger' ? 'danger' : 'ink'} style={styles.message}>

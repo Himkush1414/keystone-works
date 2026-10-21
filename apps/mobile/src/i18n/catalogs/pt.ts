@@ -152,6 +152,7 @@ export const pt: Catalog = {
     appearance: 'Aparência da leitura',
     find: 'Buscar no texto',
     collapse: 'Minimizar o player',
+    expand: 'Abre o reprodutor completo',
     preparing: 'Preparando a voz…',
     chapterOf: 'Capítulo {n} de {total}',
     remaining: 'Faltam {time} no capítulo',
