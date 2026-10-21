@@ -37,6 +37,7 @@ export const fr: Catalog = {
     more: 'Plus de voix',
     sample: 'Chaque histoire mérite une voix. On commence\u202f?',
     hear: 'Écouter {name}',
+    choose: 'Choisir {name}',
   },
   start: {
     title: 'Que voulez-vous écouter en premier\u202f?',
@@ -236,6 +237,14 @@ export const fr: Catalog = {
       M3: 'Arlo',
       M4: 'Silas',
       M5: 'Jonah',
+    },
+    traits: {
+      low: 'Voix grave',
+      medium: 'Voix médium',
+      high: 'Voix aiguë',
+      unhurried: 'posée',
+      steady: 'régulière',
+      brisk: 'vive',
     },
   },
   settings: {

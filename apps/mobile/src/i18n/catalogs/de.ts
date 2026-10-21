@@ -35,6 +35,7 @@ export const de: Catalog = {
     more: 'Weitere Stimmen',
     sample: 'Jede Geschichte verdient eine Stimme. Wollen wir anfangen?',
     hear: '{name} anhören',
+    choose: '{name} wählen',
   },
   start: {
     title: 'Was möchtest du zuerst hören?',
@@ -235,6 +236,14 @@ export const de: Catalog = {
       M3: 'Arlo',
       M4: 'Silas',
       M5: 'Jonah',
+    },
+    traits: {
+      low: 'Tiefe Stimme',
+      medium: 'Mittlere Stimme',
+      high: 'Hohe Stimme',
+      unhurried: 'ruhig',
+      steady: 'gleichmäßig',
+      brisk: 'zügig',
     },
   },
   settings: {
