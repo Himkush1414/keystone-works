@@ -17,7 +17,8 @@ export interface ImportFile {
 }
 
 export interface ImportDeps extends ParseDeps {
-  sha256(bytes: Uint8Array): Promise<string>;
+  /** Hex SHA-256 of the file's content; on devices expo-file-system's File.digest hashes the local copy. */
+  sha256(file: ImportFile): Promise<string>;
   /** Stores an EPUB cover image and returns its path. */
   saveCover?(documentId: string, cover: { mime: string; data: Uint8Array }): Promise<string>;
   now?(): number;
@@ -44,7 +45,7 @@ export async function importFile(db: Db, file: ImportFile, deps: ImportDeps): Pr
     throw e;
   }
 
-  const sha256 = await deps.sha256(file.bytes);
+  const sha256 = await deps.sha256(file);
   const existing = findBySha(db, sha256);
   if (existing && existing.status !== 'failed') return { status: 'duplicate', id: existing.id };
   const id =

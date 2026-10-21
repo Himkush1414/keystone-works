@@ -9,7 +9,7 @@ import { testDb } from './nodeDb';
 const utf8 = (s: string) => new TextEncoder().encode(s);
 
 const deps = (extra: Partial<ImportDeps> = {}): ImportDeps => ({
-  sha256: (bytes) => Promise.resolve(createHash('sha256').update(bytes).digest('hex')),
+  sha256: (file) => Promise.resolve(createHash('sha256').update(file.bytes).digest('hex')),
   extractPdf: () => Promise.reject(Object.assign(new Error('locked'), { code: 'password' })),
   now: () => 1_000,
   ...extra,
