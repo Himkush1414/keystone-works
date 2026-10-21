@@ -178,6 +178,7 @@ export const fr: Catalog = {
     endOfChapter: 'Fin du chapitre',
     custom: 'Personnalisée',
     endsIn: 'S’arrête dans {time}',
+    endsSoon: 'Se termine dans moins d’une minute',
     endsAtChapter: 'S’arrête à la fin de ce chapitre',
   },
   quality: {

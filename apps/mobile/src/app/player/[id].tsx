@@ -36,6 +36,7 @@ export default function PlayerRoute() {
       skip: (delta) => run(LamplightEngine.skip(delta)),
       seekTo: (index) => run(LamplightEngine.seekTo(index)),
       setSpeed: (speed) => run(LamplightEngine.setSpeed(speed)),
+      setSleepTimer: (minutes, endOfChapter) => run(LamplightEngine.setSleepTimer(minutes, endOfChapter)),
       close: () => (router.canGoBack() ? router.back() : router.replace('/library')),
     };
   }, [services, t]);

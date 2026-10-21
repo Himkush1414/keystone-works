@@ -174,6 +174,7 @@ export const en = {
     endOfChapter: 'End of chapter',
     custom: 'Custom',
     endsIn: 'Ends in {time}',
+    endsSoon: 'Ends in less than a minute',
     endsAtChapter: 'Ends with this chapter',
   },
   quality: {

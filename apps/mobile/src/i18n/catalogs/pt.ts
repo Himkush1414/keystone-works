@@ -175,6 +175,7 @@ export const pt: Catalog = {
     endOfChapter: 'Fim do capítulo',
     custom: 'Personalizado',
     endsIn: 'Termina em {time}',
+    endsSoon: 'Termina em menos de um minuto',
     endsAtChapter: 'Termina com este capítulo',
   },
   quality: {
