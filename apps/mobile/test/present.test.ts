@@ -1,7 +1,14 @@
 import { coverPalettes } from '@lamplight/tokens';
 import { describe, expect, it } from 'vitest';
 import type { LibraryItem } from '../src/data/library';
-import { estimatedListeningMs, generatedCover, itemState, rowMeta } from '../src/library/present';
+import {
+  coverTitleSize,
+  estimatedListeningMs,
+  generatedCover,
+  itemState,
+  monogram,
+  rowMeta,
+} from '../src/library/present';
 
 const item = (patch: Partial<LibraryItem> = {}): LibraryItem => ({
   id: 'd1',
@@ -38,12 +45,35 @@ describe('generatedCover', () => {
     const titles = ['Emma', 'Persuasion', 'Middlemarch', 'Dracula', 'Walden', 'Ulysses', 'Beowulf', 'Kim'];
     expect(new Set(titles.map((t) => generatedCover(t).background)).size).toBeGreaterThan(3);
   });
+});
 
-  it('sets long titles and long words smaller so they fit', () => {
-    expect(generatedCover('Emma').titleScale).toBeGreaterThan(
-      generatedCover('A Very Long Title For A Small Cover').titleScale,
+describe('coverTitleSize', () => {
+  it('shrinks the type until the longest word fits on one line', () => {
+    const inner = 80;
+    for (const title of ['Middlemarch', 'Persuasion', 'Wuthering Heights', 'Sense and Sensibility']) {
+      const longest = Math.max(...title.split(' ').map((w) => w.length));
+      expect(coverTitleSize(title, inner) * 0.7 * longest).toBeLessThanOrEqual(inner);
+    }
+  });
+
+  it('never goes below 6 dp, even when a very long word then has to break', () => {
+    expect(coverTitleSize('Supercalifragilisticexpialidocious', 80)).toBe(6);
+  });
+
+  it('sets long titles smaller than short ones', () => {
+    expect(coverTitleSize('Emma', 80)).toBeGreaterThan(
+      coverTitleSize('A Very Long Title For A Small Cover', 80),
     );
-    expect(generatedCover('Supercalifragilistic').titleScale).toBe(0.11);
+  });
+});
+
+describe('monogram', () => {
+  it('takes the first letter, skipping a leading article', () => {
+    expect(monogram('The Quiet Lamp')).toBe('Q');
+    expect(monogram('an evening')).toBe('E');
+    expect(monogram('Die Verwandlung')).toBe('V');
+    expect(monogram('“Quoted” title')).toBe('Q');
+    expect(monogram('')).toBe('·');
   });
 });
 

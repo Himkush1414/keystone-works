@@ -7,18 +7,34 @@ export interface GeneratedCover {
   background: string;
   ink: string;
   rule: string;
-  /** Title size as a fraction of the cover width: long titles get smaller type. */
-  titleScale: number;
 }
 
 /** A typographic cover for items without artwork; the same title always gets the same cover (R-LB-5). */
 export function generatedCover(title: string): GeneratedCover {
   const palette = coverPalettes[fnv1a(title.trim().toLowerCase()) % coverPalettes.length] ?? coverPalettes[0];
   const [background, ink, rule] = palette ?? ['#2F3A33', '#EFE6D2', '#C9A35B'];
-  const longestWord = Math.max(0, ...title.split(/\s+/).map((w) => w.length));
+  return { background, ink, rule };
+}
+
+/** Widest-case advance of Fraunces SemiBold, in ems (measured on screen); keeps a word from breaking. */
+const DISPLAY_EM = 0.7;
+
+/**
+ * Title size for a cover whose text area is `inner` dp wide: about a sixth of the width, smaller for long
+ * titles, and never so large that the longest word has to break.
+ */
+export function coverTitleSize(title: string, inner: number): number {
+  const words = title.trim().split(/\s+/);
+  const longest = Math.max(1, ...words.map((w) => [...w].length));
   const length = title.trim().length;
-  const titleScale = longestWord > 12 || length > 48 ? 0.11 : length > 24 ? 0.13 : 0.16;
-  return { background, ink, rule, titleScale };
+  const preferred = inner * (length > 48 ? 0.13 : length > 24 ? 0.16 : 0.2);
+  return Math.max(6, Math.floor(Math.min(preferred, inner / (longest * DISPLAY_EM))));
+}
+
+/** The letter shown on small covers: the first letter of the title, skipping a leading article. */
+export function monogram(title: string): string {
+  const t = title.trim().replace(/^(the|a|an|der|die|das|el|la|los|las|le|les|o|os|as|un|une)\s+/i, '');
+  return ([...t].find((ch) => /[\p{L}\p{N}]/u.test(ch)) ?? '·').toLocaleUpperCase();
 }
 
 /**
