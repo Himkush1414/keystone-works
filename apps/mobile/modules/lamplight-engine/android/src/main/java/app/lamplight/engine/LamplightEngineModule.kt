@@ -16,7 +16,6 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import java.io.DataOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.security.MessageDigest
 import kotlin.math.roundToInt
 
 /** JavaScript API of the narration engine (see ../../index.ts for the typed wrapper). */
@@ -119,8 +118,6 @@ class LamplightEngineModule : Module() {
             }
         }
 
-        AsyncFunction("sha256File") { path: String -> sha256(File(path)) }
-
         OnDestroy {
             controller.removeListener(listener)
             mediaController?.let { MediaController.releaseFuture(it) }
@@ -166,20 +163,6 @@ class LamplightEngineModule : Module() {
             it.release()
         }
         preview = null
-    }
-
-    /** Hex SHA-256 of a file, streamed so a large book never sits in memory twice. */
-    private fun sha256(file: File): String {
-        val md = MessageDigest.getInstance("SHA-256")
-        file.inputStream().buffered(1 shl 16).use { input ->
-            val buf = ByteArray(1 shl 16)
-            while (true) {
-                val n = input.read(buf)
-                if (n < 0) break
-                md.update(buf, 0, n)
-            }
-        }
-        return md.digest().joinToString("") { "%02x".format(it) }
     }
 
     private fun writeWav(file: File, samples: FloatArray, sampleRate: Int) {
