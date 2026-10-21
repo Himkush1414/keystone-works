@@ -236,9 +236,10 @@ export function saveContent(
       );
     });
     db.run(
-      `UPDATE documents SET title = ?, author = ?, site_name = ?, published_at = ?, language = ?, cover_path = coalesce(?, cover_path),
+      `UPDATE documents SET kind = ?, title = ?, author = ?, site_name = ?, published_at = ?, language = ?, cover_path = coalesce(?, cover_path),
          word_count = ?, sentence_count = ?, status = 'ready', error_code = NULL WHERE id = ?`,
       [
+        draft.meta.kind,
         draft.meta.title,
         draft.meta.author ?? null,
         draft.meta.siteName ?? null,
