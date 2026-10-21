@@ -91,6 +91,8 @@ export const fr: Catalog = {
     addToCollection: 'Ajouter à une collection',
     rename: 'Renommer',
     details: 'Modifier les détails',
+    titleField: 'Titre',
+    authorField: 'Auteur',
     markFinished: 'Marquer comme terminé',
     markUnfinished: 'Marquer comme non terminé',
     prepare: 'Préparer hors ligne',

@@ -88,6 +88,8 @@ export const en = {
     addToCollection: 'Add to collection',
     rename: 'Rename',
     details: 'Edit details',
+    titleField: 'Title',
+    authorField: 'Author',
     markFinished: 'Mark as finished',
     markUnfinished: 'Mark as not finished',
     prepare: 'Prepare for offline',

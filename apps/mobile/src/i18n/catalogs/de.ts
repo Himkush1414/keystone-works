@@ -89,6 +89,8 @@ export const de: Catalog = {
     addToCollection: 'Zu Sammlung hinzufügen',
     rename: 'Umbenennen',
     details: 'Details bearbeiten',
+    titleField: 'Titel',
+    authorField: 'Autor',
     markFinished: 'Als fertig markieren',
     markUnfinished: 'Als nicht fertig markieren',
     prepare: 'Offline vorbereiten',
