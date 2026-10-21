@@ -7,6 +7,9 @@ import {
   type CastMode,
   type CleanSettings,
   type QueueOptions,
+  cleanReport,
+  type CleanReport,
+  type SkipReason,
 } from '@lamplight/core';
 import type { StoreApi } from 'zustand/vanilla';
 import type { Quality, QueueFile } from '../../modules/lamplight-engine/src/types';
@@ -244,4 +247,40 @@ export async function changeQuality(
 ): Promise<void> {
   updateSettings(deps.db, documentId, { quality });
   await deps.engine.setQuality(quality);
+}
+
+export interface CleanReadRow {
+  reason: Exclude<SkipReason, 'custom'>;
+  count: number;
+  examples: string[];
+  on: boolean;
+}
+
+/**
+ * The Clean Read review (R-CR-4): what each detector found in this document, with two examples, and whether
+ * it's skipping. The listener's own skip phrases are always applied, so they aren't listed.
+ */
+export function cleanReadRows(
+  item: LibraryItem,
+  content: Pick<DocumentContent, 'blocks'>,
+  speakUrls: boolean,
+): CleanReadRow[] {
+  const settings = cleanSettingsFor(item, { blocks: content.blocks } as DocumentContent, speakUrls);
+  return cleanReport({ meta: { title: item.title, kind: item.kind }, chapters: [], blocks: content.blocks })
+    .filter((r): r is CleanReport & { reason: CleanReadRow['reason'] } => r.reason !== 'custom')
+    .map((r) => ({ ...r, on: settings[r.reason] }));
+}
+
+/** Turns one Clean Read detector on or off for this document and applies it from the next sentence. */
+export async function changeCleanRead(
+  deps: RevoiceDeps,
+  documentId: string,
+  reason: CleanReadRow['reason'],
+  on: boolean,
+  settings: SessionSettings,
+  current: number,
+): Promise<void> {
+  const item = getItem(deps.db, documentId);
+  updateSettings(deps.db, documentId, { clean: { ...(item?.settings.clean ?? {}), [reason]: on } });
+  await requeue(deps, documentId, settings, current);
 }

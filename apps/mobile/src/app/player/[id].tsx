@@ -9,8 +9,10 @@ import { useT } from '@/i18n/useLocale';
 import { PlayerScreen, type PlayerActions } from '@/player/PlayerScreen';
 import {
   changeCharacterVoice,
+  changeCleanRead,
   changeQuality,
   changeVoice,
+  cleanReadRows,
   cleanSettingsFor,
   mergeCharactersAndRequeue,
 } from '@/player/session';
@@ -81,9 +83,28 @@ export default function PlayerRoute() {
             services.player.getState().progress.index,
           ),
         ),
+      // Read the document fresh: its Clean Read settings change as the listener toggles them.
+      cleanReadRows: () => {
+        const current = id ? getItem(services.db, id) : undefined;
+        return current && content
+          ? cleanReadRows(current, content, services.settings.getState().speakUrls)
+          : [];
+      },
+      setCleanRead: (reason, on) =>
+        id &&
+        run(
+          changeCleanRead(
+            { db: services.db, store: services.player, engine: LamplightEngine },
+            id,
+            reason,
+            on,
+            services.settings.getState(),
+            services.player.getState().progress.index,
+          ),
+        ),
       close: () => (router.canGoBack() ? router.back() : router.replace('/library')),
     };
-  }, [services, t, id]);
+  }, [services, t, id, content]);
 
   // Opening a document that isn't the one in the player starts it.
   useEffect(() => {
