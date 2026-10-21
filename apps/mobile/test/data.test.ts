@@ -110,6 +110,15 @@ describe('documents', () => {
     expect(search(db, 'harbour').body).toHaveLength(1);
   });
 
+  it('takes the kind the importer decided, so a long text file shelves as a book', () => {
+    const db = testDb();
+    const id = createDocument(db, { kind: 'document', title: 'big.txt', source: 'file' });
+    const text = Array.from({ length: 401 }, (_, k) => `Paragraph ${k} of a long story.`).join('\n\n');
+    saveContent(db, id, prepareDocument(parsePlainText(text, 'Big')));
+    expect(getItem(db, id)?.kind).toBe('book');
+    expect(listItems(db, 'books').map((i) => i.id)).toEqual([id]);
+  });
+
   it('finds duplicates by hash', () => {
     const { db, id } = seed();
     expect(findBySha(db, 'abc')?.id).toBe(id);
