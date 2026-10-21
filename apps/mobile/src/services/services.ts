@@ -5,6 +5,7 @@ import { getSetting, setSetting } from '../data/userdata';
 import { trackPosition } from '../player/session';
 import { connectEngine, createPlayerStore, type PlayerMirror } from '../player/store';
 import { createLibraryStore, type LibraryState } from '../state/library';
+import { createToastStore, type ToastState } from '../state/toast';
 import {
   createSettingsStore,
   type Settings,
@@ -35,6 +36,7 @@ export interface Services {
   settings: StoreApi<SettingsState>;
   library: StoreApi<LibraryState>;
   player: StoreApi<PlayerMirror>;
+  toast: StoreApi<ToastState>;
   dispose(): void;
 }
 
@@ -50,6 +52,7 @@ export function createServices(db: Db, engine: EngineEvents, clock?: () => numbe
     settings,
     library,
     player,
+    toast: createToastStore(),
     dispose: () => unsubscribe.forEach((u) => u()),
   };
 }

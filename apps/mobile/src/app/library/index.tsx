@@ -1,20 +1,27 @@
 import { useCallback, useMemo } from 'react';
 import type { LibraryItem } from '@/data/library';
+import { getItem } from '@/data/library';
 import { pickAndImport } from '@/import/device';
+import { useT } from '@/i18n/useLocale';
+import { importMessage } from '@/library/importMessage';
 import { LibraryScreen } from '@/library/LibraryScreen';
 import { useServices } from '@/services/context';
 import { playDocument } from '@/services/device';
 
-// shortcut: import and playback errors only reach the developer console until the toast exists; failed
-// imports still show in their row.
 export default function LibraryRoute() {
   const services = useServices();
+  const t = useT();
+  const failed = useCallback(
+    (key: 'errors.generic' | 'errors.voiceUnavailable') =>
+      services.toast.getState().show({ message: t(key), tone: 'danger' }),
+    [services, t],
+  );
   const play = useCallback(
     (item: LibraryItem) => {
-      if (item.status === 'ready')
-        playDocument(services, item.id).catch((e: unknown) => console.warn('play failed', e));
+      if (item.status !== 'ready') return;
+      playDocument(services, item.id).catch(() => failed('errors.voiceUnavailable'));
     },
-    [services],
+    [services, failed],
   );
   const actions = useMemo(
     () => ({
@@ -22,12 +29,21 @@ export default function LibraryRoute() {
         services.library
           .getState()
           .runImport(() => pickAndImport(services.db))
-          .catch((e: unknown) => console.warn('import failed', e));
+          .then((summary) => {
+            const message = summary
+              ? importMessage(summary, t, (id) => {
+                  const item = getItem(services.db, id);
+                  if (item) play(item);
+                })
+              : null;
+            if (message) services.toast.getState().show(message);
+          })
+          .catch(() => failed('errors.generic'));
       },
       onOpen: play,
       onPlay: play,
     }),
-    [services, play],
+    [services, play, failed, t],
   );
   return <LibraryScreen {...actions} />;
 }

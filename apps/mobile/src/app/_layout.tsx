@@ -8,6 +8,7 @@ import { ServicesProvider, useServices } from '@/services/context';
 import { deviceServices } from '@/services/device';
 import { ThemeProvider } from '@/theme/theme';
 import { useAppFonts } from '@/theme/useAppFonts';
+import { ToastHost } from '@/ui/Toast';
 
 // Keep the splash up until the first screen can draw with its real fonts (no layout shift, R-ON-1).
 preventAutoHideAsync().catch(() => undefined);
@@ -37,6 +38,7 @@ function ThemedApp() {
   return (
     <ThemeProvider preference={theme} motionPreference={motion}>
       <Stack screenOptions={{ headerShown: false }} />
+      <ToastHost />
     </ThemeProvider>
   );
 }
