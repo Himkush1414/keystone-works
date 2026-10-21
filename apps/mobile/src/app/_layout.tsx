@@ -1,5 +1,27 @@
 import { Stack } from 'expo-router';
+import { hideAsync, preventAutoHideAsync } from 'expo-splash-screen';
+import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider } from '@/theme/theme';
+import { useAppFonts } from '@/theme/useAppFonts';
+
+// Keep the splash up until the first screen can draw with its real fonts (no layout shift, R-ON-1).
+preventAutoHideAsync().catch(() => undefined);
 
 export default function RootLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  const fontsReady = useAppFonts();
+  useEffect(() => {
+    if (fontsReady) hideAsync().catch(() => undefined);
+  }, [fontsReady]);
+  if (!fontsReady) return null;
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
 }
