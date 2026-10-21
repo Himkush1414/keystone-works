@@ -49,3 +49,10 @@ The interface ships in English (source), Spanish, German, French and Brazilian P
 - **Agreement:** adjectives after "voz"/"voix" (feminine) in the voice descriptions (`voices.traits`).
 
 Keys added most recently, which no reviewer has seen yet: `import.added`, `player.expand`, `item.titleField`, `item.authorField`, `voices.traits.*`, `voicePick.choose`.
+
+## 4. Checks that need a real phone
+
+There's no emulator on the build machine (section 2.2), so these are verified on a device before release:
+
+- **Splash hand-off:** on Android 12 and later the system draws its own splash icon at a size it chooses. Record the launch at 60 fps and check that the flame doesn't jump when the app's animated splash takes over (feature spec F1, ±1 px). If it does, adjust `ICON` in `apps/mobile/src/ui/AnimatedSplash.tsx`.
+- **Word underline colour:** Android ignores `textDecorationColor`, so the read-along underline takes the text colour there. Confirm it still reads clearly in all four reader themes.
