@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
+import { loadContent } from '../src/data/content';
 import { getItem, listItems } from '../src/data/library';
-import { importText, pastedTitle } from '../src/import/text';
+import { SAMPLES } from '../src/import/samples';
+import { importSample, importText, pastedTitle } from '../src/import/text';
 import type { ImportDeps } from '../src/import/run';
 import { testDb } from './nodeDb';
 
@@ -61,5 +63,35 @@ describe('importText', () => {
       code: 'empty',
     });
     expect(listItems(db)).toHaveLength(0);
+  });
+});
+
+describe('importSample', () => {
+  it('adds each bundled sample as a ready item with its author, and Cast finds the dialogue', async () => {
+    const db = testDb();
+    for (const sample of SAMPLES) {
+      const r = await importSample(db, sample, deps);
+      expect(r.status).toBe('ready');
+      const id = r.status === 'ready' ? r.id : '';
+      expect(getItem(db, id)).toMatchObject({
+        title: sample.title,
+        author: sample.author,
+        kind: sample.kind,
+        source: 'sample',
+      });
+    }
+    const austen = listItems(db).find((i) => i.author === 'Jane Austen');
+    const sentences = loadContent(db, austen?.id ?? '').sentences;
+    expect(sentences.some((s) => s.kind === 'dialogue')).toBe(true);
+    expect(sentences.some((s) => s.kind === 'heading')).toBe(true);
+  });
+
+  it('opens the copy already in the library when the same sample is chosen again', async () => {
+    const db = testDb();
+    const sample = SAMPLES[0];
+    if (!sample) throw new Error('no samples');
+    const first = await importSample(db, sample, deps);
+    expect((await importSample(db, sample, deps)).status).toBe('duplicate');
+    expect(first.status).toBe('ready');
   });
 });

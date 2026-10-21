@@ -1,4 +1,4 @@
-import { ImportError, prepareDocument } from '@lamplight/core';
+import { ImportError, prepareDocument, type DocumentKind } from '@lamplight/core';
 import type { Db } from '../data/db';
 import { createDocument, findBySha, markFailed, saveContent, type DocumentSource } from '../data/library';
 import { detectFormat } from './format';
@@ -16,6 +16,9 @@ export interface ImportFile {
   password?: string;
   /** Title chosen by the user (pasted text); otherwise it comes from the file. */
   title?: string;
+  /** Known up front for bundled content; otherwise the parser decides. */
+  kind?: DocumentKind;
+  author?: string;
 }
 
 export interface ImportDeps extends ParseDeps {
@@ -55,7 +58,7 @@ export async function importFile(db: Db, file: ImportFile, deps: ImportDeps): Pr
     createDocument(
       db,
       {
-        kind: format === 'epub' ? 'book' : 'document',
+        kind: file.kind ?? (format === 'epub' ? 'book' : 'document'),
         title: file.title?.trim() || titleFromName(file.name),
         source: file.source,
         ...(file.uri ? { sourceUri: file.uri } : {}),
@@ -74,6 +77,8 @@ export async function importFile(db: Db, file: ImportFile, deps: ImportDeps): Pr
         ...(file.path ? { path: file.path } : {}),
         ...(file.password ? { password: file.password } : {}),
         ...(file.title ? { title: file.title } : {}),
+        ...(file.kind ? { kind: file.kind } : {}),
+        ...(file.author ? { author: file.author } : {}),
       },
       deps,
     );

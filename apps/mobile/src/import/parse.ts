@@ -10,6 +10,7 @@ import {
   parseMarkdown,
   parsePlainText,
   type DocumentDraft,
+  type DocumentKind,
 } from '@lamplight/core';
 import type { PdfExtraction } from '../../modules/lamplight-engine/src/types';
 import type { ImportFormat } from './format';
@@ -20,6 +21,9 @@ export interface ParseInput {
   name: string;
   /** A title the user chose (pasted text); wins over the file name. */
   title?: string;
+  /** Overrides what the parser decides (a bundled sample is a book, so Cast runs). */
+  kind?: DocumentKind;
+  author?: string;
   bytes: Uint8Array;
   /** Local copy of the file; PDF text is extracted natively from a path. */
   path?: string;
@@ -44,6 +48,19 @@ export function titleFromName(name: string): string {
 
 /** Runs the core parser for `format`. Errors are ImportError with a code the UI explains. */
 export async function parseImport(input: ParseInput, deps: ParseDeps): Promise<DocumentDraft> {
+  const draft = await parseFormat(input, deps);
+  if (!input.kind && !input.author) return draft;
+  return {
+    ...draft,
+    meta: {
+      ...draft.meta,
+      ...(input.kind ? { kind: input.kind } : {}),
+      ...(input.author ? { author: input.author } : {}),
+    },
+  };
+}
+
+async function parseFormat(input: ParseInput, deps: ParseDeps): Promise<DocumentDraft> {
   const title = input.title?.trim() || titleFromName(input.name);
   switch (input.format) {
     case 'epub':
