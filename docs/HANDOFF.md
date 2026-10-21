@@ -18,22 +18,15 @@ _(Filled in as the build reaches each boundary: store listing upload, Data Safet
 
 ## 2. Things that need your accounts or permissions
 
-### 2.1 Merging pull requests
+### 2.1 Pull requests
 
-The agent opens a pull request for each change and waits for CI, but the build environment's permission classifier blocks it from merging ("Merge Without Review"). Either merge on GitHub yourself, or allow the merge call for the agent (Claude Code settings → permissions).
+Every change goes through a pull request with CI: the JS checks, the Kotlin engine tests on the real model, and the Android debug APK build. The agent merges with `gh pr merge <number> --merge --delete-branch` once CI is green.
 
-Some pull requests are stacked: each one targets the branch it builds on. Merge them in order, base first. GitHub retargets the next one to `main` when its base branch is deleted. Use **Create a merge commit** so the small commits stay in the history, and delete each branch after merging.
+`gh` reads the token from `GITHUB_TOKEN` (loaded from `.env.local`). `gh auth login` refuses this token because it lacks the `read:org` scope, which the repository work doesn't need.
 
-| Order | PR                                                 | Builds on |
-| ----- | -------------------------------------------------- | --------- |
-| 1     | #12 Android build fix (compileSdk 37) + APK CI job | `main`    |
-| 2     | #6 Player queue file                               | `main`    |
-| 3     | #7 Time left in chapter and book                   | `main`    |
-| 4     | #11 Player state mirror                            | #7        |
-| 5     | #8 Import: format detection                        | `main`    |
-| 6     | #9 Import: parsing                                 | #8        |
-| 7     | #10 Import: end to end                             | #9        |
-| 8     | #13 Native SHA-256 for imports                     | `main`    |
+**Waiting for you:** nothing.
+
+_If a merge is ever blocked, the exact commands are listed here, in order._
 
 ### 2.2 Android emulator on this machine
 
