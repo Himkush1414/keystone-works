@@ -18,6 +18,8 @@ export interface ParseInput {
   format: ImportFormat;
   /** File name as the user saw it; gives the title when the file has none. */
   name: string;
+  /** A title the user chose (pasted text); wins over the file name. */
+  title?: string;
   bytes: Uint8Array;
   /** Local copy of the file; PDF text is extracted natively from a path. */
   path?: string;
@@ -42,7 +44,7 @@ export function titleFromName(name: string): string {
 
 /** Runs the core parser for `format`. Errors are ImportError with a code the UI explains. */
 export async function parseImport(input: ParseInput, deps: ParseDeps): Promise<DocumentDraft> {
-  const title = titleFromName(input.name);
+  const title = input.title?.trim() || titleFromName(input.name);
   switch (input.format) {
     case 'epub':
       return parseEpub(input.bytes, title);

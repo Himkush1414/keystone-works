@@ -14,6 +14,8 @@ export interface ImportFile {
   uri?: string;
   source: DocumentSource;
   password?: string;
+  /** Title chosen by the user (pasted text); otherwise it comes from the file. */
+  title?: string;
 }
 
 export interface ImportDeps extends ParseDeps {
@@ -54,7 +56,7 @@ export async function importFile(db: Db, file: ImportFile, deps: ImportDeps): Pr
       db,
       {
         kind: format === 'epub' ? 'book' : 'document',
-        title: titleFromName(file.name),
+        title: file.title?.trim() || titleFromName(file.name),
         source: file.source,
         ...(file.uri ? { sourceUri: file.uri } : {}),
         sha256,
@@ -71,6 +73,7 @@ export async function importFile(db: Db, file: ImportFile, deps: ImportDeps): Pr
         bytes: file.bytes,
         ...(file.path ? { path: file.path } : {}),
         ...(file.password ? { password: file.password } : {}),
+        ...(file.title ? { title: file.title } : {}),
       },
       deps,
     );
