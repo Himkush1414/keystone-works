@@ -32,6 +32,8 @@ declare class LamplightEngineModule extends NativeModule<LamplightEngineEvents> 
   synthesizeToFile(text: string, lang: string, voice: string, steps: number, path: string): Promise<number>;
   /** Returns JSON (see PdfExtraction). Rejects with code "password" or "corrupt". */
   extractPdf(path: string, password: string | null): Promise<string>;
+  /** Hex SHA-256 of a local file (duplicate detection on import). */
+  sha256File(path: string): Promise<string>;
 }
 
 export default requireNativeModule<LamplightEngineModule>('LamplightEngine');
