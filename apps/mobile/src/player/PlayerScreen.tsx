@@ -2,7 +2,8 @@ import { DEFAULT_NARRATOR, wordAt, type CleanSettings, type DictionaryRule } fro
 import type { Quality } from '../../modules/lamplight-engine/src/types';
 import { readerThemes } from '@lamplight/tokens';
 import { useEffect, useMemo, useState } from 'react';
-import { CastSheet, ContentsSheet, SleepSheet, VoiceSheet } from './PlayerSheets';
+import { CastSheet, CleanReadSheet, ContentsSheet, SleepSheet, VoiceSheet } from './PlayerSheets';
+import type { CleanReadRow } from './session';
 import { sleepStatus } from './sheets';
 import { StyleSheet, View } from 'react-native';
 import { useStore } from 'zustand';
@@ -34,6 +35,8 @@ export interface PlayerActions {
   listCharacters(): CastCharacter[];
   setCharacterVoice(characterId: string, voice: string | null): void;
   mergeCharacters(from: string, into: string): void;
+  cleanReadRows(): CleanReadRow[];
+  setCleanRead(reason: CleanReadRow['reason'], on: boolean): void;
   close(): void;
 }
 
@@ -66,7 +69,8 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
   const locale = useLocale();
   const t = useT();
 
-  const [sheet, setSheet] = useState<'sleep' | 'contents' | 'voice' | 'cast' | null>(null);
+  const [sheet, setSheet] = useState<'sleep' | 'contents' | 'voice' | 'cast' | 'clean' | null>(null);
+  const [cleanRows, setCleanRows] = useState<CleanReadRow[]>([]);
   const [characters, setCharacters] = useState<CastCharacter[]>([]);
   // This document's own choices, shown in the voice sheet and updated as the listener changes them.
   const [voice, setVoice] = useState(
@@ -117,6 +121,15 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
             {chapterTitle !== item.title ? chapterTitle : (item.author ?? '')}
           </Text>
         </View>
+        <IconButton
+          icon="cleanRead"
+          label={t('clean.title')}
+          onPress={() => {
+            setCleanRows(actions.cleanReadRows());
+            setSheet('clean');
+          }}
+          color={theme.ink}
+        />
         <IconButton
           icon="voice"
           label={t('player.voice')}
@@ -223,6 +236,15 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
         onCast={() => {
           setCharacters(actions.listCharacters());
           setSheet('cast');
+        }}
+      />
+      <CleanReadSheet
+        visible={sheet === 'clean'}
+        rows={cleanRows}
+        onClose={() => setSheet(null)}
+        onToggle={(reason, on) => {
+          actions.setCleanRead(reason, on);
+          setCleanRows(actions.cleanReadRows());
         }}
       />
       <CastSheet

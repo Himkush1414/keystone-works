@@ -9,8 +9,9 @@ import { Button } from '@/ui/Button';
 import { OptionRow } from '@/ui/OptionRow';
 import { Text } from '@/ui/Text';
 import { useT } from '@/i18n/useLocale';
-import { ChoiceRow } from '@/ui/SettingRows';
+import { ChoiceRow, SwitchRow } from '@/ui/SettingRows';
 import { Sheet } from '@/ui/Sheet';
+import type { CleanReadRow } from './session';
 import { contentsEntries, SLEEP_MINUTES } from './sheets';
 
 /** Sleep timer (R-PL-6): a number of minutes or the end of the chapter, with a gentle fade from the engine. */
@@ -244,6 +245,39 @@ export function CastSheet({
             {back}
           </>
         )}
+      </ScrollView>
+    </Sheet>
+  );
+}
+
+/** Clean Read review (R-CR-4): each detector's findings in this document, switched on or off here. */
+export function CleanReadSheet({
+  visible,
+  rows,
+  onClose,
+  onToggle,
+}: {
+  visible: boolean;
+  rows: readonly CleanReadRow[];
+  onClose(): void;
+  onToggle(reason: CleanReadRow['reason'], on: boolean): void;
+}) {
+  const t = useT();
+  return (
+    <Sheet visible={visible} title={t('clean.title')} onClose={onClose} closeLabel={t('common.close')}>
+      <ScrollView style={{ maxHeight: 520 }}>
+        <Text variant="callout" tone="soft">
+          {rows.length ? t('clean.desc') : t('clean.nothing')}
+        </Text>
+        {rows.map((r) => (
+          <SwitchRow
+            key={r.reason}
+            label={`${t(`clean.reasons.${r.reason}`)} (${r.count})`}
+            description={r.examples.map((e) => `“${e}”`).join('  ')}
+            value={r.on}
+            onChange={(on) => onToggle(r.reason, on)}
+          />
+        ))}
       </ScrollView>
     </Sheet>
   );
