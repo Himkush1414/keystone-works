@@ -34,6 +34,7 @@ export const en = {
     more: 'More voices',
     sample: 'Every story deserves a voice. Shall we begin?',
     hear: 'Hear {name}',
+    choose: 'Use {name}',
   },
   start: {
     title: 'What would you like to hear first?',
@@ -234,6 +235,14 @@ export const en = {
       M3: 'Arlo',
       M4: 'Silas',
       M5: 'Jonah',
+    },
+    traits: {
+      low: 'Low voice',
+      medium: 'Medium voice',
+      high: 'High voice',
+      unhurried: 'unhurried',
+      steady: 'steady',
+      brisk: 'brisk',
     },
   },
   settings: {
