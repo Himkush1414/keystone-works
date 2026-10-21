@@ -39,3 +39,13 @@ sudo usermod -aG kvm "$USER"
 ### 2.3 Key rotation
 
 The GitHub, Supabase, Expo and Vercel credentials were shared in a chat. Rotate them when convenient and update `.env.local` (never commit it).
+
+## 3. Translations to review
+
+The interface ships in English (source), Spanish, German, French and Brazilian Portuguese. The non-English catalogs (`apps/mobile/src/i18n/catalogs/{es,de,fr,pt}.ts`) were written without a native speaker, so please have each reviewed before launch in its market. Things to check:
+
+- **Voice per language:** tú (es), du (de), vous (fr), você (pt-BR), as the copy deck sets out.
+- **French typography:** narrow no-break spaces before `; ! ?` and no-break spaces before `:` and inside « ». `tooling/scripts/french-spacing.mjs` applies them; a reviewer only needs to check the words.
+- **Agreement:** adjectives after "voz"/"voix" (feminine) in the voice descriptions (`voices.traits`).
+
+Keys added most recently, which no reviewer has seen yet: `import.added`, `player.expand`, `item.titleField`, `item.authorField`, `voices.traits.*`, `voicePick.choose`.
