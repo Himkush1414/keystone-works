@@ -151,6 +151,7 @@ export const en = {
     appearance: 'Reading appearance',
     find: 'Find in text',
     collapse: 'Minimise player',
+    expand: 'Opens the full player',
     preparing: 'Preparing the voice…',
     chapterOf: 'Chapter {n} of {total}',
     remaining: '{time} left in chapter',

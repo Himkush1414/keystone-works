@@ -151,6 +151,7 @@ export const de: Catalog = {
     appearance: 'Leseansicht',
     find: 'Im Text suchen',
     collapse: 'Player verkleinern',
+    expand: 'Öffnet die Wiedergabe',
     preparing: 'Stimme wird vorbereitet …',
     chapterOf: 'Kapitel {n} von {total}',
     remaining: 'Noch {time} in diesem Kapitel',
