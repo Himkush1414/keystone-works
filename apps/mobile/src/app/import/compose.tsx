@@ -1,23 +1,23 @@
 import { getStringAsync } from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { importPasted } from '@/import/device';
 import { useT } from '@/i18n/useLocale';
 import { importMessage } from '@/library/importMessage';
 import { useServices } from '@/services/context';
-import { FONT } from '@/theme/fonts';
 import { useTheme } from '@/theme/theme';
 import { Button } from '@/ui/Button';
 import { IconButton } from '@/ui/IconButton';
 import { Screen, useGutter } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
+import { TextField } from '@/ui/TextField';
 
 /** Paste or type text to hear it: one calm field, filled from the clipboard when there's something there. */
 export default function Compose() {
   const services = useServices();
   const t = useT();
-  const { colors, space, radius } = useTheme();
+  const { space } = useTheme();
   const gutter = useGutter();
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
@@ -49,18 +49,6 @@ export default function Compose() {
     }
   };
 
-  // The border keeps each field's edge at 3:1 or more against the page (R-AX-2), which the sunk fill alone
-  // doesn't reach on the dark theme.
-  const field = {
-    backgroundColor: colors.surfaceSunk,
-    borderWidth: 1,
-    borderColor: colors.inkFaint,
-    borderRadius: radius.sm,
-    color: colors.ink,
-    fontFamily: FONT.ui,
-    paddingHorizontal: space.md,
-    paddingVertical: space.sm,
-  };
   return (
     <Screen>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -77,23 +65,21 @@ export default function Compose() {
           contentContainerStyle={{ padding: gutter, gap: space.md }}
           keyboardShouldPersistTaps="handled"
         >
-          <TextInput
+          <TextField
             value={title}
             onChangeText={setTitle}
+            label={t('import.composeName')}
             placeholder={t('import.composeName')}
-            placeholderTextColor={colors.inkFaint}
-            accessibilityLabel={t('import.composeName')}
-            style={[field, { fontSize: 16, minHeight: 48 }]}
           />
-          <TextInput
+          <TextField
             value={text}
             onChangeText={setText}
+            label={t('import.composePlaceholder')}
             placeholder={t('import.composePlaceholder')}
-            placeholderTextColor={colors.inkFaint}
-            accessibilityLabel={t('import.composePlaceholder')}
+            reader
             multiline
             textAlignVertical="top"
-            style={[field, { fontFamily: FONT.reader, fontSize: 17, lineHeight: 26, minHeight: 240 }]}
+            style={{ lineHeight: 26, minHeight: 240 }}
           />
         </ScrollView>
       </KeyboardAvoidingView>
