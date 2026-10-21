@@ -1,7 +1,10 @@
 import { Directory, File, Paths } from 'expo-file-system';
+import { Platform } from 'react-native';
 import LamplightEngine from '../../modules/lamplight-engine';
 import { getDb } from '../data/expoDb';
+import { getSetting, setSetting } from '../data/userdata';
 import { uriToPath } from '../import/paths';
+import { scheduleCalibration } from '../player/calibration';
 import { startDocument } from '../player/session';
 import { createServices, type Services } from './services';
 
@@ -16,9 +19,24 @@ async function writeQueue(docId: string, json: string): Promise<string> {
 
 let services: Services | null = null;
 
+/** Android's build fingerprint changes with every OS update, which is when calibration should run again. */
+function deviceFingerprint(): string {
+  const c = Platform.constants as { Fingerprint?: string; Model?: string; Release?: string };
+  return c.Fingerprint ?? `${c.Model ?? Platform.OS}/${c.Release ?? String(Platform.Version)}`;
+}
+
 /** The app's services on this device, created on first use. */
 export function deviceServices(): Services {
-  services ??= createServices(getDb(), LamplightEngine);
+  if (services) return services;
+  const db = getDb();
+  services = createServices(db, LamplightEngine);
+  scheduleCalibration(services.player, {
+    fingerprint: deviceFingerprint(),
+    calibratedFor: () => getSetting<string | null>(db, 'calibratedFor', null),
+    remember: (f) => setSetting(db, 'calibratedFor', f),
+    calibrate: () => LamplightEngine.calibrate(),
+    now: Date.now,
+  });
   return services;
 }
 
