@@ -14,4 +14,5 @@ export * from './import/docx';
 export * from './cast/dialogue';
 export * from './cast/attribute';
 export * from './cast/voices';
+export * from './cast/catalog';
 export * from './pipeline';
