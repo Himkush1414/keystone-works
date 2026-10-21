@@ -66,6 +66,13 @@ export const en = {
     settings: 'Settings',
     thisWeek: '{time} listened this week',
   },
+  search: {
+    placeholder: 'Search titles, authors and text',
+    titles: 'Titles',
+    inText: 'In text',
+    recent: 'Recent searches',
+    clearRecent: 'Clear',
+  },
   empty: {
     all: 'Your library is ready for its first book.',
     books: 'Add an EPUB or PDF and it will appear here.',

@@ -67,6 +67,13 @@ export const es: Catalog = {
     settings: 'Ajustes',
     thisWeek: '{time} escuchados esta semana',
   },
+  search: {
+    placeholder: 'Busca títulos, autores y texto',
+    titles: 'Títulos',
+    inText: 'En el texto',
+    recent: 'Búsquedas recientes',
+    clearRecent: 'Borrar',
+  },
   empty: {
     all: 'Tu biblioteca está lista para su primer libro.',
     books: 'Añade un EPUB o PDF y aparecerá aquí.',

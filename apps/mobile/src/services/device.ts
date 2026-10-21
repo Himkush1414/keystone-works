@@ -23,10 +23,15 @@ export function deviceServices(): Services {
 }
 
 /** Opens a document in the player and starts narrating it. */
-export function playDocument(s: Services, documentId: string): ReturnType<typeof startDocument> {
+export function playDocument(
+  s: Services,
+  documentId: string,
+  opts: { autoplay?: boolean; at?: number } = {},
+): ReturnType<typeof startDocument> {
   return startDocument(
     { db: s.db, store: s.player, engine: LamplightEngine, writeQueue },
     documentId,
     s.settings.getState(),
+    opts,
   );
 }

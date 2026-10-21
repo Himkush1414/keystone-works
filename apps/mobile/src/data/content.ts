@@ -147,3 +147,11 @@ export function mergeCharacters(db: Db, documentId: string, from: string, into: 
     db.run('DELETE FROM characters WHERE document_id = ? AND id = ?', [documentId, from]);
   });
 }
+
+/** The first sentence at or after block `blockOrd` (a search hit in a heading or caption lands on what follows). */
+export function sentenceAtBlock(db: Db, documentId: string, blockOrd: number): number | undefined {
+  return db.get<{ ord: number }>(
+    'SELECT ord FROM sentences WHERE document_id = ? AND block_ord >= ? ORDER BY ord LIMIT 1',
+    [documentId, blockOrd],
+  )?.ord;
+}
