@@ -1,5 +1,9 @@
+import { VOICE_CATALOG } from '@lamplight/core';
 import { ScrollView } from 'react-native';
-import type { QueueFile } from '../../modules/lamplight-engine/src/types';
+import type { Quality, QueueFile } from '../../modules/lamplight-engine/src/types';
+import type { TKey } from '@/i18n/translate';
+import { voiceTraits } from '@/onboarding/voiceTraits';
+import { Text } from '@/ui/Text';
 import { useT } from '@/i18n/useLocale';
 import { ChoiceRow } from '@/ui/SettingRows';
 import { Sheet } from '@/ui/Sheet';
@@ -69,6 +73,62 @@ export function ContentsSheet({
               onJump(e.start);
               onClose();
             }}
+          />
+        ))}
+      </ScrollView>
+    </Sheet>
+  );
+}
+
+const QUALITIES: { value: Quality; desc: TKey }[] = [
+  { value: 'auto', desc: 'quality.autoDesc' },
+  { value: 'live', desc: 'quality.liveDesc' },
+  { value: 'studio', desc: 'quality.studioDesc' },
+  { value: 'studioPlus', desc: 'quality.studioPlusDesc' },
+];
+
+/** Voice and quality for this document (R-PL-5); both take effect from the next sentence. */
+export function VoiceSheet({
+  visible,
+  voice,
+  quality,
+  onClose,
+  onVoice,
+  onQuality,
+}: {
+  visible: boolean;
+  voice: string;
+  quality: Quality;
+  onClose(): void;
+  onVoice(voice: string): void;
+  onQuality(quality: Quality): void;
+}) {
+  const t = useT();
+  return (
+    <Sheet visible={visible} title={t('player.voice')} onClose={onClose} closeLabel={t('common.close')}>
+      <ScrollView style={{ maxHeight: 520 }}>
+        {VOICE_CATALOG.map((v) => {
+          const traits = voiceTraits(v);
+          return (
+            <ChoiceRow
+              key={v.id}
+              label={t(`voices.names.${v.id}` as TKey)}
+              description={`${t(`voices.traits.${traits.pitch}`)} · ${t(`voices.traits.${traits.pace}`)}`}
+              selected={v.id === voice}
+              onPress={() => onVoice(v.id)}
+            />
+          );
+        })}
+        <Text variant="micro" tone="soft" style={{ marginTop: 16 }} accessibilityRole="header">
+          {t('player.quality')}
+        </Text>
+        {QUALITIES.map((q) => (
+          <ChoiceRow
+            key={q.value}
+            label={t(`quality.${q.value}`)}
+            description={t(q.desc)}
+            selected={q.value === quality}
+            onPress={() => onQuality(q.value)}
           />
         ))}
       </ScrollView>
