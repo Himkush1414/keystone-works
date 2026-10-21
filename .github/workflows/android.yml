@@ -1,0 +1,49 @@
+name: Android
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/**'
+      - 'package-lock.json'
+      - '.github/workflows/android.yml'
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  assemble:
+    name: Debug APK (arm64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Cache engine asset pack
+        uses: actions/cache@v4
+        with:
+          path: apps/mobile/modules/lamplight-engine/android/build/engine-assets/*.zip
+          key: engine-assets-1e49e5788df8bb5655a296cad93c751620124ebbbf36fd504ef196b86dc6bd76
+      - run: npm ci
+      - name: Generate the native project
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+        env:
+          CI: '1'
+      - name: Assemble
+        working-directory: apps/mobile/android
+        run: ./gradlew --no-daemon -PreactNativeArchitectures=arm64-v8a :app:assembleDebug
