@@ -1,7 +1,8 @@
-import { wordAt, type CleanSettings, type DictionaryRule } from '@lamplight/core';
+import { DEFAULT_NARRATOR, wordAt, type CleanSettings, type DictionaryRule } from '@lamplight/core';
+import type { Quality } from '../../modules/lamplight-engine/src/types';
 import { readerThemes } from '@lamplight/tokens';
 import { useEffect, useMemo, useState } from 'react';
-import { ContentsSheet, SleepSheet } from './PlayerSheets';
+import { ContentsSheet, SleepSheet, VoiceSheet } from './PlayerSheets';
 import { sleepStatus } from './sheets';
 import { StyleSheet, View } from 'react-native';
 import { useStore } from 'zustand';
@@ -28,6 +29,8 @@ export interface PlayerActions {
   seekTo(index: number): void;
   setSpeed(speed: number): void;
   setSleepTimer(minutes: number | null, endOfChapter: boolean): void;
+  setVoice(voice: string): void;
+  setQuality(quality: Quality): void;
   close(): void;
 }
 
@@ -60,7 +63,12 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
   const locale = useLocale();
   const t = useT();
 
-  const [sheet, setSheet] = useState<'sleep' | 'contents' | null>(null);
+  const [sheet, setSheet] = useState<'sleep' | 'contents' | 'voice' | null>(null);
+  // This document's own choices, shown in the voice sheet and updated as the listener changes them.
+  const [voice, setVoice] = useState(
+    () => item.settings.voice ?? settings.getState().voices[item.language] ?? DEFAULT_NARRATOR,
+  );
+  const [quality, setQuality] = useState<Quality>(() => item.settings.quality ?? settings.getState().quality);
   const playing = mirror.native.playing;
   const now = useNow(playing);
   const { index, positionMs } = livePosition(mirror, now);
@@ -105,7 +113,18 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
             {chapterTitle !== item.title ? chapterTitle : (item.author ?? '')}
           </Text>
         </View>
-        <IconButton icon="chapters" label={t('player.contents')} onPress={() => setSheet('contents')} />
+        <IconButton
+          icon="voice"
+          label={t('player.voice')}
+          onPress={() => setSheet('voice')}
+          color={theme.ink}
+        />
+        <IconButton
+          icon="chapters"
+          label={t('player.contents')}
+          onPress={() => setSheet('contents')}
+          color={theme.ink}
+        />
       </View>
 
       <ReadAlong
@@ -183,6 +202,20 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
         status={sleep}
         onClose={() => setSheet(null)}
         onSet={actions.setSleepTimer}
+      />
+      <VoiceSheet
+        visible={sheet === 'voice'}
+        voice={voice}
+        quality={quality}
+        onClose={() => setSheet(null)}
+        onVoice={(v) => {
+          setVoice(v);
+          actions.setVoice(v);
+        }}
+        onQuality={(q) => {
+          setQuality(q);
+          actions.setQuality(q);
+        }}
       />
       <ContentsSheet
         visible={sheet === 'contents'}

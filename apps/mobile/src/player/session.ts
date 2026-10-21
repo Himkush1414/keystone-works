@@ -12,7 +12,7 @@ import type { StoreApi } from 'zustand/vanilla';
 import type { Quality, QueueFile } from '../../modules/lamplight-engine/src/types';
 import { loadContent, type DocumentContent } from '../data/content';
 import type { Db } from '../data/db';
-import { getItem, markOpened, type LibraryItem } from '../data/library';
+import { getItem, markOpened, updateSettings, type LibraryItem } from '../data/library';
 import { getPosition, rulesFor, savePosition } from '../data/userdata';
 import type { Settings } from '../state/settings';
 import { toQueueFile } from './queue';
@@ -167,4 +167,42 @@ export function trackPosition(
       t,
     );
   });
+}
+
+export interface RevoiceDeps {
+  db: Db;
+  store: StoreApi<PlayerMirror>;
+  engine: {
+    updateSegments(json: string): Promise<void>;
+    setQuality(quality: Quality): Promise<void>;
+  };
+}
+
+/**
+ * Changes the narrator for one document while it plays (R-PL-5): the choice is saved on the document, and
+ * every sentence after the one being heard is re-queued with the new voice, so it takes effect at the next
+ * sentence with no gap. Cast voices follow the new narrator.
+ */
+export async function changeVoice(
+  deps: RevoiceDeps,
+  documentId: string,
+  voice: string,
+  settings: SessionSettings,
+  current: number,
+): Promise<void> {
+  updateSettings(deps.db, documentId, { voice });
+  const { queue } = planSession(deps.db, documentId, settings);
+  deps.store.getState().setQueue(queue);
+  const next = { ...queue, segments: queue.segments.filter((s) => s.i > current) };
+  if (next.segments.length) await deps.engine.updateSegments(JSON.stringify(next));
+}
+
+/** Changes the quality for one document: saved on it, and applied by the engine from the next sentence. */
+export async function changeQuality(
+  deps: Pick<RevoiceDeps, 'db' | 'engine'>,
+  documentId: string,
+  quality: Quality,
+): Promise<void> {
+  updateSettings(deps.db, documentId, { quality });
+  await deps.engine.setQuality(quality);
 }

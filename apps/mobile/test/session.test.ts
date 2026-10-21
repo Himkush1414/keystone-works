@@ -3,7 +3,14 @@ import { describe, expect, it } from 'vitest';
 import type { Quality } from '../modules/lamplight-engine/src/types';
 import { createDocument, getItem, saveContent, setFinished, updateSettings } from '../src/data/library';
 import { getPosition, savePosition } from '../src/data/userdata';
-import { planSession, startDocument, trackPosition, type SessionSettings } from '../src/player/session';
+import {
+  changeQuality,
+  changeVoice,
+  planSession,
+  startDocument,
+  trackPosition,
+  type SessionSettings,
+} from '../src/player/session';
 import { createPlayerStore, IDLE } from '../src/player/store';
 import { testDb } from './nodeDb';
 
@@ -144,5 +151,62 @@ describe('trackPosition', () => {
     expect(getPosition(db, id)).toMatchObject({ sentenceOrd: 1, offsetMs: 1_500, listenedMs: 5_500 });
     expect(getPosition(db, id)?.progress).toBeGreaterThan(0);
     stop();
+  });
+});
+
+describe('changing voice and quality while playing', () => {
+  it('saves the voice and re-queues only the sentences after the current one', async () => {
+    const { db, id } = seed();
+    const store = createPlayerStore();
+    store.getState().setQueue(planSession(db, id, SETTINGS).queue);
+    const sent: string[] = [];
+    const engine = {
+      updateSegments: (json: string) => {
+        sent.push(json);
+        return Promise.resolve();
+      },
+      setQuality: () => Promise.resolve(),
+    };
+    await changeVoice({ db, store, engine }, id, 'M2', SETTINGS, 1);
+    expect(getItem(db, id)?.settings.voice).toBe('M2');
+    const update = JSON.parse(sent[0] ?? '{}') as {
+      docId: string;
+      segments: { i: number; voice: string; kind: string }[];
+    };
+    expect(update.docId).toBe(id);
+    expect(update.segments.every((s) => s.i > 1)).toBe(true);
+    expect(update.segments.filter((s) => s.kind !== 'dialogue').every((s) => s.voice === 'M2')).toBe(true);
+    expect(store.getState().queue?.segments[0]?.voice).toBe('M2');
+  });
+
+  it('sends nothing to re-queue at the last sentence', async () => {
+    const { db, id } = seed();
+    const store = createPlayerStore();
+    const calls: string[] = [];
+    const engine = {
+      updateSegments: (j: string) => (calls.push(j), Promise.resolve()),
+      setQuality: () => Promise.resolve(),
+    };
+    const last = planSession(db, id, SETTINGS).queue.segments.length - 1;
+    await changeVoice({ db, store, engine }, id, 'F3', SETTINGS, last);
+    expect(calls).toEqual([]);
+  });
+
+  it('saves the quality and tells the engine', async () => {
+    const { db, id } = seed();
+    const set: string[] = [];
+    await changeQuality(
+      {
+        db,
+        engine: {
+          updateSegments: () => Promise.resolve(),
+          setQuality: (q) => (set.push(q), Promise.resolve()),
+        },
+      },
+      id,
+      'studioPlus',
+    );
+    expect(getItem(db, id)?.settings.quality).toBe('studioPlus');
+    expect(set).toEqual(['studioPlus']);
   });
 });

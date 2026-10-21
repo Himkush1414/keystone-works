@@ -7,7 +7,7 @@ import { getItem } from '@/data/library';
 import { rulesFor } from '@/data/userdata';
 import { useT } from '@/i18n/useLocale';
 import { PlayerScreen, type PlayerActions } from '@/player/PlayerScreen';
-import { cleanSettingsFor } from '@/player/session';
+import { changeQuality, changeVoice, cleanSettingsFor } from '@/player/session';
 import { useServices } from '@/services/context';
 import { playDocument } from '@/services/device';
 
@@ -37,9 +37,22 @@ export default function PlayerRoute() {
       seekTo: (index) => run(LamplightEngine.seekTo(index)),
       setSpeed: (speed) => run(LamplightEngine.setSpeed(speed)),
       setSleepTimer: (minutes, endOfChapter) => run(LamplightEngine.setSleepTimer(minutes, endOfChapter)),
+      setVoice: (voice) =>
+        id &&
+        run(
+          changeVoice(
+            { db: services.db, store: services.player, engine: LamplightEngine },
+            id,
+            voice,
+            services.settings.getState(),
+            services.player.getState().progress.index,
+          ),
+        ),
+      setQuality: (quality) =>
+        id && run(changeQuality({ db: services.db, engine: LamplightEngine }, id, quality)),
       close: () => (router.canGoBack() ? router.back() : router.replace('/library')),
     };
-  }, [services, t]);
+  }, [services, t, id]);
 
   // Opening a document that isn't the one in the player starts it.
   useEffect(() => {
