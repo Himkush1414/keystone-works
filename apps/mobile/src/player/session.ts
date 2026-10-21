@@ -47,7 +47,13 @@ export function cleanSettingsFor(
 }
 
 /** Everything the native player needs to narrate `documentId` from where the listener left off. */
-export function planSession(db: Db, documentId: string, settings: SessionSettings): SessionPlan {
+export function planSession(
+  db: Db,
+  documentId: string,
+  settings: SessionSettings,
+  /** Start at this sentence instead of the saved position (a search result). */
+  at?: number,
+): SessionPlan {
   const item = getItem(db, documentId);
   if (!item || item.status !== 'ready') throw new Error(`document ${documentId} is not ready to play`);
   const content = loadContent(db, documentId);
@@ -80,8 +86,10 @@ export function planSession(db: Db, documentId: string, settings: SessionSetting
   // Resume where the listener stopped, from the start of that sentence (R-PL-9); a finished item restarts.
   const pos = getPosition(db, documentId);
   const finished = item.finishedAt !== null || (pos?.progress ?? 0) >= 1;
-  const startIndex = finished || !pos ? 0 : Math.min(pos.sentenceOrd, Math.max(0, segments.length - 1));
-  const startMs = finished || !pos || settings.rewindOnResume ? 0 : pos.offsetMs;
+  const last = Math.max(0, segments.length - 1);
+  const resumeAt = finished || !pos ? 0 : Math.min(pos.sentenceOrd, last);
+  const startIndex = at === undefined ? resumeAt : Math.min(Math.max(0, at), last);
+  const startMs = at !== undefined || finished || !pos || settings.rewindOnResume ? 0 : pos.offsetMs;
   return {
     queue,
     startIndex,
@@ -114,9 +122,9 @@ export async function startDocument(
   deps: SessionDeps,
   documentId: string,
   settings: SessionSettings,
-  opts: { autoplay?: boolean } = {},
+  opts: { autoplay?: boolean; at?: number } = {},
 ): Promise<SessionPlan> {
-  const plan = planSession(deps.db, documentId, settings);
+  const plan = planSession(deps.db, documentId, settings, opts.at);
   const path = await deps.writeQueue(documentId, JSON.stringify(plan.queue));
   deps.store.getState().setQueue(plan.queue);
   await deps.engine.loadQueue(path, plan.startIndex, plan.startMs, plan.speed, plan.quality);
