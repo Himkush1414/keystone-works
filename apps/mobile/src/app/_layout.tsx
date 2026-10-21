@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { hideAsync, preventAutoHideAsync } from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { ServicesProvider, useServices } from '@/services/context';
 import { deviceServices } from '@/services/device';
 import { ThemeProvider } from '@/theme/theme';
 import { useAppFonts } from '@/theme/useAppFonts';
+import { AnimatedSplash } from '@/ui/AnimatedSplash';
 import { ToastHost } from '@/ui/Toast';
 
 // Keep the splash up until the first screen can draw with its real fonts (no layout shift, R-ON-1).
@@ -35,6 +36,7 @@ function ThemedApp() {
   const { settings } = useServices();
   const theme = useStore(settings, (s) => s.theme);
   const motion = useStore(settings, (s) => s.motion);
+  const [splash, setSplash] = useState(true);
   return (
     <ThemeProvider preference={theme} motionPreference={motion}>
       <Stack screenOptions={{ headerShown: false }}>
@@ -42,6 +44,7 @@ function ThemedApp() {
         <Stack.Screen name="import/compose" options={{ presentation: 'modal' }} />
       </Stack>
       <ToastHost />
+      {splash ? <AnimatedSplash onDone={() => setSplash(false)} /> : null}
     </ThemeProvider>
   );
 }
