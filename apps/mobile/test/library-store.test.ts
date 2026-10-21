@@ -75,3 +75,41 @@ describe('library store', () => {
     expect(store.getState().importing).toBe(false);
   });
 });
+
+describe('item actions', () => {
+  it('marks an item finished and back', () => {
+    const db = testDb();
+    const id = addDoc(db, 'Alpha');
+    const store = createLibraryStore(db);
+    store.getState().setFinished(id, true);
+    expect(store.getState().items[0]?.finishedAt).not.toBeNull();
+    store.getState().setFinished(id, false);
+    expect(store.getState().items[0]?.finishedAt).toBeNull();
+  });
+
+  it('edits the title and author, keeping the title when it is left blank', () => {
+    const db = testDb();
+    const id = addDoc(db, 'Alpha');
+    const store = createLibraryStore(db);
+    store.getState().editDetails(id, { title: '  The Real Title ', author: 'Ada' });
+    expect(store.getState().items[0]).toMatchObject({ title: 'The Real Title', author: 'Ada' });
+    store.getState().editDetails(id, { title: '   ', author: '' });
+    expect(store.getState().items[0]).toMatchObject({ title: 'The Real Title', author: null });
+  });
+
+  it('removes an item and puts it back on undo', () => {
+    const db = testDb();
+    const id = addDoc(db, 'Alpha');
+    addDoc(db, 'Beta');
+    const store = createLibraryStore(db);
+    const undo = store.getState().remove(id);
+    expect(store.getState().items.map((i) => i.title)).toEqual(['Beta']);
+    undo();
+    expect(
+      store
+        .getState()
+        .items.map((i) => i.title)
+        .sort(),
+    ).toEqual(['Alpha', 'Beta']);
+  });
+});

@@ -1,7 +1,14 @@
+import { parsePlainText, prepareDocument } from '@lamplight/core';
 import { describe, expect, it } from 'vitest';
+import { createDocument, getItem, restore, saveContent, softDelete } from '../src/data/library';
 import type { LamplightEngineEvents } from '../modules/lamplight-engine/src/types';
 import { getSetting } from '../src/data/userdata';
-import { createServices, sqliteSettingsBackend, type EngineEvents } from '../src/services/services';
+import {
+  createServices,
+  PURGE_AFTER_MS,
+  sqliteSettingsBackend,
+  type EngineEvents,
+} from '../src/services/services';
 import { testDb } from './nodeDb';
 
 function fakeEngine() {
@@ -43,5 +50,26 @@ describe('createServices', () => {
     expect(services.player.getState().progress).toEqual({ index: 4, positionMs: 20, at: 10 });
     services.dispose();
     expect(fake.removed()).toBe(3);
+  });
+});
+
+describe('purge at launch', () => {
+  it('removes items deleted more than a day ago and keeps recent ones restorable', () => {
+    const db = testDb();
+    const add = (title: string) => {
+      const id = createDocument(db, { kind: 'document', title, source: 'paste' });
+      saveContent(db, id, prepareDocument(parsePlainText(`${title}. Some words.`, title)));
+      return id;
+    };
+    const old = add('Old');
+    const recent = add('Recent');
+    const now = 10 * PURGE_AFTER_MS;
+    softDelete(db, old, now - PURGE_AFTER_MS - 1);
+    softDelete(db, recent, now - 1000);
+    createServices(db, fakeEngine().engine, () => 0, now);
+    restore(db, old);
+    restore(db, recent);
+    expect(getItem(db, old)).toBeUndefined();
+    expect(getItem(db, recent)?.title).toBe('Recent');
   });
 });

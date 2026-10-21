@@ -3,6 +3,10 @@ import type { Db } from '../data/db';
 import {
   continueItem,
   listItems,
+  restore,
+  setFinished as setItemFinished,
+  softDelete,
+  updateDetails,
   type LibraryItem,
   type Shelf,
   type SortKey,
@@ -38,6 +42,10 @@ export interface LibraryState {
   refresh(): void;
   /** Runs an import (picker, share, paste) and refreshes; null when the user cancelled. */
   runImport(start: () => Promise<ImportResult[] | null>): Promise<ImportSummary | null>;
+  setFinished(id: string, finished: boolean): void;
+  editDetails(id: string, details: { title?: string; author?: string | null }): void;
+  /** Removes an item from the library; the returned function puts it back (the toast's Undo). */
+  remove(id: string): () => void;
 }
 
 /** The library as the screens see it. SQLite stays the source of truth; this is a refreshed view. */
@@ -56,6 +64,22 @@ export function createLibraryStore(db: Db): StoreApi<LibraryState> {
     refresh() {
       const { shelf, sort, status } = get();
       set({ items: listItems(db, shelf, sort, status), continueWith: continueItem(db) ?? null });
+    },
+    setFinished(id, finished) {
+      setItemFinished(db, id, finished);
+      get().refresh();
+    },
+    editDetails(id, details) {
+      updateDetails(db, id, details);
+      get().refresh();
+    },
+    remove(id) {
+      softDelete(db, id);
+      get().refresh();
+      return () => {
+        restore(db, id);
+        get().refresh();
+      };
     },
     async runImport(start) {
       set({ importing: true });

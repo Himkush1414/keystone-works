@@ -1,6 +1,7 @@
 import type { StoreApi } from 'zustand/vanilla';
 import type { LamplightEngineEvents } from '../../modules/lamplight-engine/src/types';
 import type { Db } from '../data/db';
+import { purgeDeleted } from '../data/library';
 import { getSetting, setSetting } from '../data/userdata';
 import { trackPosition } from '../player/session';
 import { connectEngine, createPlayerStore, type PlayerMirror } from '../player/store';
@@ -40,7 +41,16 @@ export interface Services {
   dispose(): void;
 }
 
-export function createServices(db: Db, engine: EngineEvents, clock?: () => number): Services {
+/** Deleted items stay restorable this long (the toast's Undo needs seconds); then launch removes them. */
+export const PURGE_AFTER_MS = 24 * 60 * 60 * 1000;
+
+export function createServices(
+  db: Db,
+  engine: EngineEvents,
+  clock?: () => number,
+  now: number = Date.now(),
+): Services {
+  purgeDeleted(db, now - PURGE_AFTER_MS);
   const settings = createSettingsStore(sqliteSettingsBackend(db));
   settings.getState().hydrate();
   const library = createLibraryStore(db);
