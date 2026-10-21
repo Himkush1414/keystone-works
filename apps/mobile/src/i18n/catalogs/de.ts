@@ -115,6 +115,7 @@ export const de: Catalog = {
     openExisting: 'Öffnen',
     savedLater: 'Für später gespeichert',
     playNow: 'Jetzt abspielen',
+    added: { one: 'Zur Bibliothek hinzugefügt', other: '{n} Titel zur Bibliothek hinzugefügt' },
   },
   errors: {
     drm: 'Dieses Buch ist per DRM geschützt, daher kann Lamplight es nicht öffnen.',

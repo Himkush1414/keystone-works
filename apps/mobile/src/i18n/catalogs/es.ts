@@ -115,6 +115,7 @@ export const es: Catalog = {
     openExisting: 'Abrirlo',
     savedLater: 'Guardado para escuchar después',
     playNow: 'Reproducir ahora',
+    added: { one: 'Añadido a tu biblioteca', other: 'Se añadieron {n} elementos a tu biblioteca' },
   },
   errors: {
     drm: 'Este libro tiene DRM, así que Lamplight no puede abrirlo.',

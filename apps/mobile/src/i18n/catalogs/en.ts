@@ -114,6 +114,7 @@ export const en = {
     openExisting: 'Open it',
     savedLater: 'Saved to Listen Later',
     playNow: 'Play now',
+    added: { one: 'Added to your library', other: 'Added {n} items to your library' },
   },
   errors: {
     drm: 'This book is protected by DRM, so Lamplight can’t open it.',
