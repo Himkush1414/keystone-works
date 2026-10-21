@@ -7,6 +7,7 @@ import { useLocale, useT } from '@/i18n/useLocale';
 import { useServices } from '@/services/context';
 import { useTheme } from '@/theme/theme';
 import { Button } from '@/ui/Button';
+import { MINI_PLAYER_HEIGHT } from '@/ui/elevation';
 import { IconButton } from '@/ui/IconButton';
 import { Screen, useGutter } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
@@ -95,7 +96,11 @@ export function LibraryScreen(actions: LibraryActions) {
             </View>
           </View>
         }
-        contentContainerStyle={{ paddingHorizontal: gutter, paddingTop: space.md, paddingBottom: space.x5 }}
+        contentContainerStyle={{
+          paddingHorizontal: gutter,
+          paddingTop: space.md,
+          paddingBottom: MINI_PLAYER_HEIGHT + space.x4,
+        }}
       />
     </Screen>
   );
