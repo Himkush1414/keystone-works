@@ -49,6 +49,22 @@ describe('estimateWordTimes', () => {
     expect((year?.t1 ?? 0) - (year?.t0 ?? 0)).toBeGreaterThan((t[0]?.t1 ?? 0) - (t[0]?.t0 ?? 0));
   });
 
+  it('never gives punctuation a slot of its own; its pause goes to the word before', () => {
+    for (const text of ['Born in 1984.', 'Wait — what?']) {
+      const t = times(text, 3000);
+      expect(t.every((w) => /[\p{L}\p{N}]/u.test(text.slice(w.start, w.end)))).toBe(true);
+    }
+    const t = times('Born in 1984.', 3000);
+    const year = t.at(-1);
+    const born = t[0];
+    expect(text(year)).toBe('1984');
+    // The final stop's pause lengthens "1984" rather than standing alone.
+    expect((year?.t1 ?? 0) - (year?.t0 ?? 0)).toBeGreaterThan(2 * ((born?.t1 ?? 0) - (born?.t0 ?? 0)));
+    function text(w: { start: number; end: number } | undefined) {
+      return w ? 'Born in 1984.'.slice(w.start, w.end) : '';
+    }
+  });
+
   it('ignores skipped spans', () => {
     const text = 'Glow [12] softly.';
     const s = normalize(text, { start: 0, end: text.length }, 'en', {

@@ -55,9 +55,18 @@ export function estimateWordTimes(spoken: Spoken, blockText: string, durationMs:
     const slice = blockText.slice(p.start, p.end);
     for (const m of slice.matchAll(/\S+/gu)) {
       const w = m[0];
-      const weight = syllables(w) + pauseWeight(w);
-      if (weight === 0) continue; // stray punctuation: no time of its own
-      words.push({ start: p.start + m.index, end: p.start + m.index + w.length, weight });
+      if (syllables(w) === 0) {
+        // Stray punctuation ("." after "1984", a lone dash) has no time of its own; its pause belongs to the
+        // word before it, so the underline never lands on the punctuation.
+        const prev = words[words.length - 1];
+        if (prev) prev.weight += pauseWeight(w);
+        continue;
+      }
+      words.push({
+        start: p.start + m.index,
+        end: p.start + m.index + w.length,
+        weight: syllables(w) + pauseWeight(w),
+      });
     }
   }
   if (!words.length) return [];
