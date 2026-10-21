@@ -19,6 +19,30 @@ export interface CastCharacter {
   voiceId: string | null;
 }
 
+/** The characters Cast found in a document, most lines first. */
+export function listCharacters(db: Db, documentId: string): CastCharacter[] {
+  return db
+    .all<{
+      id: string;
+      name: string;
+      aliases_json: string;
+      gender: 'f' | 'm' | null;
+      line_count: number;
+      voice_id: string | null;
+    }>(
+      'SELECT id, name, aliases_json, gender, line_count, voice_id FROM characters WHERE document_id = ? ORDER BY line_count DESC',
+      [documentId],
+    )
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      aliases: JSON.parse(r.aliases_json) as string[],
+      gender: r.gender,
+      lineCount: r.line_count,
+      voiceId: r.voice_id,
+    }));
+}
+
 export function loadContent(db: Db, documentId: string): DocumentContent {
   const blocks = db
     .all<{
@@ -81,26 +105,7 @@ export function loadContent(db: Db, documentId: string): DocumentContent {
       if (r.language) c.language = r.language;
       return c;
     });
-  const characters = db
-    .all<{
-      id: string;
-      name: string;
-      aliases_json: string;
-      gender: 'f' | 'm' | null;
-      line_count: number;
-      voice_id: string | null;
-    }>(
-      'SELECT id, name, aliases_json, gender, line_count, voice_id FROM characters WHERE document_id = ? ORDER BY line_count DESC',
-      [documentId],
-    )
-    .map((r) => ({
-      id: r.id,
-      name: r.name,
-      aliases: JSON.parse(r.aliases_json) as string[],
-      gender: r.gender,
-      lineCount: r.line_count,
-      voiceId: r.voice_id,
-    }));
+  const characters = listCharacters(db, documentId);
   return { blocks, sentences, confidence: rows.map((r) => r.confidence), chapters, characters };
 }
 
