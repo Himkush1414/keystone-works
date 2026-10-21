@@ -15,7 +15,8 @@ export interface LibraryRowProps {
   speed: number;
   onOpen(item: LibraryItem): void;
   onPlay(item: LibraryItem): void;
-  onMore(item: LibraryItem): void;
+  /** Item actions (long press); omitted until the item sheet exists. */
+  onMore?(item: LibraryItem): void;
 }
 
 /** One library item: cover, title, author and state, progress. Tap opens; actions are also exposed to TalkBack. */
@@ -34,15 +35,19 @@ export const LibraryRow = memo(function LibraryRow({
   return (
     <Tappable
       onPress={() => onOpen(item)}
-      onLongPress={() => onMore(item)}
+      onLongPress={onMore ? () => onMore(item) : undefined}
       pressScale={0.985}
       accessibilityRole="button"
       accessibilityLabel={`${item.title}. ${meta}`}
       accessibilityActions={[
         { name: 'activate', label: translate(locale, 'player.play') },
-        { name: 'longpress', label: translate(locale, 'a11y.itemActions', { title: item.title }) },
+        ...(onMore
+          ? [{ name: 'longpress', label: translate(locale, 'a11y.itemActions', { title: item.title }) }]
+          : []),
       ]}
-      onAccessibilityAction={(e) => (e.nativeEvent.actionName === 'longpress' ? onMore(item) : onPlay(item))}
+      onAccessibilityAction={(e) =>
+        e.nativeEvent.actionName === 'longpress' ? onMore?.(item) : onPlay(item)
+      }
       style={[styles.row, { paddingVertical: space.sm, gap: space.md }]}
     >
       <Cover title={item.title} author={item.author} uri={item.coverPath} width={48} />

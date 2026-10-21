@@ -56,8 +56,8 @@ export function itemState(item: LibraryItem): ItemState {
   return item.progress > 0 ? 'inProgress' : 'new';
 }
 
-/** The meta line under a library row: author, then where the listener stands. */
-export function rowMeta(item: LibraryItem, locale: Locale, speed = 1): string {
+/** The meta line under a library row: author (unless the cover already shows it), then where the listener stands. */
+export function rowMeta(item: LibraryItem, locale: Locale, speed = 1, withAuthor = true): string {
   const state = itemState(item);
   const status =
     state === 'importing'
@@ -74,5 +74,5 @@ export function rowMeta(item: LibraryItem, locale: Locale, speed = 1): string {
                   estimatedListeningMs(item.wordCount, speed) * (1 - item.progress),
                 ),
               });
-  return [item.author, status].filter(Boolean).join(' · ');
+  return [withAuthor ? item.author : null, status].filter(Boolean).join(' · ');
 }
