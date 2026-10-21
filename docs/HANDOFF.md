@@ -18,25 +18,22 @@ _(Filled in as the build reaches each boundary: store listing upload, Data Safet
 
 ## 2. Things that need your accounts or permissions
 
-### 2.1 Pull requests (automation was blocked)
+### 2.1 Merging pull requests
 
-The build environment's permission classifier blocked merging pull requests automatically ("Merge Without Review"). Work has been pushed directly to `main` after full local verification (typecheck, lint, format, tests, secret scan), which you explicitly authorised. To enable the feature-branch + PR flow, allow these commands for the agent (Claude Code settings → permissions), or run them yourself:
+The agent opens a pull request for each change and waits for CI, but the build environment's permission classifier blocks it from merging ("Merge Without Review"). Either merge on GitHub yourself, or allow the merge call for the agent (Claude Code settings → permissions).
 
-```bash
-# open a PR from a pushed branch
-curl -sS -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
-  https://api.github.com/repos/Himkush1414/keystone-works/pulls \
-  -d '{"title":"<title>","head":"<branch>","base":"main","body":"<description>"}'
+Some pull requests are stacked: each one targets the branch it builds on. Merge them in order, base first. GitHub retargets the next one to `main` when its base branch is deleted. Use **Create a merge commit** so the small commits stay in the history, and delete each branch after merging.
 
-# merge it after CI passes (merge commit keeps the atomic commits)
-curl -sS -X PUT -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
-  https://api.github.com/repos/Himkush1414/keystone-works/pulls/<number>/merge \
-  -d '{"merge_method":"merge"}'
-
-# delete the branch
-curl -sS -X DELETE -H "Authorization: Bearer $GITHUB_TOKEN" \
-  https://api.github.com/repos/Himkush1414/keystone-works/git/refs/heads/<branch>
-```
+| Order | PR                                                 | Builds on |
+| ----- | -------------------------------------------------- | --------- |
+| 1     | #12 Android build fix (compileSdk 37) + APK CI job | `main`    |
+| 2     | #6 Player queue file                               | `main`    |
+| 3     | #7 Time left in chapter and book                   | `main`    |
+| 4     | #11 Player state mirror                            | #7        |
+| 5     | #8 Import: format detection                        | `main`    |
+| 6     | #9 Import: parsing                                 | #8        |
+| 7     | #10 Import: end to end                             | #9        |
+| 8     | #13 Native SHA-256 for imports                     | `main`    |
 
 ### 2.2 Android emulator on this machine
 
