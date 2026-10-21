@@ -37,7 +37,9 @@ function ThemedApp() {
   const motion = useStore(settings, (s) => s.motion);
   return (
     <ThemeProvider preference={theme} motionPreference={motion}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="player/[id]" options={{ presentation: 'modal' }} />
+      </Stack>
       <ToastHost />
     </ThemeProvider>
   );

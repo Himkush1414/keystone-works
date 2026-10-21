@@ -62,6 +62,15 @@ describe('Timeline', () => {
     expect(t.totalMs()).toBe(2100 * 3 + 3100 + 500);
   });
 
+  it("gives a sentence's spoken length without its pause", () => {
+    const t = make();
+    expect(t.speechMs(0)).toBe(2000);
+    expect(t.speechMs(2)).toBe(0);
+    t.setMeasured(0, 2600);
+    expect(t.speechMs(0)).toBe(2600);
+    expect(t.speechMs(42)).toBe(0);
+  });
+
   it('ignores measurements for unknown sentences or invalid lengths', () => {
     const t = make();
     t.setMeasured(42, 1000);

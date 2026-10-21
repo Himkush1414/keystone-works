@@ -42,6 +42,12 @@ export class Timeline {
     this.dirtyFrom = Math.min(this.dirtyFrom, index);
   }
 
+  /** How long sentence `index` is spoken, without the pause after it. */
+  speechMs(index: number): number {
+    const seg = this.source.segments[index];
+    return seg ? Math.max(0, (this.ms[index] ?? 0) - seg.pauseMs) : 0;
+  }
+
   /** Time from the start of the document to `index` plus `offsetMs` into it. */
   positionMs(index: number, offsetMs = 0): number {
     const i = Math.min(Math.max(0, index), this.length);

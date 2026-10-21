@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import type { LibraryItem } from '@/data/library';
 import { getItem } from '@/data/library';
@@ -40,7 +41,9 @@ export default function LibraryRoute() {
           })
           .catch(() => failed('errors.generic'));
       },
-      onOpen: play,
+      onOpen: (item: LibraryItem) => {
+        if (item.status === 'ready') router.push(`/player/${item.id}`);
+      },
       onPlay: play,
     }),
     [services, play, failed, t],
