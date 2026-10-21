@@ -1,6 +1,8 @@
 import { wordAt, type CleanSettings, type DictionaryRule } from '@lamplight/core';
 import { readerThemes } from '@lamplight/tokens';
 import { useEffect, useMemo, useState } from 'react';
+import { ContentsSheet, SleepSheet } from './PlayerSheets';
+import { sleepStatus } from './sheets';
 import { StyleSheet, View } from 'react-native';
 import { useStore } from 'zustand';
 import type { DocumentContent } from '@/data/content';
@@ -25,6 +27,7 @@ export interface PlayerActions {
   skip(delta: number): void;
   seekTo(index: number): void;
   setSpeed(speed: number): void;
+  setSleepTimer(minutes: number | null, endOfChapter: boolean): void;
   close(): void;
 }
 
@@ -57,6 +60,7 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
   const locale = useLocale();
   const t = useT();
 
+  const [sheet, setSheet] = useState<'sleep' | 'contents' | null>(null);
   const playing = mirror.native.playing;
   const now = useNow(playing);
   const { index, positionMs } = livePosition(mirror, now);
@@ -87,6 +91,7 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
   const chapterTitle = mirror.queue?.chapterTitles[chapterIndex] || item.title;
   const left = mirror.timeline?.remaining(index, positionMs, speed).chapterMs ?? 0;
   const progress = mirror.timeline?.progress(index, positionMs) ?? item.progress;
+  const sleep = sleepStatus(mirror.native, Date.now(), locale);
 
   return (
     <Screen background={theme.bg}>
@@ -100,7 +105,7 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
             {chapterTitle !== item.title ? chapterTitle : (item.author ?? '')}
           </Text>
         </View>
-        <View style={styles.spacer} />
+        <IconButton icon="chapters" label={t('player.contents')} onPress={() => setSheet('contents')} />
       </View>
 
       <ReadAlong
@@ -162,9 +167,30 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
             onPress={() => actions.skip(1)}
             color={theme.ink}
           />
-          <View style={styles.speed} />
+          <View style={styles.speed}>
+            <IconButton
+              icon="sleep"
+              label={sleep ? `${t('player.sleep')}: ${sleep}` : t('player.sleep')}
+              onPress={() => setSheet('sleep')}
+              color={sleep ? theme.underline : theme.ink}
+              selected={sleep !== null}
+            />
+          </View>
         </View>
       </View>
+      <SleepSheet
+        visible={sheet === 'sleep'}
+        status={sleep}
+        onClose={() => setSheet(null)}
+        onSet={actions.setSleepTimer}
+      />
+      <ContentsSheet
+        visible={sheet === 'contents'}
+        queue={mirror.queue}
+        index={index}
+        onClose={() => setSheet(null)}
+        onJump={actions.seekTo}
+      />
     </Screen>
   );
 }
@@ -172,7 +198,6 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row', alignItems: 'center', minHeight: 56 },
   titles: { flex: 1 },
-  spacer: { width: 48 },
   controls: {},
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   speed: { minWidth: 56, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
