@@ -90,6 +90,8 @@ export const pt: Catalog = {
     addToCollection: 'Adicionar a uma coleção',
     rename: 'Renomear',
     details: 'Editar detalhes',
+    titleField: 'Título',
+    authorField: 'Autor',
     markFinished: 'Marcar como concluído',
     markUnfinished: 'Marcar como não concluído',
     prepare: 'Preparar para ouvir offline',

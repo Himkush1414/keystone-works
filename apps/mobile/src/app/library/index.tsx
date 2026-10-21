@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import LamplightEngine from '../../../modules/lamplight-engine';
 import { useCallback, useMemo, useState } from 'react';
 import type { LibraryItem } from '@/data/library';
 import { getItem } from '@/data/library';
@@ -6,6 +7,7 @@ import { importBundledSample, pickAndImport } from '@/import/device';
 import type { Sample } from '@/import/samples';
 import { useT } from '@/i18n/useLocale';
 import { ImportSheet } from '@/library/ImportSheet';
+import { ItemSheet } from '@/library/ItemSheet';
 import { importMessage } from '@/library/importMessage';
 import { LibraryScreen } from '@/library/LibraryScreen';
 import { useServices } from '@/services/context';
@@ -15,6 +17,7 @@ export default function LibraryRoute() {
   const services = useServices();
   const t = useT();
   const [adding, setAdding] = useState(false);
+  const [selected, setSelected] = useState<LibraryItem | null>(null);
   const failed = useCallback(
     (key: 'errors.generic' | 'errors.voiceUnavailable') =>
       services.toast.getState().show({ message: t(key), tone: 'danger' }),
@@ -64,9 +67,26 @@ export default function LibraryRoute() {
     [services, t, open, failed],
   );
 
+  // Deleting what the player holds stops it first; the toast's Undo puts the item back in the library.
+  const remove = useCallback(
+    (item: LibraryItem) => {
+      if (services.player.getState().queue?.docId === item.id) {
+        LamplightEngine.stop().catch(() => undefined);
+        services.player.getState().setQueue(null);
+      }
+      const undo = services.library.getState().remove(item.id);
+      services.toast.getState().show({
+        message: t('item.deleted', { title: item.title }),
+        action: { label: t('common.undo'), run: undo },
+      });
+    },
+    [services, t],
+  );
+
   const actions = useMemo(
     () => ({
       onAdd: () => setAdding(true),
+      onMore: setSelected,
       onOpen: (item: LibraryItem) => {
         if (item.status === 'ready') open(item.id);
       },
@@ -83,6 +103,16 @@ export default function LibraryRoute() {
         onFile={fromFile}
         onPaste={() => router.push('/import/compose')}
         onSample={fromSample}
+      />
+      <ItemSheet
+        item={selected}
+        onClose={() => setSelected(null)}
+        onPlay={play}
+        onToggleFinished={(item) =>
+          services.library.getState().setFinished(item.id, item.finishedAt === null)
+        }
+        onSaveDetails={(item, details) => services.library.getState().editDetails(item.id, details)}
+        onDelete={remove}
       />
     </>
   );

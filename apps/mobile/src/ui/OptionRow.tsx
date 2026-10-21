@@ -12,12 +12,15 @@ export function OptionRow({
   hint,
   onPress,
   disabled,
+  tone,
 }: {
   icon: IconName;
   label: string;
   hint?: string;
   onPress(): void;
   disabled?: boolean;
+  /** Destructive choices (delete) read in the danger colour. */
+  tone?: 'danger';
 }) {
   const { colors, space, radius } = useTheme();
   return (
@@ -30,10 +33,12 @@ export function OptionRow({
       style={[styles.row, { gap: space.md, paddingVertical: space.sm }]}
     >
       <View style={[styles.icon, { backgroundColor: colors.surfaceSunk, borderRadius: radius.md }]}>
-        <Icon name={icon} size={22} color={colors.accent} />
+        <Icon name={icon} size={22} color={tone === 'danger' ? colors.danger : colors.accent} />
       </View>
       <View style={styles.text}>
-        <Text variant="bodyStrong">{label}</Text>
+        <Text variant="bodyStrong" tone={tone === 'danger' ? 'danger' : 'ink'}>
+          {label}
+        </Text>
         {hint ? (
           <Text variant="meta" tone="soft">
             {hint}
