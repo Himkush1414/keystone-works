@@ -174,6 +174,7 @@ export const es: Catalog = {
     endOfChapter: 'Al final del capítulo',
     custom: 'Personalizado',
     endsIn: 'Termina en {time}',
+    endsSoon: 'Termina en menos de un minuto',
     endsAtChapter: 'Termina con este capítulo',
   },
   quality: {
