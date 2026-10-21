@@ -9,6 +9,7 @@ import { useServices } from '@/services/context';
 import type { CastModePreference, QualityPreference } from '@/state/settings';
 import { useTheme } from '@/theme/theme';
 import { IconButton } from '@/ui/IconButton';
+import { OptionRow } from '@/ui/OptionRow';
 import { Screen, useGutter } from '@/ui/Screen';
 import { Segmented } from '@/ui/Segmented';
 import { ChoiceRow, SwitchRow } from '@/ui/SettingRows';
@@ -40,7 +41,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /** Settings (R-SE-1): every choice applies at once and is kept in the app database. */
-export function SettingsScreen({ onBack }: { onBack(): void }) {
+export function SettingsScreen({ onBack, onPronunciation }: { onBack(): void; onPronunciation(): void }) {
   const { settings } = useServices();
   const s = useStore(settings);
   const update = s.update;
@@ -124,6 +125,15 @@ export function SettingsScreen({ onBack }: { onBack(): void }) {
               onPress={() => update({ quality: q })}
             />
           ))}
+        </Section>
+
+        <Section title={t('settings.pronunciation')}>
+          <OptionRow
+            icon="dictionary"
+            label={t('pronunciation.title')}
+            hint={t('pronunciation.desc')}
+            onPress={onPronunciation}
+          />
         </Section>
 
         <Section title={t('cast.title')}>
