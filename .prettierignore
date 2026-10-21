@@ -12,3 +12,4 @@ package-lock.json
 **/src/test/resources/*.json
 **/build/
 **/.gradle/
+.claude
