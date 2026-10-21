@@ -5,6 +5,8 @@ import type { Db } from '../data/db';
 import type { DocumentSource } from '../data/library';
 import { coverExtension, PICKER_TYPES, uriToPath } from './paths';
 import { importFile, type ImportResult } from './run';
+import type { Sample } from './samples';
+import { importSample, importText } from './text';
 
 /** A file the app can read: from the picker, the share sheet or "Open with". */
 export interface IncomingFile {
@@ -79,4 +81,30 @@ export async function pickAndImport(db: Db): Promise<ImportResult[] | null> {
     );
   }
   return results;
+}
+
+/** Hashes bytes that have no file yet (pasted text) with the platform digest, via a short-lived cache file. */
+async function hashBytes(bytes: Uint8Array): Promise<string> {
+  const tmp = new File(Paths.cache, `hash-${Date.now()}-${Math.random().toString(36).slice(2)}.bin`);
+  await tmp.write(bytes);
+  try {
+    return await tmp.digest('SHA-256');
+  } finally {
+    if (tmp.exists) tmp.delete();
+  }
+}
+
+const textDeps = {
+  sha256: (file: { bytes: Uint8Array }) => hashBytes(file.bytes),
+  extractPdf: () => Promise.reject(new Error('pasted text is never a PDF')),
+};
+
+/** Adds pasted or typed text to the library. */
+export function importPasted(db: Db, input: { text: string; title?: string }): Promise<ImportResult> {
+  return importText(db, input, textDeps);
+}
+
+/** Adds one of the bundled samples (or finds the copy already there). */
+export function importBundledSample(db: Db, sample: Sample): Promise<ImportResult> {
+  return importSample(db, sample, textDeps);
 }
