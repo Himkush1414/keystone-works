@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assignVoices, DEFAULT_NARRATOR, relativePitch, VOICE_CATALOG } from '../src';
+import { assignVoices, DEFAULT_NARRATOR, recommendedVoices, relativePitch, VOICE_CATALOG } from '../src';
 
 describe('voice catalog', () => {
   it('lists the ten bundled voices once each', () => {
@@ -43,5 +43,30 @@ describe('relativePitch', () => {
     expect(relativePitch(Math.sqrt(80 * 220))).toBe(0.5);
     expect(relativePitch(40)).toBe(0);
     expect(relativePitch(400)).toBe(1);
+  });
+});
+
+describe('recommendedVoices', () => {
+  it('offers a balanced female voice, a balanced male voice and the slowest of the rest', () => {
+    const [f, m, slow] = recommendedVoices();
+    expect(f?.gender).toBe('f');
+    expect(m?.gender).toBe('m');
+    expect(new Set([f?.id, m?.id, slow?.id]).size).toBe(3);
+    const rest = VOICE_CATALOG.filter((v) => v.id !== f?.id && v.id !== m?.id);
+    expect(slow?.charsPerSecond).toBe(Math.min(...rest.map((v) => v.charsPerSecond)));
+  });
+
+  it('picks from the middle of each gender, not the extremes', () => {
+    const [f, m] = recommendedVoices();
+    const fs = VOICE_CATALOG.filter((v) => v.gender === 'f').map((v) => v.pitchHz);
+    const ms = VOICE_CATALOG.filter((v) => v.gender === 'm').map((v) => v.pitchHz);
+    expect(f?.pitchHz).not.toBe(Math.max(...fs));
+    expect(f?.pitchHz).not.toBe(Math.min(...fs));
+    expect(m?.pitchHz).not.toBe(Math.max(...ms));
+    expect(m?.pitchHz).not.toBe(Math.min(...ms));
+  });
+
+  it('is stable for the bundled voices', () => {
+    expect(recommendedVoices().map((v) => v.id)).toMatchSnapshot();
   });
 });

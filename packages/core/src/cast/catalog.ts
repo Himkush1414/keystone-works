@@ -38,3 +38,31 @@ export const VOICE_CATALOG: readonly BuiltInVoice[] = MEASURED.map((v) => ({
 
 /** The narrator Lamplight starts with; device calibration (PlaybackController.calibrate) also uses it. */
 export const DEFAULT_NARRATOR = 'F1';
+
+const median = (xs: readonly number[]): number => {
+  const s = [...xs].sort((a, b) => a - b);
+  const mid = s.length >> 1;
+  return s.length % 2 ? (s[mid] ?? 0) : ((s[mid - 1] ?? 0) + (s[mid] ?? 0)) / 2;
+};
+
+/**
+ * The three voices offered first (feature spec F1.5): a balanced female voice, a balanced male voice, and a
+ * warm, slow one. "Balanced" is the voice nearest its gender's mean pitch among those with an ordinary pace
+ * (within 1 character a second of the median); "warm and slow" is the slowest of the rest.
+ */
+export function recommendedVoices(catalog: readonly BuiltInVoice[] = VOICE_CATALOG): BuiltInVoice[] {
+  const pace = median(catalog.map((v) => v.charsPerSecond));
+  const ordinary = catalog.filter((v) => Math.abs(v.charsPerSecond - pace) <= 1);
+  const balanced = (gender: 'f' | 'm') => {
+    const group = catalog.filter((v) => v.gender === gender);
+    const mean = group.reduce((sum, v) => sum + v.pitchHz, 0) / (group.length || 1);
+    return ordinary
+      .filter((v) => v.gender === gender)
+      .sort((a, b) => Math.abs(a.pitchHz - mean) - Math.abs(b.pitchHz - mean) || a.id.localeCompare(b.id))[0];
+  };
+  const picks = [balanced('f'), balanced('m')].filter((v): v is BuiltInVoice => v !== undefined);
+  const slow = catalog
+    .filter((v) => !picks.includes(v))
+    .sort((a, b) => a.charsPerSecond - b.charsPerSecond || a.id.localeCompare(b.id))[0];
+  return slow ? [...picks, slow] : picks;
+}

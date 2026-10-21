@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`recommendedVoices > is stable for the bundled voices 1`] = `
+[
+  "F1",
+  "M4",
+  "F3",
+]
+`;
