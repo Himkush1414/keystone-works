@@ -1,5 +1,6 @@
 import { analyseCast, type Character } from './cast/attribute';
 import { findDialogue } from './cast/dialogue';
+import { profileCharacters } from './cast/profile';
 import { voiceFor, type CastAssignment, type CastMode } from './cast/voices';
 import {
   cleanReport,
@@ -117,12 +118,18 @@ export function prepareDocument(input: DocumentDraft, opts: PrepareOptions = {})
   const chapterStarts = new Set(chapters.map((c) => c.blockStart));
 
   const useCast = opts.cast ?? draft.meta.kind === 'book';
-  const cast = useCast
-    ? analyseCast(
-        blocks.map((b) => (b.kind === 'paragraph' || b.kind === 'quote' ? b.text : '')),
-        docLang,
-      )
-    : { characters: [], attributions: [] };
+  const castBlocks = blocks.map((b) => (b.kind === 'paragraph' || b.kind === 'quote' ? b.text : ''));
+  const cast = useCast ? analyseCast(castBlocks, docLang) : { characters: [], attributions: [] };
+  if (cast.characters.length) {
+    const quotes = new Map<number, ReturnType<typeof findDialogue>>();
+    const quotesOf = (bi: number) => {
+      let q = quotes.get(bi);
+      if (!q) quotes.set(bi, (q = findDialogue(castBlocks[bi] ?? '', docLang)));
+      return q;
+    };
+    const profiles = profileCharacters(castBlocks, cast.characters, cast.attributions, quotesOf);
+    cast.characters = cast.characters.map((c) => ({ ...c, ...profiles[c.id] }));
+  }
   const attributionByBlock = new Map<number, typeof cast.attributions>();
   for (const a of cast.attributions) {
     const list = attributionByBlock.get(a.block) ?? [];
@@ -191,6 +198,8 @@ export interface QueueSegment {
   voice: string;
   pauseMs: number;
   kind: SentenceKind;
+  /** Pace relative to the listener's speed, when not 1 (a character's own pace). */
+  rate?: number;
 }
 
 export interface QueueOptions {
@@ -241,14 +250,11 @@ export function buildQueue(doc: QueueSource, opts: QueueOptions): QueueSegment[]
       speakUrls: !opts.clean.url,
     });
     const text = /[\p{L}\p{N}]/u.test(spoken.text) ? spoken.text : '';
-    out.push({
-      i,
-      text,
-      lang,
-      voice: voiceFor(opts.assignment, opts.castMode, s.kind, s.speaker, doc.confidence?.[i] ?? 1),
-      pauseMs: s.pauseMs,
-      kind: s.kind,
-    });
+    const confidence = doc.confidence?.[i] ?? 1;
+    const voice = voiceFor(opts.assignment, opts.castMode, s.kind, s.speaker, confidence);
+    const ownVoice = s.speaker !== undefined && voice === opts.assignment.byCharacter[s.speaker];
+    const rate = ownVoice && s.speaker ? opts.assignment.rateByCharacter?.[s.speaker] : undefined;
+    out.push({ i, text, lang, voice, pauseMs: s.pauseMs, kind: s.kind, ...(rate ? { rate } : {}) });
   }
   return out;
 }

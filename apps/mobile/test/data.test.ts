@@ -282,6 +282,9 @@ describe('annotations, collections and settings', () => {
         gender: null,
         lineCount: 2,
         voiceId: 'F2',
+        age: null,
+        temperament: null,
+        autoVoiceId: null,
       },
     ]);
     expect(c.sentences.filter((s) => s.speaker === 'elizabeth')).toHaveLength(2);

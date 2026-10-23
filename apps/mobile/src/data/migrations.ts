@@ -169,6 +169,18 @@ export const migrations: Migration[] = [
       `);
     },
   },
+  {
+    id: 2,
+    name: 'character profiles',
+    up(db) {
+      // How a character sounds (Cast profiling) and the voice Cast chose for them, kept so it never shifts.
+      db.exec(`
+        ALTER TABLE characters ADD COLUMN age TEXT;
+        ALTER TABLE characters ADD COLUMN temperament TEXT;
+        ALTER TABLE characters ADD COLUMN auto_voice_id TEXT;
+      `);
+    },
+  },
 ];
 
 /** Applies pending migrations in one transaction each. Returns the resulting schema version. */

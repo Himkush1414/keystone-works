@@ -231,8 +231,17 @@ export function saveContent(
     });
     doc.characters.forEach((c: Character) => {
       db.run(
-        'INSERT INTO characters (document_id, id, name, aliases_json, gender, line_count) VALUES (?, ?, ?, ?, ?, ?)',
-        [id, c.id, c.name, JSON.stringify(c.aliases), c.gender ?? null, c.lines],
+        'INSERT INTO characters (document_id, id, name, aliases_json, gender, line_count, age, temperament) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          id,
+          c.id,
+          c.name,
+          JSON.stringify(c.aliases),
+          c.gender ?? null,
+          c.lines,
+          c.age ?? null,
+          c.temperament ?? null,
+        ],
       );
     });
     db.run(

@@ -1,3 +1,4 @@
+import type { Age, Temperament } from './profile';
 import { findDialogue, type DialogueSpan } from './dialogue';
 
 /** Speech verbs per language, used to find dialogue tags ("said Elizabeth", "Elizabeth asked"). */
@@ -62,6 +63,9 @@ export interface Character {
   aliases: string[];
   gender?: Gender;
   lines: number;
+  /** From `profileCharacters`: how old they sound and how they usually speak. */
+  age?: Age;
+  temperament?: Temperament;
 }
 
 export interface Attribution {

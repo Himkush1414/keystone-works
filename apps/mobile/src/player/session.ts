@@ -13,7 +13,13 @@ import {
 } from '@lamplight/core';
 import type { StoreApi } from 'zustand/vanilla';
 import type { Quality, QueueFile } from '../../modules/lamplight-engine/src/types';
-import { loadContent, mergeCharacters, setCharacterVoice, type DocumentContent } from '../data/content';
+import {
+  loadContent,
+  mergeCharacters,
+  saveAutoVoices,
+  setCharacterVoice,
+  type DocumentContent,
+} from '../data/content';
 import type { Db } from '../data/db';
 import { getItem, markOpened, updateSettings, type LibraryItem } from '../data/library';
 import { getPosition, rulesFor, savePosition } from '../data/userdata';
@@ -63,19 +69,35 @@ export function planSession(
 
   const narrator = item.settings.voice ?? settings.voices[item.language] ?? DEFAULT_NARRATOR;
   const overrides: Record<string, string> = {};
-  for (const c of content.characters) if (c.voiceId) overrides[c.id] = c.voiceId;
+  const saved: Record<string, string> = {};
+  for (const c of content.characters) {
+    if (c.voiceId) overrides[c.id] = c.voiceId;
+    if (c.autoVoiceId) saved[c.id] = c.autoVoiceId;
+  }
   const characters = content.characters.map((c) => ({
     id: c.id,
     name: c.name,
     aliases: c.aliases,
     lines: c.lineCount,
     ...(c.gender ? { gender: c.gender } : {}),
+    ...(c.age ? { age: c.age } : {}),
+    ...(c.temperament ? { temperament: c.temperament } : {}),
   }));
+  const assignment = assignVoices(characters, narrator, VOICE_CATALOG, overrides, saved);
+  // The first time a book plays, Cast's choices are written down so they hold for the whole book.
+  const fresh = Object.fromEntries(
+    content.characters
+      .filter(
+        (c) => !c.voiceId && assignment.byCharacter[c.id] && assignment.byCharacter[c.id] !== c.autoVoiceId,
+      )
+      .map((c) => [c.id, assignment.byCharacter[c.id] ?? '']),
+  );
+  if (Object.keys(fresh).length) saveAutoVoices(db, documentId, fresh);
   const options: QueueOptions = {
     clean: cleanSettingsFor(item, content, settings.speakUrls),
     customSkips: item.settings.customSkips ?? [],
     dictionary: rulesFor(db, documentId),
-    assignment: assignVoices(characters, narrator, VOICE_CATALOG, overrides),
+    assignment,
     castMode: (item.settings.castMode ?? settings.castMode) as CastMode,
   };
   const segments = buildQueue({ ...content, language: item.language }, options);
