@@ -203,6 +203,16 @@ export const fr: Catalog = {
     preview: 'Écouter',
     merge: 'Fusionner avec…',
     noCharacters: 'Aucun personnage nommé pour l’instant. Les dialogues utilisent la voix des dialogues.',
+    profile: {
+      old: 'âgé',
+      young: 'jeune',
+      child: 'enfant',
+      calm: 'calme',
+      gentle: 'doux',
+      bright: 'enjoué',
+      fiery: 'fougueux',
+    },
+    autoVoice: 'Automatique : {voice}',
   },
   clean: {
     title: 'Lecture épurée',

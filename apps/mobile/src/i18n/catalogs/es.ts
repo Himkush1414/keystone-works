@@ -199,6 +199,16 @@ export const es: Catalog = {
     preview: 'Escuchar',
     merge: 'Unir con…',
     noCharacters: 'Aún no hay personajes con nombre. Los diálogos usan la voz de diálogo.',
+    profile: {
+      old: 'mayor',
+      young: 'joven',
+      child: 'niño',
+      calm: 'tranquilo',
+      gentle: 'suave',
+      bright: 'alegre',
+      fiery: 'impetuoso',
+    },
+    autoVoice: 'Automática: {voice}',
   },
   clean: {
     title: 'Lectura limpia',

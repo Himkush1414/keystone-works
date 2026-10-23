@@ -173,7 +173,7 @@ export function SettingsScreen({ onBack, onPronunciation }: { onBack(): void; on
                 {t(`tiers.${tier}Desc`)}
               </Text>
               <Text variant="meta" tone="soft">
-                {byTier[tier].map((l) => LANGUAGE_NAMES[l]).join(' · ')}
+                {byTier[tier].map((l) => LANGUAGE_NAMES[l].replace(/ /g, '\u00a0')).join('\u00a0· ')}
               </Text>
             </View>
           ))}
