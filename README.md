@@ -34,7 +34,7 @@ Lamplight is an Android app that reads your books, documents and articles aloud 
 
 ## Features
 
-|                        |                                                                                                                                                                                                                                                        |
+| Area                   | What you get                                                                                                                                                                                                                                           |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Listen**             | Read-along with the current word underlined · speeds 0.75×–2× · sleep timer (minutes or end of chapter) · chapter contents · background playback with lock-screen controls · resume where you left off                                                 |
 | **Cast**               | Speakers found in English, Hindi and Hinglish (speech verbs, names, pronouns, turn-taking) · voices cast by gender, age and temperament · voices kept for the whole book · your own choice for any character wins · merge two names into one character |
