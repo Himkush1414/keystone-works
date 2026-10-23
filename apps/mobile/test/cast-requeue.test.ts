@@ -84,3 +84,59 @@ describe('Cast changes while playing', () => {
     expect(dialogueVoices.size).toBe(1);
   });
 });
+
+describe('Casting holds for the whole book', () => {
+  const VILLAGE = [
+    'Chapter One',
+    'Old Mr. Grey sat by the fire.',
+    '“Who is there?” asked Mr. Grey.',
+    '“Only me, Grandpa,” said little Sam.',
+    '“Come in, then,” Mr. Grey said.',
+    '“Can I stay?” asked Sam.',
+    '“Of course,” said Mrs. Hall from the door.',
+  ].join('\n\n');
+
+  function village() {
+    const db = testDb();
+    const id = createDocument(db, { kind: 'book', title: 'Village', source: 'paste' });
+    saveContent(db, id, prepareDocument(parsePlainText(VILLAGE, 'Village', 'book')));
+    return { db, id };
+  }
+
+  it('stores who each character is and gives them a pace that suits them', () => {
+    const { db, id } = village();
+    const grey = characterNamed(db, id, 'Mr. Grey');
+    const sam = characterNamed(db, id, 'Sam');
+    expect(grey?.age).toBe('old');
+    expect(sam?.age).toBe('child');
+    const plan = planSession(db, id, SETTINGS);
+    const content = loadContent(db, id);
+    const rateOf = (speaker: string | undefined) =>
+      plan.queue.segments.find((s) => content.sentences[s.i]?.speaker === speaker)?.rate;
+    expect(rateOf(grey?.id)).toBeLessThan(1);
+    expect(rateOf(sam?.id)).toBeGreaterThan(1);
+  });
+
+  it('writes the automatic voices down on first play and keeps them after a merge', async () => {
+    const { db, id } = village();
+    const first = planSession(db, id, SETTINGS);
+    const saved = Object.fromEntries(loadContent(db, id).characters.map((c) => [c.id, c.autoVoiceId]));
+    expect(Object.values(saved).every((v) => v !== null)).toBe(true);
+
+    const deps = {
+      db,
+      store: createPlayerStore(),
+      engine: { updateSegments: () => Promise.resolve(), setQuality: () => Promise.resolve() },
+    };
+    const hall = characterNamed(db, id, 'Mrs. Hall');
+    const sam = characterNamed(db, id, 'Sam');
+    // Merging moves lines (and the order Cast would cast in); the others keep their voices.
+    await mergeCharactersAndRequeue(deps, id, sam?.id ?? '', hall?.id ?? '', SETTINGS, 0);
+    const after = planSession(db, id, SETTINGS);
+    const voiceOf = (plan: typeof first, speaker: string | undefined) =>
+      plan.queue.segments.find((s) => loadContent(db, id).sentences[s.i]?.speaker === speaker)?.voice;
+    const grey = characterNamed(db, id, 'Mr. Grey')?.id;
+    expect(voiceOf(after, grey)).toBe(voiceOf(first, grey));
+    expect(voiceOf(after, hall?.id)).toBe(saved[hall?.id ?? '']);
+  });
+});

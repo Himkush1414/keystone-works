@@ -1,4 +1,14 @@
-import type { Block, BlockKind, Chapter, Sentence, SentenceKind, Skip, SkipReason } from '@lamplight/core';
+import type {
+  Age,
+  Block,
+  BlockKind,
+  Chapter,
+  Sentence,
+  SentenceKind,
+  Skip,
+  SkipReason,
+  Temperament,
+} from '@lamplight/core';
 import type { Db } from './db';
 
 /** Everything the reader and the queue builder need for one document. */
@@ -16,7 +26,12 @@ export interface CastCharacter {
   aliases: string[];
   gender: 'f' | 'm' | null;
   lineCount: number;
+  /** The listener's choice; null for automatic. */
   voiceId: string | null;
+  age: Age | null;
+  temperament: Temperament | null;
+  /** The voice Cast chose the first time the document played, kept so it never shifts. */
+  autoVoiceId: string | null;
 }
 
 /** The characters Cast found in a document, most lines first. */
@@ -29,8 +44,11 @@ export function listCharacters(db: Db, documentId: string): CastCharacter[] {
       gender: 'f' | 'm' | null;
       line_count: number;
       voice_id: string | null;
+      age: Age | null;
+      temperament: Temperament | null;
+      auto_voice_id: string | null;
     }>(
-      'SELECT id, name, aliases_json, gender, line_count, voice_id FROM characters WHERE document_id = ? ORDER BY line_count DESC',
+      'SELECT id, name, aliases_json, gender, line_count, voice_id, age, temperament, auto_voice_id FROM characters WHERE document_id = ? ORDER BY line_count DESC, id',
       [documentId],
     )
     .map((r) => ({
@@ -40,6 +58,9 @@ export function listCharacters(db: Db, documentId: string): CastCharacter[] {
       gender: r.gender,
       lineCount: r.line_count,
       voiceId: r.voice_id,
+      age: r.age,
+      temperament: r.temperament,
+      autoVoiceId: r.auto_voice_id,
     }));
 }
 
@@ -120,6 +141,19 @@ export function setCharacterVoice(
     documentId,
     characterId,
   ]);
+}
+
+/** Remembers Cast's automatic choices (character id → voice) so they stay put for the rest of the book. */
+export function saveAutoVoices(db: Db, documentId: string, voices: Readonly<Record<string, string>>): void {
+  db.transaction(() => {
+    for (const [id, voice] of Object.entries(voices)) {
+      db.run('UPDATE characters SET auto_voice_id = ? WHERE document_id = ? AND id = ?', [
+        voice,
+        documentId,
+        id,
+      ]);
+    }
+  });
 }
 
 /** Merges `from` into `into` (e.g. "Lizzy" → "Elizabeth"): lines move, aliases combine. */

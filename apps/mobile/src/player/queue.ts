@@ -66,6 +66,7 @@ export function toQueueFile(
       voice: s.voice,
       pauseMs: s.pauseMs,
       kind: s.kind,
+      ...(s.rate !== undefined ? { rate: s.rate } : {}),
     })),
   };
 }

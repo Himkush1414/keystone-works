@@ -67,7 +67,16 @@ export interface QueueFile {
   artworkUri?: string;
   chapterStarts: number[];
   chapterTitles: string[];
-  segments: { i: number; text: string; lang: string; voice: string; pauseMs: number; kind: string }[];
+  segments: {
+    i: number;
+    text: string;
+    lang: string;
+    voice: string;
+    pauseMs: number;
+    kind: string;
+    /** Pace relative to the listener's speed (a character's own pace); 1 when absent. */
+    rate?: number;
+  }[];
 }
 
 export interface PdfExtraction {
