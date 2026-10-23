@@ -166,3 +166,38 @@ export function lineLanguage(text: string, base: string): string {
   if (base === 'hi' && d.lang === 'en' && d.confidence >= 0.5 && words >= 4) return 'en';
   return base;
 }
+
+/**
+ * How well Lamplight reads each voice language, stated honestly:
+ * - best: numbers, dates and times in words; speakers found by name, speech verbs and pronouns; emotion read
+ *   from how lines are said; measured on stories with known speakers (English, Hindi, Hinglish).
+ * - good: numbers and abbreviations in words; speakers found by name and speech verbs.
+ * - basic: the voice reads the text as written (numbers too); dialogue is found by its quotation marks and
+ *   speakers are told apart by turn.
+ */
+export type LanguageTier = 'best' | 'good' | 'basic';
+
+const BEST: readonly VoiceLanguage[] = ['en', 'hi'];
+const GOOD: readonly VoiceLanguage[] = ['es', 'de', 'fr', 'pt', 'it'];
+
+export function languageTier(lang: string): LanguageTier {
+  const base = lang.slice(0, 2) as VoiceLanguage;
+  return BEST.includes(base) ? 'best' : GOOD.includes(base) ? 'good' : 'basic';
+}
+
+/** Each voice language in its own name. */
+// prettier-ignore
+export const LANGUAGE_NAMES: Record<VoiceLanguage, string> = {
+  en: 'English', hi: 'हिन्दी', es: 'Español', de: 'Deutsch', fr: 'Français', pt: 'Português', it: 'Italiano',
+  ko: '한국어', ja: '日本語', ar: 'العربية', bg: 'Български', cs: 'Čeština', da: 'Dansk', el: 'Ελληνικά',
+  et: 'Eesti', fi: 'Suomi', hr: 'Hrvatski', hu: 'Magyar', id: 'Bahasa Indonesia', lt: 'Lietuvių',
+  lv: 'Latviešu', nl: 'Nederlands', pl: 'Polski', ro: 'Română', ru: 'Русский', sk: 'Slovenčina',
+  sl: 'Slovenščina', sv: 'Svenska', tr: 'Türkçe', uk: 'Українська', vi: 'Tiếng Việt',
+};
+
+/** The voice languages grouped by tier, each group in catalogue order. */
+export function languagesByTier(): Record<LanguageTier, VoiceLanguage[]> {
+  const out: Record<LanguageTier, VoiceLanguage[]> = { best: [], good: [], basic: [] };
+  for (const l of VOICE_LANGUAGES) out[languageTier(l)].push(l);
+  return out;
+}
