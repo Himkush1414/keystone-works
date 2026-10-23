@@ -199,6 +199,16 @@ export const en = {
     preview: 'Preview',
     merge: 'Merge with…',
     noCharacters: 'No named characters found yet. Dialogue uses the dialogue voice.',
+    profile: {
+      old: 'older',
+      young: 'young',
+      child: 'child',
+      calm: 'calm',
+      gentle: 'gentle',
+      bright: 'bright',
+      fiery: 'fiery',
+    },
+    autoVoice: 'Automatic: {voice}',
   },
   clean: {
     title: 'Clean Read',

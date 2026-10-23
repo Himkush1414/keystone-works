@@ -200,6 +200,16 @@ export const pt: Catalog = {
     preview: 'Ouvir',
     merge: 'Juntar com…',
     noCharacters: 'Ainda não há personagens com nome. Os diálogos usam a voz dos diálogos.',
+    profile: {
+      old: 'mais velho',
+      young: 'jovem',
+      child: 'criança',
+      calm: 'calmo',
+      gentle: 'suave',
+      bright: 'alegre',
+      fiery: 'impetuoso',
+    },
+    autoVoice: 'Automática: {voice}',
   },
   clean: {
     title: 'Leitura limpa',

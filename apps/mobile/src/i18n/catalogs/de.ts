@@ -199,6 +199,16 @@ export const de: Catalog = {
     preview: 'Anhören',
     merge: 'Zusammenführen mit …',
     noCharacters: 'Noch keine Figuren mit Namen erkannt. Dialoge nutzen die Dialogstimme.',
+    profile: {
+      old: 'älter',
+      young: 'jung',
+      child: 'Kind',
+      calm: 'ruhig',
+      gentle: 'sanft',
+      bright: 'fröhlich',
+      fiery: 'hitzig',
+    },
+    autoVoice: 'Automatisch: {voice}',
   },
   clean: {
     title: 'Sauber lesen',

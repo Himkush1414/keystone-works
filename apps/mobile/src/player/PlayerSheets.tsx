@@ -200,7 +200,17 @@ export function CastSheet({
                 key={c.id}
                 icon="voice"
                 label={c.name}
-                hint={`${t('cast.lines', { n: c.lineCount })} · ${voiceName(c.voiceId)}`}
+                hint={[
+                  t('cast.lines', { n: c.lineCount }),
+                  ...(c.age && c.age !== 'adult' ? [t(`cast.profile.${c.age}`)] : []),
+                  ...(c.temperament ? [t(`cast.profile.${c.temperament}`)] : []),
+                  c.voiceId || !c.autoVoiceId
+                    ? voiceName(c.voiceId)
+                    : t('cast.autoVoice', { voice: voiceName(c.autoVoiceId) }),
+                ]
+                  // Each part stays on one line, and a separator never starts one.
+                  .map((part) => part.replace(/ /g, '\u00a0'))
+                  .join('\u00a0· ')}
                 onPress={() => setSelected(c.id)}
               />
             ))
