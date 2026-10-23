@@ -29,7 +29,14 @@ import type { PlayerMirror } from './store';
 
 export type SessionSettings = Pick<
   Settings,
-  'castMode' | 'quality' | 'defaultSpeed' | 'voices' | 'speakUrls' | 'rewindOnResume'
+  | 'castMode'
+  | 'quality'
+  | 'defaultSpeed'
+  | 'voices'
+  | 'speakUrls'
+  | 'rewindOnResume'
+  | 'expressive'
+  | 'breaths'
 >;
 
 export interface SessionPlan {
@@ -99,6 +106,8 @@ export function planSession(
     dictionary: rulesFor(db, documentId),
     assignment,
     castMode: (item.settings.castMode ?? settings.castMode) as CastMode,
+    expressive: settings.expressive,
+    breaths: settings.breaths,
   };
   const segments = buildQueue({ ...content, language: item.language }, options);
   const queue = toQueueFile(

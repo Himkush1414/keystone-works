@@ -29,6 +29,10 @@ export interface Settings {
   /** Skipped spans are dimmed in the reader (true) or hidden (false). */
   showSkipped: boolean;
   speakUrls: boolean;
+  /** Whispers, shouts, reveal beats and pauses between speakers. */
+  expressive: boolean;
+  /** A soft breath before long sentences and emotional moments. */
+  breaths: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -51,6 +55,8 @@ export const DEFAULT_SETTINGS: Settings = {
   lineFocus: false,
   showSkipped: true,
   speakUrls: true,
+  expressive: true,
+  breaths: true,
 };
 
 /** Where settings are kept: SQLite on devices, localStorage on the web, memory in tests. */

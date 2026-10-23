@@ -73,4 +73,13 @@ describe('toQueueFile', () => {
     expect(q.chapterStarts).toEqual([0]);
     expect(q.chapterTitles).toEqual(['One']);
   });
+
+  it('carries the performance (pace, loudness, breath) and leaves plain lines plain', () => {
+    const q = toQueueFile({ docId: 'd', title: 't' }, chapters, sentences, [
+      { ...seg(0), rate: 0.9, gainDb: -6, breath: true },
+      seg(1),
+    ]);
+    expect(q.segments[0]).toMatchObject({ rate: 0.9, gainDb: -6, breath: true });
+    expect(Object.keys(q.segments[1] ?? {})).toEqual(['i', 'text', 'lang', 'voice', 'pauseMs', 'kind']);
+  });
 });

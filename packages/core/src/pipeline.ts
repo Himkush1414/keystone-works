@@ -1,6 +1,8 @@
 import { analyseCast, type Character } from './cast/attribute';
 import { findDialogue } from './cast/dialogue';
 import { profileCharacters } from './cast/profile';
+import { NEUTRAL } from './perform/cues';
+import { deliveryOf, perform, type PlannedLine } from './perform/plan';
 import { voiceFor, type CastAssignment, type CastMode } from './cast/voices';
 import {
   cleanReport,
@@ -198,8 +200,12 @@ export interface QueueSegment {
   voice: string;
   pauseMs: number;
   kind: SentenceKind;
-  /** Pace relative to the listener's speed, when not 1 (a character's own pace). */
+  /** Pace relative to the listener's speed, when not 1: a character's own pace and the line's emotion. */
   rate?: number;
+  /** Loudness change in dB, when not 0 (a whisper is quieter, a shout louder). */
+  gainDb?: number;
+  /** A soft breath before the line. */
+  breath?: true;
 }
 
 export interface QueueOptions {
@@ -208,6 +214,10 @@ export interface QueueOptions {
   dictionary?: readonly DictionaryRule[];
   assignment: CastAssignment;
   castMode: CastMode;
+  /** Emotion, reveal beats and speaker-change pauses (default on). */
+  expressive?: boolean;
+  /** Breaths before long sentences and emotional beats (default on). */
+  breaths?: boolean;
   from?: number;
   to?: number;
 }
@@ -218,6 +228,12 @@ export interface QueueSource {
   sentences: readonly Sentence[];
   confidence?: readonly number[];
   language: string;
+}
+
+/** A character's own pace, when the line is in their own voice. */
+function characterRate(assignment: CastAssignment, speaker: string | undefined, voice: string): number {
+  if (!speaker || assignment.byCharacter[speaker] !== voice) return 1;
+  return assignment.rateByCharacter?.[speaker] ?? 1;
 }
 
 /** Builds the spoken queue the native engine plays, from sentence `from` (inclusive) to `to` (exclusive). */
@@ -233,7 +249,14 @@ export function buildQueue(doc: QueueSource, opts: QueueOptions): QueueSegment[]
   };
   const from = Math.max(0, opts.from ?? 0);
   const to = Math.min(doc.sentences.length, opts.to ?? doc.sentences.length);
+  const quotesByBlock = new Map<number, ReturnType<typeof findDialogue>>();
+  const quotesOf = (bi: number, text: string, lang: string) => {
+    let q = quotesByBlock.get(bi);
+    if (!q) quotesByBlock.set(bi, (q = findDialogue(text, lang)));
+    return q;
+  };
   const out: QueueSegment[] = [];
+  const lines: PlannedLine[] = [];
   for (let i = from; i < to; i++) {
     const s = doc.sentences[i];
     const block = s ? doc.blocks[s.block] : undefined;
@@ -253,8 +276,34 @@ export function buildQueue(doc: QueueSource, opts: QueueOptions): QueueSegment[]
     const confidence = doc.confidence?.[i] ?? 1;
     const voice = voiceFor(opts.assignment, opts.castMode, s.kind, s.speaker, confidence);
     const ownVoice = s.speaker !== undefined && voice === opts.assignment.byCharacter[s.speaker];
-    const rate = ownVoice && s.speaker ? opts.assignment.rateByCharacter?.[s.speaker] : undefined;
-    out.push({ i, text, lang, voice, pauseMs: s.pauseMs, kind: s.kind, ...(rate ? { rate } : {}) });
+    out.push({ i, text, lang, voice, pauseMs: s.pauseMs, kind: s.kind });
+    const delivery =
+      text && s.kind !== 'heading'
+        ? deliveryOf(block.text, s, s.kind === 'dialogue' ? quotesOf(s.block, block.text, lang) : [])
+        : NEUTRAL;
+    lines.push({
+      text,
+      raw: block.text.slice(s.start, s.end),
+      kind: s.kind,
+      ...(ownVoice && s.speaker ? { speaker: s.speaker } : s.kind === 'dialogue' ? { speaker: voice } : {}),
+      pauseMs: s.pauseMs,
+      block: s.block,
+      lastInBlock: doc.sentences[i + 1]?.block !== s.block,
+      blockText: block.text,
+      delivery,
+    });
   }
+  const plan = perform(lines, { expressive: opts.expressive ?? true, breaths: opts.breaths ?? true });
+  out.forEach((seg, k) => {
+    const p = plan[k];
+    if (!p) return;
+    const own =
+      seg.kind === 'dialogue' ? characterRate(opts.assignment, doc.sentences[seg.i]?.speaker, seg.voice) : 1;
+    const rate = Math.round(own * p.rate * 100) / 100;
+    seg.pauseMs = p.pauseMs;
+    if (rate !== 1) seg.rate = rate;
+    if (p.gainDb !== 0) seg.gainDb = p.gainDb;
+    if (p.breath) seg.breath = true;
+  });
   return out;
 }

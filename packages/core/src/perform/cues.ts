@@ -19,12 +19,12 @@ export const NEUTRAL: Delivery = { emotion: 'neutral', intensity: 0 };
 // Verbs say how a line was spoken (strong); adverbs and gestures colour it (a little weaker).
 // prettier-ignore
 const VERB_CUES: Record<Exclude<Emotion, 'neutral'>, string> = {
-  whisper: 'whispered whispers whispering murmured murmurs murmuring breathed फुसफुसाया फुसफुसाई फुसफुसायी फुसफुसाते फुसफुसाकर phusphusaya phusphusayi phusphusai phusphusate',
-  shout: 'shouted shouts shouting yelled yells screamed screams bellowed roared hollered चिल्लाया चिल्लाई चिल्लायी चिल्लाते चिल्लाकर चीखा चीखी चीखते chillaya chillayi chillai chillate chillakar cheekha cheekhi',
-  angry: 'snapped growled snarled barked thundered fumed hissed grumbled demanded गरजा गरजी डांटा डाँटा डांटी डाँटी झल्लाया झल्लाई garja garji daanta daanti dantaa jhallaya jhallayi',
-  excited: 'exclaimed laughed laughing giggled giggling chuckled grinned cheered beamed हँसा हँसी हंसा हंसी हँसकर हंसकर हँसते हंसते चहकी चहका hansa hansi hanskar hanste chahki chahka',
-  sad: 'sighed sobbed sobbing wept weeping sniffed sniffled रोया रोई रोयी रोते रोकर सिसकी सिसका roya royi roi rote rokar siski siska',
-  fear: 'trembled trembling stammered stuttered gasped quavered काँपा काँपी कांपा कांपी काँपते कांपते हकलाया हकलाई kaanpa kaanpi kaanpte haklaya haklayi',
+  whisper: 'whispered whispers whispering murmured murmurs murmuring breathed फुसफुसाया फुसफुसाई फुसफुसायी फुसफुसाते फुसफुसाकर फुसफुसाए फुसफुसाईं phusphusaya phusphusaye phusphusayi phusphusai phusphusate',
+  shout: 'shouted shouts shouting yelled yells screamed screams bellowed roared hollered चिल्लाया चिल्लाई चिल्लायी चिल्लाते चिल्लाकर चीखा चीखी चीखते चिल्लाए चिल्लाईं चीखे chillaya chillaye chillaaye chillayi chillai chillate chillakar cheekha cheekhi',
+  angry: 'snapped growled snarled barked thundered fumed hissed grumbled demanded गरजा गरजी गरजे डांटा डाँटा डांटी डाँटी झल्लाया झल्लाई garja garji garje daanta daanti dantaa jhallaya jhallayi',
+  excited: 'exclaimed laughed laughing giggled giggling chuckled grinned cheered beamed हँसा हँसी हंसा हंसी हँसे हंसे हँसीं हँसकर हंसकर हँसते हंसते चहकी चहका hansa hanse hansi hanskar hanste chahki chahka',
+  sad: 'sighed sobbed sobbing wept weeping sniffed sniffled रोया रोई रोयी रोए रोईं रोते रोकर सिसकी सिसका roya roye royi roi rote rokar siski siska',
+  fear: 'trembled trembling stammered stuttered gasped quavered काँपा काँपी काँपे कांपा कांपी काँपते कांपते हकलाया हकलाई kaanpa kaanpi kaanpte haklaya haklayi',
   tender: 'soothed cooed',
   calm: '',
 };
