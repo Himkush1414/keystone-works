@@ -7,7 +7,7 @@ import java.security.MessageDigest
 
 /**
  * Content-addressed cache of rendered sentences. The key covers everything that changes the audio (model,
- * voice, steps, language, spoken text), so edits to the pronunciation dictionary or voice invalidate only the
+ * voice, steps, language, spoken text, and the line's pace, loudness and breath), so edits to the pronunciation dictionary or voice invalidate only the
  * sentences they touch, and identical sentences are shared between documents.
  */
 class AudioCache(context: Context, private val modelVersion: String) {
@@ -19,7 +19,13 @@ class AudioCache(context: Context, private val modelVersion: String) {
 
     fun key(segment: Segment, steps: Int): String {
         val md = MessageDigest.getInstance("SHA-256")
-        md.update("$modelVersion|${segment.voice}|$steps|${segment.lang}|${segment.text}".toByteArray(Charsets.UTF_8))
+        // The performance joins the key only when present, so plain lines keep the keys they always had.
+        val performance = buildString {
+            if (segment.rate != 1f) append("|r${segment.rate}")
+            if (segment.gainDb != 0f) append("|g${segment.gainDb}")
+            if (segment.breath) append("|b")
+        }
+        md.update("$modelVersion|${segment.voice}|$steps|${segment.lang}|${segment.text}$performance".toByteArray(Charsets.UTF_8))
         return md.digest().joinToString("") { "%02x".format(it) }
     }
 

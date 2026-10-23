@@ -12,6 +12,9 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
+import app.lamplight.engine.core.Performance
+import app.lamplight.engine.core.Seed
+import app.lamplight.engine.core.Synthesis
 import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.CopyOnWriteArraySet
@@ -416,8 +419,15 @@ class PlaybackController private constructor(private val context: Context) : Str
     }
 
     private fun runJob(job: Job) {
-        val audio = host.engine().synthesize(job.segment.text, job.segment.lang, host.voice(job.segment.voice), job.steps)
-        if (audio.dropped.isNotEmpty()) Log.d(TAG, "dropped characters ${audio.dropped}")
+        val seg = job.segment
+        val voice = host.voice(seg.voice)
+        val raw = host.engine().synthesize(seg.text, seg.lang, voice, job.steps, BASE_RATE * seg.rate)
+        if (raw.dropped.isNotEmpty()) Log.d(TAG, "dropped characters ${raw.dropped}")
+        val audio = Synthesis(
+            Performance.apply(raw.samples, raw.sampleRate, seg.gainDb, seg.breath, Seed.forSentence(seg.text, voice.id, job.steps)),
+            raw.sampleRate,
+            raw.dropped,
+        )
         val key = cache.key(job.segment, job.steps)
         if (job.steps >= studioSteps || job.prepare != null) cache.write(key, audio.samples, audio.sampleRate)
         if (job.prepare != null) {
@@ -566,7 +576,9 @@ class PlaybackController private constructor(private val context: Context) : Str
         main.post { listeners.forEach { it.onState(s) } }
     }
 
-    private fun estimateMs(s: Segment): Long = if (s.isSilent) 0 else (s.text.length * 1000L / 15).coerceAtLeast(400)
+    private fun estimateMs(s: Segment): Long =
+        if (s.isSilent) 0
+        else (s.text.length * 1000L / 15 / s.rate).toLong().coerceAtLeast(400) + if (s.breath) Performance.BREATH_MS else 0
 
     private fun isCharging(): Boolean {
         val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
@@ -600,6 +612,9 @@ class PlaybackController private constructor(private val context: Context) : Str
 
     companion object {
         private const val TAG = "LamplightPlayback"
+
+        /** The model's own speaking rate (Supertonic.synthesize default); a line's rate multiplies it. */
+        private const val BASE_RATE = 1.05f
         const val MODEL_VERSION = "supertonic3-int8-v1"
         const val SAMPLE_RATE = 44_100
         const val STUDIO_PLUS_STEPS = 16
