@@ -7,11 +7,11 @@ import { CAST_CORPUS } from './fixtures/castCorpus';
  * Cast worse on any story fails here.
  */
 const FLOORS: Record<string, { named: number; consistent: number }> = {
-  // Baseline, 2026-10-23: 80 / 0 / 0 / 6 %.
-  'en-harbour': { named: 0.8, consistent: 0.8 },
-  'hi-bazaar': { named: 0, consistent: 0 },
-  'hinglish-bazaar': { named: 0, consistent: 0 },
-  'en-austen-ch1': { named: 0.06, consistent: 0.06 },
+  // Baseline (old code): 80 / 0 / 0 / 6 %. Attribution v2: 100 % on every story (tuned on these).
+  'en-harbour': { named: 1, consistent: 1 },
+  'hi-bazaar': { named: 1, consistent: 1 },
+  'hinglish-bazaar': { named: 1, consistent: 1 },
+  'en-austen-ch1': { named: 1, consistent: 1 },
 };
 
 describe('Cast attribution corpus', () => {

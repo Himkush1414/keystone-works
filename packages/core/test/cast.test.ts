@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { analyseCast } from '../src/cast/attribute';
 import { findDialogue } from '../src/cast/dialogue';
-import { assignVoices, voiceFor, type VoiceTraits } from '../src/cast/voices';
+import { assignVoices, NAMED_VOICE_CONFIDENCE, voiceFor, type VoiceTraits } from '../src/cast/voices';
 
 const spoken = (text: string, lang = 'en') => findDialogue(text, lang).map((s) => text.slice(s.start, s.end));
 
@@ -50,11 +50,12 @@ describe('analyseCast', () => {
       [2, 'jane'],
       [3, 'elizabeth'],
       [4, 'jane'],
-      [6, 'bennet'],
-      [7, null], // "she" is ambiguous: two women, no recent female speaker is certain → generic voice
+      [6, 'bennet-m'],
+      [7, 'jane'], // "she" is ambiguous (two women): a guess, held below the named-voice threshold
     ]);
+    expect(attributions[6]?.confidence).toBeLessThan(NAMED_VOICE_CONFIDENCE);
     const names = characters.map((c) => [c.id, c.name, c.gender ?? null]);
-    expect(names).toContainEqual(['bennet', 'Mr. Bennet', 'm']);
+    expect(names).toContainEqual(['bennet-m', 'Mr. Bennet', 'm']);
     expect(characters[0]?.id).toBe('jane'); // three lines to Elizabeth's two
   });
 
@@ -66,8 +67,8 @@ describe('analyseCast', () => {
       '“Then close the window,” she said.',
     ];
     const { attributions } = analyseCast(text);
-    expect(attributions.map((a) => a.speaker)).toEqual(['hale', 'hale']);
-    expect(attributions[1]?.confidence).toBe(0.75);
+    expect(attributions.map((a) => a.speaker)).toEqual(['hale-f', 'hale-f']);
+    expect(attributions[1]?.confidence).toBeGreaterThanOrEqual(NAMED_VOICE_CONFIDENCE);
   });
 
   it('attributes first-person narrators', () => {
