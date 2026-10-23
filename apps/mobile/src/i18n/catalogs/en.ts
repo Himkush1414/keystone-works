@@ -253,6 +253,16 @@ export const en = {
       brisk: 'brisk',
     },
   },
+  tiers: {
+    title: 'Voice languages',
+    best: 'Best',
+    bestDesc:
+      'Numbers, dates and times in words; speakers found by name and speech verbs; emotion read from how lines are said. Tested on stories with known speakers.',
+    good: 'Good',
+    goodDesc: 'Numbers and abbreviations in words; speakers found by name and speech verbs.',
+    basic: 'Basic',
+    basicDesc: 'Read as written, numbers too; speakers told apart by turn.',
+  },
   settings: {
     title: 'Settings',
     appearance: 'Appearance',

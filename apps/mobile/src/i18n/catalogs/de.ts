@@ -256,6 +256,16 @@ export const de: Catalog = {
       brisk: 'zügig',
     },
   },
+  tiers: {
+    title: 'Sprachen der Stimmen',
+    best: 'Am besten',
+    bestDesc:
+      'Zahlen, Daten und Uhrzeiten in Worten; Sprecher an Namen und Redeverben erkannt; Gefühl aus der Art, wie etwas gesagt wird. Getestet an Geschichten mit bekannten Sprechern.',
+    good: 'Gut',
+    goodDesc: 'Zahlen und Abkürzungen in Worten; Sprecher an Namen und Redeverben erkannt.',
+    basic: 'Einfach',
+    basicDesc: 'So gelesen, wie es dasteht, auch Zahlen; Sprecher abwechselnd unterschieden.',
+  },
   settings: {
     title: 'Einstellungen',
     appearance: 'Darstellung',
