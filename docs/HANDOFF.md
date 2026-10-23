@@ -48,7 +48,7 @@ The interface ships in English (source), Spanish, German, French and Brazilian P
 - **French typography:** narrow no-break spaces before `; ! ?` and no-break spaces before `:` and inside « ». `tooling/scripts/french-spacing.mjs` applies them; a reviewer only needs to check the words.
 - **Agreement:** adjectives after "voz"/"voix" (feminine) in the voice descriptions (`voices.traits`).
 
-Keys added most recently, which no reviewer has seen yet: `import.added`, `player.expand`, `item.titleField`, `item.authorField`, `voices.traits.*`, `voicePick.choose`.
+Keys added most recently, which no reviewer has seen yet: `import.added`, `player.expand`, `item.titleField`, `item.authorField`, `voices.traits.*`, `voicePick.choose`, `settings.expressive*`, `settings.breaths*`, `tiers.*`.
 
 ## 4. Checks that need a real phone
 
@@ -56,3 +56,60 @@ There's no emulator on the build machine (section 2.2), so these are verified on
 
 - **Splash hand-off:** on Android 12 and later the system draws its own splash icon at a size it chooses. Record the launch at 60 fps and check that the flame doesn't jump when the app's animated splash takes over (feature spec F1, ±1 px). If it does, adjust `ICON` in `apps/mobile/src/ui/AnimatedSplash.tsx`.
 - **Word underline colour:** Android ignores `textDecorationColor`, so the read-along underline takes the text colour there. Confirm it still reads clearly in all four reader themes.
+
+## 5. Listening checklist (the storyteller voice)
+
+Code can check that the plan is right: who speaks each line, the emotion read from each line, the pauses, the breaths, the numbers in words, and the audio maths (gain, no clipping, breath length and level). It cannot tell whether the result _sounds_ human. Please listen on a phone with headphones and with the speaker, in a quiet room, at 1.0× and at 1.5×.
+
+Each item says what to listen for and which value to change if it's off. All the values are in `packages/core/src/perform/plan.ts` and `packages/core/src/cast/voices.ts` (core) or `.../engine/core/Performance.kt` (engine).
+
+**Who is speaking (Cast).** Open the Pride and Prejudice and A Scandal in Bohemia samples with _Voices for each character_ on.
+
+- [ ] Mr. and Mrs. Bennet have clearly different voices from each other and from the narrator.
+- [ ] A line the app isn't sure about is read by the narrator. A wrong character voice is worse than none, so count any line read in the wrong character's voice.
+- [ ] Voices stay the same all the way through. Merge two characters in the Cast sheet, and check nobody else's voice changes.
+- [ ] Measured accuracy is 94% on text the rules were never tuned on (`packages/core/test/cast-fresh.test.ts`). Note any book where it's clearly worse.
+
+**Character voices.**
+
+- [ ] An old character (old Mr. Grey, दादी) sounds older: a lower voice and a little slower (`AGE_RATE.old` = 0.93).
+- [ ] A child sounds younger: the highest voice of their gender, a little quicker (`AGE_RATE.child` = 1.05). If it sounds rushed, lower it.
+- [ ] Two characters who share a voice are still easy to tell apart (`SHARED_RATE`). If the pace change is audible as "sped up", narrow it.
+
+**Delivery (Expressive reading on).**
+
+- [ ] A whisper ("she whispered", "फुसफुसाई") is clearly softer and a touch slower, but still intelligible on a phone speaker (`PROSODY.whisper`: −7 dB, 0.9×). If it's lost under street noise, try −5 dB.
+- [ ] A shout ("he roared", "STOP!") is louder without crackling (`PROSODY.shout`: +3 dB, soft knee in `Performance.kt`).
+- [ ] Sad and tender lines slow down without dragging. Excited lines speed up without sounding chipmunk-like (`PROSODY.excited` = 1.07).
+- [ ] The narrator stays calm through exclamation marks.
+- [ ] Questions rise at the end. The model does this itself; we measured +8 Hz median pitch on "?".
+
+**Pauses.**
+
+- [ ] The beat between two speakers feels like a turn in conversation, not a gap (`BEAT.speakerChange` = 220 ms).
+- [ ] An ellipsis trails off ("And then…"), and a dash breaks off (`BEAT.ellipsis` 260, `BEAT.dash` 160).
+- [ ] A short closing sentence lands ("It was empty."), with `BEAT.reveal` = 180 ms before it.
+- [ ] A scene break (`* * *`) is a clear change of scene without feeling like a stall (`SCENE_BREAK_MS` = 1.6 s).
+- [ ] Paragraph and chapter pauses still feel right at 1.5×.
+
+**Breaths (Natural breaths on).**
+
+- [ ] On headphones, a breath before a long sentence or an emotional line sounds like an inhale, not static or a hiss (`BREATH_RMS_DB` = −36 dBFS; band 500 Hz–3.5 kHz).
+- [ ] Breaths are rare enough not to be noticed as a pattern (at most one every 4 lines).
+- [ ] Turning _Natural breaths_ off removes them completely.
+
+**Hindi and Hinglish.**
+
+- [ ] A Hindi story reads naturally, including numbers (एक लाख पच्चीस हज़ार), years (उन्नीस सौ चौरासी) and times (साढ़े तीन बजे).
+- [ ] A Hinglish story ("Tum kahan ja rahe ho?") is read by the Hindi voice with Hindi words in Devanagari. English words inside it (match, movie, Netflix) should still sound English enough. This is the biggest unknown: if it sounds wrong, Hinglish can be sent to the English voice by removing the Hinglish rule in `packages/core/src/text/normalize.ts`.
+- [ ] A Devanagari line inside an English book switches to the Hindi voice cleanly, and back.
+
+**Languages.**
+
+- [ ] Settings → Voice languages: spot-check one _good_ language (Spanish) and one _basic_ one (Japanese) and confirm the descriptions are fair.
+
+**Speed of the first sentence.**
+
+- [ ] Pressing play on a freshly imported book starts speaking about as quickly as before. Rate, gain and breath add only microseconds per sentence, but confirm it on a mid-range phone.
+
+When something sounds off, note the book, the sentence and the setting. That is enough to tune the value named next to it.
