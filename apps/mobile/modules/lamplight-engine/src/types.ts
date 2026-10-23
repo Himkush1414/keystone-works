@@ -76,6 +76,10 @@ export interface QueueFile {
     kind: string;
     /** Pace relative to the listener's speed (a character's own pace); 1 when absent. */
     rate?: number;
+    /** Loudness change in dB (a whisper is quieter); 0 when absent. */
+    gainDb?: number;
+    /** A soft breath before the line. */
+    breath?: boolean;
   }[];
 }
 

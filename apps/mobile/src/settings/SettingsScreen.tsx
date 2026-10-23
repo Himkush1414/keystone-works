@@ -125,6 +125,18 @@ export function SettingsScreen({ onBack, onPronunciation }: { onBack(): void; on
               onPress={() => update({ quality: q })}
             />
           ))}
+          <SwitchRow
+            label={t('settings.expressive')}
+            description={t('settings.expressiveDesc')}
+            value={s.expressive}
+            onChange={(expressive) => update({ expressive })}
+          />
+          <SwitchRow
+            label={t('settings.breaths')}
+            description={t('settings.breathsDesc')}
+            value={s.breaths}
+            onChange={(breaths) => update({ breaths })}
+          />
         </Section>
 
         <Section title={t('settings.pronunciation')}>

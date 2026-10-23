@@ -67,6 +67,8 @@ export function toQueueFile(
       pauseMs: s.pauseMs,
       kind: s.kind,
       ...(s.rate !== undefined ? { rate: s.rate } : {}),
+      ...(s.gainDb !== undefined ? { gainDb: s.gainDb } : {}),
+      ...(s.breath ? { breath: true } : {}),
     })),
   };
 }

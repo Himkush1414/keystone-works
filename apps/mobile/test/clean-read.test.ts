@@ -13,6 +13,8 @@ const SETTINGS: SessionSettings = {
   voices: {},
   speakUrls: true,
   rewindOnResume: true,
+  expressive: true,
+  breaths: true,
 };
 
 const line = (text: string, y: number) => ({ text, x: 72, y, width: 400, size: 11 });

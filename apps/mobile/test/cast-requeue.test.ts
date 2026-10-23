@@ -18,6 +18,8 @@ const SETTINGS: SessionSettings = {
   voices: {},
   speakUrls: true,
   rewindOnResume: true,
+  expressive: true,
+  breaths: true,
 };
 
 const STORY = [
