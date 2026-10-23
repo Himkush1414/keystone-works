@@ -1,11 +1,11 @@
 /**
- * Numbers to words for narration in English, Spanish, German, French, Portuguese (Brazil) and Italian.
+ * Numbers to words for narration in English, Spanish, German, French, Portuguese (Brazil), Italian and Hindi.
  * Other languages keep digits (the voice model reads them acceptably).
  */
 
-export type NumberLang = 'en' | 'es' | 'de' | 'fr' | 'pt' | 'it';
+export type NumberLang = 'en' | 'es' | 'de' | 'fr' | 'pt' | 'it' | 'hi';
 
-export const NUMBER_LANGS: readonly NumberLang[] = ['en', 'es', 'de', 'fr', 'pt', 'it'];
+export const NUMBER_LANGS: readonly NumberLang[] = ['en', 'es', 'de', 'fr', 'pt', 'it', 'hi'];
 
 export function numberLang(lang: string): NumberLang | undefined {
   const base = lang.slice(0, 2) as NumberLang;
@@ -321,6 +321,58 @@ function itOrdinal(n: number): string {
   return /tré$/.test(w) ? `${w.slice(0, -1)}eesimo` : `${w.replace(/[aeio]$/, '')}esimo`;
 }
 
+// ───────────────────────────── Hindi ─────────────────────────────
+// Every number below a hundred has its own word in Hindi; Indian grouping above that (लाख, करोड़).
+// prettier-ignore
+const HI_0_99 = [
+  'शून्य', 'एक', 'दो', 'तीन', 'चार', 'पाँच', 'छह', 'सात', 'आठ', 'नौ',
+  'दस', 'ग्यारह', 'बारह', 'तेरह', 'चौदह', 'पंद्रह', 'सोलह', 'सत्रह', 'अठारह', 'उन्नीस',
+  'बीस', 'इक्कीस', 'बाईस', 'तेईस', 'चौबीस', 'पच्चीस', 'छब्बीस', 'सत्ताईस', 'अट्ठाईस', 'उनतीस',
+  'तीस', 'इकतीस', 'बत्तीस', 'तैंतीस', 'चौंतीस', 'पैंतीस', 'छत्तीस', 'सैंतीस', 'अड़तीस', 'उनतालीस',
+  'चालीस', 'इकतालीस', 'बयालीस', 'तैंतालीस', 'चवालीस', 'पैंतालीस', 'छियालीस', 'सैंतालीस', 'अड़तालीस', 'उनचास',
+  'पचास', 'इक्यावन', 'बावन', 'तिरपन', 'चौवन', 'पचपन', 'छप्पन', 'सत्तावन', 'अट्ठावन', 'उनसठ',
+  'साठ', 'इकसठ', 'बासठ', 'तिरसठ', 'चौंसठ', 'पैंसठ', 'छियासठ', 'सड़सठ', 'अड़सठ', 'उनहत्तर',
+  'सत्तर', 'इकहत्तर', 'बहत्तर', 'तिहत्तर', 'चौहत्तर', 'पचहत्तर', 'छिहत्तर', 'सतहत्तर', 'अठहत्तर', 'उन्यासी',
+  'अस्सी', 'इक्यासी', 'बयासी', 'तिरासी', 'चौरासी', 'पचासी', 'छियासी', 'सत्तासी', 'अट्ठासी', 'नवासी',
+  'नब्बे', 'इक्यानवे', 'बानवे', 'तिरानवे', 'चौरानवे', 'पंचानवे', 'छियानवे', 'सत्तानवे', 'अट्ठानवे', 'निन्यानवे',
+];
+
+const HI_SCALES: [number, string][] = [
+  [1e11, 'खरब'],
+  [1e9, 'अरब'],
+  [1e7, 'करोड़'],
+  [1e5, 'लाख'],
+  [1e3, 'हज़ार'],
+  [1e2, 'सौ'],
+];
+
+function hiCardinal(n: number): string {
+  if (n < 100) return HI_0_99[n] ?? '';
+  const parts: string[] = [];
+  for (const [size, word] of HI_SCALES) {
+    const q = Math.floor(n / size);
+    if (q) parts.push(`${hiCardinal(q)} ${word}`);
+    n %= size;
+  }
+  if (n) parts.push(HI_0_99[n] ?? '');
+  return parts.join(' ');
+}
+
+// prettier-ignore
+const HI_ORD: Record<number, string> = { 1: 'पहला', 2: 'दूसरा', 3: 'तीसरा', 4: 'चौथा', 6: 'छठा' };
+
+function hiOrdinal(n: number): string {
+  return HI_ORD[n] ?? `${hiCardinal(n)}वाँ`;
+}
+
+/** 1984 → उन्नीस सौ चौरासी, as years are said; 2026 → दो हज़ार छब्बीस. */
+function hiYear(n: number): string {
+  if (n >= 1100 && n < 2000 && n % 100 !== 0)
+    return `${hiCardinal(Math.floor(n / 100))} सौ ${hiCardinal(n % 100)}`;
+  if (n >= 1100 && n < 2000) return `${hiCardinal(n / 100)} सौ`;
+  return hiCardinal(n);
+}
+
 // ───────────────────────────── Public API ─────────────────────────────
 
 /** Cardinal number in words. Integers only, |n| ≤ 999 trillion; others fall back to digits. */
@@ -340,6 +392,8 @@ export function cardinal(n: number, lang: NumberLang): string {
       return ptCardinal(n);
     case 'it':
       return itCardinal(n);
+    case 'hi':
+      return hiCardinal(n);
   }
 }
 
@@ -359,6 +413,8 @@ export function ordinal(n: number, lang: NumberLang): string {
       return ES_ORD[n] ?? esCardinal(n);
     case 'pt':
       return PT_ORD[n] ?? ptCardinal(n);
+    case 'hi':
+      return hiOrdinal(n);
   }
 }
 
@@ -366,6 +422,7 @@ export function ordinal(n: number, lang: NumberLang): string {
 export function year(n: number, lang: NumberLang): string {
   if (lang === 'en') return enYear(n);
   if (lang === 'de') return deYear(n);
+  if (lang === 'hi') return hiYear(n);
   return cardinal(n, lang);
 }
 
@@ -376,6 +433,7 @@ const MINUS: Record<NumberLang, string> = {
   fr: 'moins',
   pt: 'menos',
   it: 'meno',
+  hi: 'माइनस',
 };
 const POINT: Record<NumberLang, string> = {
   en: 'point',
@@ -384,6 +442,7 @@ const POINT: Record<NumberLang, string> = {
   fr: 'virgule',
   pt: 'vírgula',
   it: 'virgola',
+  hi: 'दशमलव',
 };
 
 /** Decimal number: integer part in words, then each fractional digit ("three point one four"). */

@@ -1,4 +1,5 @@
 import type { Skip } from '../model';
+import { hinglishWord } from './hinglish';
 import { lexicons, type Lexicon } from './lexicon';
 import { cardinal, decimal, numberLang, ordinal, year, type NumberLang } from './numbers';
 import type { Span } from './segment';
@@ -71,11 +72,17 @@ function applyRule(text: string, pieces: Piece[], rule: Rule, range: Span): Piec
   return out;
 }
 
+/** Devanagari digits (२०२६) as ASCII digits. */
+const toAsciiDigits = (s: string) => s.replace(/[०-९]/g, (d) => String(d.charCodeAt(0) - 0x966));
+
 /** Numbers as written in `lang`: thousands separator and decimal mark. */
 function parseNumber(raw: string, lang: NumberLang): { int: string; frac: string } | null {
-  const comma = lang === 'en' ? ',' : '.';
-  const dot = lang === 'en' ? '.' : ',';
-  const cleaned = raw.replace(/[\s\u00a0\u202f]/g, lang === 'fr' ? '' : ' ').trim();
+  const pointIsDot = lang === 'en' || lang === 'hi';
+  const comma = pointIsDot ? ',' : '.';
+  const dot = pointIsDot ? '.' : ',';
+  const cleaned = toAsciiDigits(raw)
+    .replace(/[\s\u00a0\u202f]/g, lang === 'fr' ? '' : ' ')
+    .trim();
   if (/\s/.test(cleaned)) return null;
   const [intRaw = '', frac = ''] = cleaned.split(dot);
   const int = intRaw.split(comma).join('');
@@ -104,6 +111,21 @@ export function romanToInt(s: string): number | null {
   return total;
 }
 
+/**
+ * A clock time the way it's said in Hindi: 3:00 तीन बजे, 3:15 सवा तीन, 3:30 साढ़े तीन (1:30 डेढ़, 2:30 ढाई),
+ * 3:45 पौने चार, other minutes तीन बजकर बीस मिनट. `bajeFollows`: the text already says बजे.
+ */
+function hindiTime(h: number, min: number, bajeFollows: boolean): string {
+  const hour = (x: number) => cardinal(x % 12 === 0 ? 12 : x % 12, 'hi');
+  const baje = bajeFollows ? '' : ' बजे';
+  if (min === 0) return `${hour(h)}${baje}`;
+  if (min === 15) return `सवा ${hour(h)}${baje}`;
+  if (min === 30)
+    return h % 12 === 1 ? `डेढ़${baje}` : h % 12 === 2 ? `ढाई${baje}` : `साढ़े ${hour(h)}${baje}`;
+  if (min === 45) return `पौने ${hour(h + 1)}${baje}`;
+  return bajeFollows ? `${hour(h)} ${cardinal(min, 'hi')}` : `${hour(h)} बजकर ${cardinal(min, 'hi')} मिनट`;
+}
+
 function feminine(word: string, lang: NumberLang): string {
   if (lang === 'es' || lang === 'pt' || lang === 'it') return word.replace(/o$/, 'a');
   return word;
@@ -116,11 +138,14 @@ function rulesFor(lang: NumberLang, lex: Lexicon, opts: NormalizeOptions): Rule[
     .map(escapeRe);
   const unitRe = unitKeys.length ? `(?:[\\s\\u00a0]?(${unitKeys.join('|')})${after})?` : '()?';
   const num =
-    lang === 'en'
-      ? '\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?|\\d+(?:\\.\\d+)?'
-      : lang === 'fr'
-        ? '\\d{1,3}(?:[\\s\\u00a0\\u202f]\\d{3})+(?:,\\d+)?|\\d+(?:,\\d+)?'
-        : '\\d{1,3}(?:\\.\\d{3})+(?:,\\d+)?|\\d+(?:,\\d+)?';
+    lang === 'hi'
+      ? // Indian grouping (1,00,000) and Devanagari digits.
+        '[\\d०-९]{1,3}(?:,[\\d०-९]{2,3})+(?:\\.[\\d०-९]+)?|[\\d०-९]+(?:\\.[\\d०-९]+)?'
+      : lang === 'en'
+        ? '\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?|\\d+(?:\\.\\d+)?'
+        : lang === 'fr'
+          ? '\\d{1,3}(?:[\\s\\u00a0\\u202f]\\d{3})+(?:,\\d+)?|\\d+(?:,\\d+)?'
+          : '\\d{1,3}(?:\\.\\d{3})+(?:,\\d+)?|\\d+(?:,\\d+)?';
   const sayCount = (raw: string, one: string, many: string) => {
     const words = speakNumber(raw, lang);
     if (words === null) return null;
@@ -223,6 +248,7 @@ function rulesFor(lang: NumberLang, lex: Lexicon, opts: NormalizeOptions): Rule[
       }
       if (lang === 'de')
         return `${cardinal(h, 'de').replace(/^eins$/, 'ein')} Uhr${min ? ` ${cardinal(min, 'de')}` : ''}`;
+      if (lang === 'hi') return hindiTime(h, min, /^\s*बजे/.test(ctx.text.slice(ctx.at + m[0].length)));
       if (lang === 'fr')
         return `${cardinal(h, 'fr').replace(/^un$/, 'une')} heure${h > 1 ? 's' : ''}${min ? ` ${cardinal(min, 'fr')}` : ''}`;
       return `${cardinal(h, lang)}${min ? ` ${cardinal(min, lang)}` : ''}`;
@@ -249,6 +275,7 @@ function rulesFor(lang: NumberLang, lex: Lexicon, opts: NormalizeOptions): Rule[
       if (lang === 'de') return `${ordinal(d, 'de')} ${mo} ${year(y, 'de')}`;
       if (lang === 'fr') return `${d === 1 ? 'premier' : cardinal(d, 'fr')} ${mo} ${year(y, 'fr')}`;
       if (lang === 'es' || lang === 'pt') return `${cardinal(d, lang)} de ${mo} de ${year(y, lang)}`;
+      if (lang === 'hi') return `${cardinal(d, 'hi')} ${mo} ${year(y, 'hi')}`;
       return `${d === 1 ? 'primo' : cardinal(d, 'it')} ${mo} ${year(y, 'it')}`;
     },
   });
@@ -324,8 +351,12 @@ function rulesFor(lang: NumberLang, lex: Lexicon, opts: NormalizeOptions): Rule[
       if (unit) {
         const [one, many] = lex.units[unit] ?? ['', ''];
         words = sayCount(raw, one, many);
-      } else if (/^\d{4}$/.test(raw) && Number(raw) >= 1100 && Number(raw) <= 2099) {
-        words = year(Number(raw), lang);
+      } else if (
+        /^\d{4}$/.test(toAsciiDigits(raw)) &&
+        Number(toAsciiDigits(raw)) >= 1100 &&
+        Number(toAsciiDigits(raw)) <= 2099
+      ) {
+        words = year(Number(toAsciiDigits(raw)), lang);
       } else {
         words = speakNumber(raw, lang);
       }
@@ -362,6 +393,14 @@ function rulesFor(lang: NumberLang, lex: Lexicon, opts: NormalizeOptions): Rule[
   rules.push({ re: /(?<=[\d\s])\+(?=[\d\s])/gu, fn: () => ` ${lex.plus} ` });
   rules.push({ re: /(?<=[\d\s])=(?=[\d\s])/gu, fn: () => ` ${lex.equals} ` });
   rules.push({ re: /°(?![CF])/gu, fn: () => ` ${lex.degrees}` });
+
+  // Hinglish: romanised Hindi words in Devanagari for the Hindi voice; English words stay as they are.
+  if (lang === 'hi') {
+    rules.push({
+      re: new RegExp(`${before}\\p{Script=Latin}+${after}`, 'gu'),
+      fn: (m) => hinglishWord(m[0]) ?? null,
+    });
+  }
   return rules;
 }
 

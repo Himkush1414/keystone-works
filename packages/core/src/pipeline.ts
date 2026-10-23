@@ -12,7 +12,7 @@ import {
   type CleanSettings,
 } from './clean/detect';
 import type { Block, Chapter, DocumentDraft, Sentence, SentenceKind } from './model';
-import { detectLanguage, VOICE_LANGUAGES, type VoiceLanguage } from './text/language';
+import { detectLanguage, lineLanguage, VOICE_LANGUAGES, type VoiceLanguage } from './text/language';
 import { normalize, type DictionaryRule } from './text/normalize';
 import { segment, type Span } from './text/segment';
 
@@ -266,7 +266,8 @@ export function buildQueue(doc: QueueSource, opts: QueueOptions): QueueSegment[]
       skips = effectiveSkips(block, opts.clean, opts.customSkips ?? []);
       skipsByBlock.set(s.block, skips);
     }
-    const lang = chapterLang(s.block);
+    // A Devanagari or Hinglish line in an English book goes to the Hindi voice, and an English line in a Hindi one to the English voice.
+    const lang = lineLanguage(block.text.slice(s.start, s.end), chapterLang(s.block));
     const spoken = normalize(block.text, s, lang, {
       skips,
       dictionary: opts.dictionary ?? [],
