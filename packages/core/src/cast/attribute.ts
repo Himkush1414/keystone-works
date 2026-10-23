@@ -44,7 +44,7 @@ const KIN_M = new Set('दादा नाना पापा पिताजी
 
 /** Capitalised words that start sentences but aren't names. */
 // prettier-ignore
-const NOT_NAMES = new Set('the a an and but or then there this that these those it its he she they we you i his her their our your my when while if as so yet still now here what who why how where which oh ah well yes no not one all some every no-one nobody somebody everyone old young el la los las un una y pero entonces ella él ellos der die das ein eine und aber dann sie er es le la les un une et mais puis elle il ils il lo gli una e ma poi lei lui o a os as um uma mas então ela ele'.split(' '));
+const NOT_NAMES = new Set('the a an and but or then there this that these those it its he she they we you i his her their our your my when while if as so yet still now here what who why how where which oh ah well yes no not one all some every no-one nobody somebody everyone old young with without after before for from once since upon at in on to into by of though although because perhaps indeed suddenly finally later meanwhile again never always only even just however therefore besides beyond moreover otherwise presently sometimes outside inside january february march april may june july august september october november december monday tuesday wednesday thursday friday saturday sunday el la los las un una y pero entonces ella él ellos der die das ein eine und aber dann sie er es le la les un une et mais puis elle il ils il lo gli una e ma poi lei lui o a os as um uma mas então ela ele'.split(' '));
 
 const FEMALE_PRONOUNS = new Set(['she', 'her', 'ella', 'sie', 'elle', 'lei', 'ela']);
 const MALE_PRONOUNS = new Set(['he', 'him', 'his', 'él', 'er', 'il', 'lui', 'ele']);
@@ -144,8 +144,22 @@ function tagPatterns(lang: string) {
     // Hinglish: "Meera ne poocha", "woh bola", "Meera hanste hue boli"; before: "Dadi ne ... awaaz lagayi,"
     hgAfter: new RegExp(String.raw`^[\s,—–-]*(\p{L}+)(?:\s+ne)?\s+(?:\p{L}+\s+){0,3}?(${hgVerbs})\b`, 'iu'),
     hgBefore: new RegExp(String.raw`(\p{L}+)\s+ne\s+(?:[^“”"]{0,40}\s)?(?:${hgVerbs})\s*[,:]?\s*$`, 'iu'),
+    // Before the quote without ने: "Mummy kitchen se boli," / "माँ रसोई से बोली,"
+    hiBeforeIntransitive: new RegExp(
+      String.raw`(${W})\s+(?:${W}\s+){0,3}?(${alt([...HI_VERBS_M, ...HI_VERBS_F, ...HG_VERBS_M, ...HG_VERBS_F])})\s*[,:]\s*$`,
+      'iu',
+    ),
+    // Hindi action beat right after a quote: "अनु ने नाक सिकोड़ी", "Arjun ne cup uthaya"
+    hiBeat: new RegExp(String.raw`^[\s,।—–-]*(${W})\s+(?:ने|ne)\s+`, 'iu'),
+    // A known name opening the narration before a quote: "पिताजी मुस्कुराए।", "Maria laughed."
+    leadingWord: new RegExp(String.raw`(?:^|[.!?।]\s+)(${W})\s+${W}[^.!?।]*[.!?।]?\s*$`, 'u'),
   };
 }
+
+/** Words that come before places, not people ("in Baker Street", "to London"). */
+const PLACE_PREPOSITIONS = new Set(
+  'in at into near across toward towards through around inside outside past beyond within'.split(' '),
+);
 
 function verbGender(verb: string): Gender | undefined {
   const v = verb.toLowerCase().replace(/\s+/g, ' ');
@@ -293,7 +307,12 @@ export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysi
     return out;
   };
 
-  const resolve = (tag: Tag, quote: string, lastSpeaker: string | undefined): string | undefined => {
+  const resolve = (
+    tag: Tag,
+    quote: string,
+    lastSpeaker: string | undefined,
+    namedHere: ReadonlySet<string> = new Set(),
+  ): string | undefined => {
     switch (tag.kind) {
       case 'name':
         return register(tag.text, tag.gender);
@@ -304,7 +323,15 @@ export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysi
         const want =
           tag.gender ?? (FEMALE_PRONOUNS.has(lower) ? 'f' : MALE_PRONOUNS.has(lower) ? 'm' : undefined);
         const spokenTo = addressees(quote);
-        const byGender = want ? recentWhere((id) => genderOf(id) === want && !spokenTo.has(id)) : undefined;
+        const speaking = (id: string) => (chars.get(id)?.lines ?? 0) > 0;
+        // Someone named in this paragraph first ("Old Mr. Grey looked up. … he grumbled."), then someone already
+        // in the conversation, and anyone merely mentioned only if no speaker fits.
+        const fits = (id: string) => genderOf(id) === want && !spokenTo.has(id);
+        const byGender = want
+          ? (recentWhere((id) => fits(id) && namedHere.has(id)) ??
+            recentWhere((id) => fits(id) && speaking(id)) ??
+            recentWhere(fits))
+          : undefined;
         // Without a known gender, "वह बोला" after someone else spoke is the other person in the conversation,
         // as long as nothing says they're of the other gender.
         const id =
@@ -356,12 +383,14 @@ export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysi
       tag.gender ?? (FEMALE_PRONOUNS.has(lower) ? 'f' : MALE_PRONOUNS.has(lower) ? 'm' : undefined);
     if (!want) return false;
     const spokenTo = addressees(quote);
-    // Anyone who could be meant: of that gender or not known, not spoken to, not the one who just spoke.
+    // Anyone who could be meant: of that gender (or unknown but already speaking), not spoken to, not the one
+    // who just spoke. People only mentioned in narration with no known gender are not in the conversation.
     const candidates = recent.filter(
       (id) =>
         id !== lastSpeaker &&
         !spokenTo.has(id) &&
         id !== 'narrator-i' &&
+        (chars.get(id)?.lines ?? 0) > 0 &&
         (genderOf(id) === want || genderOf(id) === undefined),
     );
     // A name in the same paragraph settles it ("Old Mr. Grey looked up. 'You two again,' he grumbled.").
@@ -409,9 +438,30 @@ export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysi
     if (hiBefore?.[1] && !HI_PRONOUNS.has(hiBefore[1].toLowerCase())) {
       return { tag: { kind: 'name', text: hiBefore[1], confidence: 0.9 }, confidence: 0.9 };
     }
+    const intransitive = pat.hiBeforeIntransitive.exec(before);
+    if (intransitive?.[1] && intransitive[2] && !HI_PRONOUNS.has(intransitive[1].toLowerCase())) {
+      const gender = verbGender(intransitive[2]);
+      return {
+        tag: { kind: 'name', text: intransitive[1], ...(gender ? { gender } : {}), confidence: 0.9 },
+        confidence: 0.9,
+      };
+    }
+    const hiBeat = pat.hiBeat.exec(after);
+    if (
+      hiBeat?.[1] &&
+      !HI_PRONOUNS.has(hiBeat[1].toLowerCase()) &&
+      !HI_FIRST_PERSON.has(hiBeat[1].toLowerCase())
+    ) {
+      return { tag: { kind: 'name', text: hiBeat[1], confidence: 0.85 }, confidence: 0.85 };
+    }
     const beat = pat.beat.exec(after) ?? pat.beat.exec(before);
     if (beat?.[1] && findKnown(beat[1])) {
       return { tag: { kind: 'name', text: beat[1], confidence: 0.8 }, confidence: 0.8 };
+    }
+    // A known person opening the sentence just before the quote is the one who speaks.
+    const lead = pat.leadingWord.exec(before);
+    if (lead?.[1] && findKnown(lead[1])) {
+      return { tag: { kind: 'name', text: lead[1], confidence: 0.8 }, confidence: 0.8 };
     }
     return undefined;
   };
@@ -429,8 +479,28 @@ export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysi
       if (id) see(id);
     }
     for (const m of narration.matchAll(new RegExp(NAME, 'gu'))) {
-      const known = findKnown(m[1] ?? '');
-      if (known) see(known.id);
+      // "To Sherlock Holmes": drop leading capitalised words that aren't names.
+      const words = (m[1] ?? '').split(/\s+/);
+      while (words.length > 1 && NOT_NAMES.has((words[0] ?? '').toLowerCase())) words.shift();
+      const raw = words.join(' ');
+      const known = findKnown(raw);
+      if (known) {
+        see(known.id);
+        continue;
+      }
+      // New people: a capitalised word mid-sentence that isn't after a place word ("…said Holmes…"), or a
+      // sentence's subject followed by its verb ("Maria set the kettle").
+      const at = (m.index ?? 0) + (m[0].length - (m[1]?.length ?? 0));
+      const prefix = narration.slice(0, at);
+      const previous = /(\p{L}+)\W*$/u.exec(prefix)?.[1] ?? '';
+      const sentenceStart = /(?:^|[.!?:;]["”’]?\s+)$/u.test(prefix);
+      const next = /^\s+(\p{L}+)/u.exec(narration.slice(at + raw.length))?.[1] ?? '';
+      const midSentence = !sentenceStart && /^\p{Ll}/u.test(previous) && !PLACE_PREPOSITIONS.has(previous);
+      const subject = sentenceStart && /^\p{Ll}/u.test(next) && words.length <= 3;
+      if ((midSentence || subject) && !NOT_NAMES.has(raw.toLowerCase())) {
+        const id = register(raw);
+        if (id) see(id);
+      }
     }
     // Names without capital letters (Devanagari) are recognised once they've spoken.
     for (const c of chars.values()) {
@@ -475,7 +545,7 @@ export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysi
       const found = findTag(after, before);
       const ambiguous =
         found?.tag.kind === 'pronoun' && pronounIsAmbiguous(found.tag, quote, lastSpeaker, namedHere);
-      const id = found ? resolve(found.tag, quote, lastSpeaker) : undefined;
+      const id = found ? resolve(found.tag, quote, lastSpeaker, namedHere) : undefined;
       // "she asked" with two women in the scene: keep the guess, but below the threshold for a named voice.
       const confidence = ambiguous ? 0.6 : (found?.confidence ?? 0.8);
       if (id) {

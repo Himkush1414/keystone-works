@@ -183,3 +183,65 @@ export const HELD_OUT: CastStory[] = [
     ],
   },
 ];
+
+/**
+ * Fresh held-out set, written and measured once after the rules were final (2026-10-23). Never tuned on: if
+ * Cast changes, these scores may move but the stories stay as they are.
+ */
+export const FRESH: CastStory[] = [
+  {
+    id: 'en-classroom',
+    lang: 'en',
+    text: [
+      'Mrs. Patel tapped the board.',
+      '“Who can tell me the answer?” she asked.',
+      'A hand shot up at the back.',
+      '“Is it seven?” said Ravi.',
+      '“Close,” Mrs. Patel said. “Try again.”',
+      'Ravi frowned at his notebook.',
+      '“Eight?”',
+      '“Good.”',
+      'Behind him, Lucy giggled. “Show-off,” she whispered.',
+      '“I heard that, Lucy,” said the teacher.',
+    ].join('\n\n'),
+    speakers: {
+      patel: { names: ['Mrs. Patel', 'Patel'], gender: 'f' },
+      ravi: { names: ['Ravi'], gender: 'm' },
+      lucy: { names: ['Lucy'], gender: 'f' },
+    },
+    gold: ['patel', 'ravi', 'patel', 'patel', 'ravi', 'patel', 'lucy', 'patel'],
+  },
+  {
+    id: 'hi-night',
+    lang: 'hi',
+    text: [
+      'रात बहुत गहरी थी।',
+      '“क्या तुमने वह आवाज़ सुनी?” सीमा फुसफुसाई।',
+      '“कौन-सी आवाज़?” विजय ने पूछा।',
+      '“छत पर कोई चल रहा है।”',
+      'विजय उठकर खिड़की तक गया। “कोई नहीं है, बस हवा है।”',
+      '“मुझे डर लग रहा है,” वह धीरे से बोली।',
+    ].join('\n\n'),
+    speakers: {
+      seema: { names: ['सीमा'], gender: 'f' },
+      vijay: { names: ['विजय'], gender: 'm' },
+    },
+    gold: ['seema', 'vijay', 'seema', 'vijay', 'seema'],
+  },
+  {
+    id: 'hinglish-exam',
+    lang: 'hi',
+    text: [
+      '"Kal exam hai aur maine kuch nahi padha," Kabir ne kaha.',
+      '"Toh ab padh le," Neha boli.',
+      '"Tu hi padha de na."',
+      'Neha hansi. "Chal, book nikaal."',
+      '"Thanks yaar," woh bola.',
+    ].join('\n\n'),
+    speakers: {
+      kabir: { names: ['Kabir'], gender: 'm' },
+      neha: { names: ['Neha'], gender: 'f' },
+    },
+    gold: ['kabir', 'neha', 'kabir', 'neha', 'kabir'],
+  },
+];

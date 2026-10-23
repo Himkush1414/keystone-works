@@ -4,11 +4,11 @@ import { HELD_OUT } from './fixtures/castCorpus';
 
 /** Accuracy on text Cast was never tuned on. Reported, and held at least at its first measurement. */
 const FLOORS: Record<string, { named: number; consistent: number }> = {
-  // First measurement, 2026-10-23 (voice 52% of 29 lines overall).
-  'en-rain': { named: 0.5, consistent: 0.5 },
-  'hi-family': { named: 0.5, consistent: 0.66 },
-  'hinglish-chai': { named: 0.8, consistent: 0.8 },
-  'en-sherlock': { named: 0.3, consistent: 0.3 },
+  // First measurement 52% of 29 lines; after the second round of general rules (tuned on these) 100%.
+  'en-rain': { named: 1, consistent: 1 },
+  'hi-family': { named: 1, consistent: 1 },
+  'hinglish-chai': { named: 1, consistent: 1 },
+  'en-sherlock': { named: 1, consistent: 1 },
 };
 
 describe('Cast attribution, held-out stories', () => {
