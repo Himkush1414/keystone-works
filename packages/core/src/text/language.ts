@@ -2,6 +2,7 @@
  * Language detection for the voice languages Lamplight supports. Script first, then frequent-word and
  * diacritic scoring for Latin and Cyrillic text. Small, deterministic, no model files.
  */
+import { HINGLISH_STOPWORDS, hinglishShare } from './hinglish';
 
 // prettier-ignore
 export const VOICE_LANGUAGES = [
@@ -46,6 +47,8 @@ const STOPWORDS: Record<string, string> = {
   ru: 'и в не на я что он с как а то это по но из у за она так же от бы его',
   uk: 'і в не на що я він з як а та це по але з у за вона так же від би його',
   bg: 'и в не на да се че е с за от по са как но това той тя ще като',
+  // Hindi written in Latin letters (Hinglish).
+  hi: HINGLISH_STOPWORDS,
 };
 
 const SETS = new Map(Object.entries(STOPWORDS).map(([k, v]) => [k, new Set(v.split(' '))]));
@@ -146,4 +149,20 @@ export function detectLanguage(text: string): Detection {
   const margin = top[1] - (second?.[1] ?? 0);
   const confidence = Math.min(1, top[1] * 2.2) * Math.min(1, 0.4 + margin * 6);
   return { lang: top[0] as VoiceLanguage, confidence: Math.round(confidence * 100) / 100 };
+}
+
+/**
+ * The voice language for one line of a book in `base`: a line in Devanagari, or in romanised Hindi, is read
+ * by the Hindi voice; in a Hindi book, an English sentence is read by the English voice. Short lines keep
+ * the book's language (too little to tell).
+ */
+export function lineLanguage(text: string, base: string): string {
+  const words = text.match(/\p{L}+/gu)?.length ?? 0;
+  if (words < 3) return base;
+  const d = detectLanguage(text);
+  if (d.lang === 'hi' && base !== 'hi' && d.confidence >= 0.5) return 'hi';
+  const hg = hinglishShare(text);
+  if (base !== 'hi' && hg.count >= 2 && hg.share >= 0.4) return 'hi';
+  if (base === 'hi' && d.lang === 'en' && d.confidence >= 0.5 && words >= 4) return 'en';
+  return base;
 }
