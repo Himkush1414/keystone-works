@@ -1,4 +1,4 @@
-import { analyseCast, findDialogue } from '../src';
+import { analyseCast, findDialogue, NAMED_VOICE_CONFIDENCE } from '../src';
 import type { CastStory } from './fixtures/castCorpus';
 
 export interface CastScore {
@@ -25,9 +25,11 @@ export function scoreStory(story: CastStory): CastScore {
   }
   const { characters, attributions } = analyseCast(paragraphs, story.lang);
   const byId = new Map(characters.map((c) => [c.id, c]));
-  const predicted = quotes.map(
-    (q) => attributions.find((a) => a.block === q.block && a.span.start === q.start)?.speaker,
-  );
+  const found = quotes.map((q) => attributions.find((a) => a.block === q.block && a.span.start === q.start));
+  const predicted = found.map((a) => a?.speaker);
+  // A line only gets its character's own voice above this confidence (voiceFor); below it, the listener hears
+  // the generic dialogue voice, so for "voice" it counts as unattributed.
+  const voiced = found.map((a) => (a && a.confidence >= NAMED_VOICE_CONFIDENCE ? a.speaker : undefined));
 
   let named = 0;
   predicted.forEach((p, k) => {
@@ -38,14 +40,14 @@ export function scoreStory(story: CastStory): CastScore {
   });
 
   const votes = new Map<string, Map<string, number>>();
-  predicted.forEach((p, k) => {
+  voiced.forEach((p, k) => {
     if (!p) return;
     const m = votes.get(p) ?? new Map<string, number>();
     m.set(story.gold[k] ?? '', (m.get(story.gold[k] ?? '') ?? 0) + 1);
     votes.set(p, m);
   });
   const mapsTo = new Map([...votes].map(([p, m]) => [p, [...m].sort((a, b) => b[1] - a[1])[0]?.[0]]));
-  const consistent = predicted.filter((p, k) => p !== undefined && mapsTo.get(p) === story.gold[k]).length;
+  const consistent = voiced.filter((p, k) => p !== undefined && mapsTo.get(p) === story.gold[k]).length;
 
   return {
     id: story.id,

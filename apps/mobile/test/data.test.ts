@@ -99,7 +99,7 @@ describe('documents', () => {
     expect(item?.sentenceCount).toBe(c.sentences.length);
     c.sentences.forEach((s) => expect(s.block).toBeLessThan(c.blocks.length));
     expect(c.chapters.map((ch) => ch.firstSentence)).toEqual([0, c.sentences.findIndex((s) => s.block >= 3)]);
-    expect(c.characters.map((ch) => ch.id)).toEqual(['hale']);
+    expect(c.characters.map((ch) => ch.id)).toEqual(['hale-f']);
     expect(c.blocks[4]?.skips).toEqual([{ start: 13, end: 16, reason: 'citation' }]);
   });
 

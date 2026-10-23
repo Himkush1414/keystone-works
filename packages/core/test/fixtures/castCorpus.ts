@@ -94,3 +94,154 @@ export const CAST_CORPUS: CastStory[] = [
     ],
   },
 ];
+
+const sherlock = SAMPLES.find((s) => s.id === 'scandal-in-bohemia')?.text ?? '';
+
+/**
+ * Held out: written or labelled after Cast was tuned on the corpus above, and never tuned on. Their scores are
+ * the honest estimate of accuracy on new text.
+ */
+export const HELD_OUT: CastStory[] = [
+  {
+    id: 'en-rain',
+    lang: 'en',
+    text: [
+      'Maria set the kettle on the stove.',
+      '“Where’s your brother?” she asked.',
+      '“Out with the dog,” said Leo, not looking up from his book.',
+      '“In this rain?”',
+      '“He likes the rain.”',
+      'The door banged open and Mr. Costa stamped in, shaking water from his hat.',
+      '“Who left the gate open?” the old man demanded.',
+      '“Sam did,” Leo said quickly.',
+      '“Then Sam can fix it,” said Mr. Costa.',
+      'Maria laughed. “You’ll have to catch him first.”',
+    ].join('\n\n'),
+    speakers: {
+      maria: { names: ['Maria'], gender: 'f' },
+      leo: { names: ['Leo'], gender: 'm' },
+      costa: { names: ['Mr. Costa', 'Costa'], gender: 'm' },
+    },
+    gold: ['maria', 'leo', 'maria', 'leo', 'costa', 'leo', 'costa', 'maria'],
+  },
+  {
+    id: 'hi-family',
+    lang: 'hi',
+    text: [
+      'शाम को पूरा परिवार आँगन में बैठा था।',
+      '“आज खाने में क्या बना है?” पिताजी ने पूछा।',
+      '“दाल और चावल,” माँ बोली।',
+      '“फिर से दाल?” अनु ने नाक सिकोड़ी।',
+      '“चुपचाप खाओ,” भैया हँसते हुए बोला।',
+      '“तुम भी तो कल शिकायत कर रहे थे!” उसने तुरंत कहा।',
+      'पिताजी मुस्कुराए। “बस करो तुम दोनों।”',
+    ].join('\n\n'),
+    speakers: {
+      pitaji: { names: ['पिताजी'], gender: 'm' },
+      maa: { names: ['माँ'], gender: 'f' },
+      anu: { names: ['अनु'], gender: 'f' },
+      bhaiya: { names: ['भैया'], gender: 'm' },
+    },
+    gold: ['pitaji', 'maa', 'anu', 'bhaiya', 'anu', 'pitaji'],
+  },
+  {
+    id: 'hinglish-chai',
+    lang: 'hi',
+    text: [
+      '"Bhai, chai banaoge?" Priya ne poocha.',
+      '"Abhi nahi, match chal raha hai," Arjun bola.',
+      '"Toh main khud bana leti hoon."',
+      '"Mere liye bhi ek cup," Arjun ne hanste hue kaha.',
+      'Mummy kitchen se boli, "Dono ke liye main bana deti hoon!"',
+    ].join('\n\n'),
+    speakers: {
+      priya: { names: ['Priya'], gender: 'f' },
+      arjun: { names: ['Arjun'], gender: 'm' },
+      mummy: { names: ['Mummy'], gender: 'f' },
+    },
+    gold: ['priya', 'arjun', 'priya', 'arjun', 'mummy'],
+  },
+  {
+    id: 'en-sherlock',
+    lang: 'en',
+    text: sherlock,
+    speakers: {
+      holmes: { names: ['Holmes', 'Sherlock Holmes'], gender: 'm' },
+      watson: { names: ['I (narrator)', 'Watson'], gender: 'm' },
+    },
+    gold: [
+      'holmes',
+      'holmes',
+      'watson',
+      'holmes',
+      'watson',
+      'holmes',
+      'watson',
+      'watson',
+      'holmes',
+      'holmes',
+    ],
+  },
+];
+
+/**
+ * Fresh held-out set, written and measured once after the rules were final (2026-10-23). Never tuned on: if
+ * Cast changes, these scores may move but the stories stay as they are.
+ */
+export const FRESH: CastStory[] = [
+  {
+    id: 'en-classroom',
+    lang: 'en',
+    text: [
+      'Mrs. Patel tapped the board.',
+      '“Who can tell me the answer?” she asked.',
+      'A hand shot up at the back.',
+      '“Is it seven?” said Ravi.',
+      '“Close,” Mrs. Patel said. “Try again.”',
+      'Ravi frowned at his notebook.',
+      '“Eight?”',
+      '“Good.”',
+      'Behind him, Lucy giggled. “Show-off,” she whispered.',
+      '“I heard that, Lucy,” said the teacher.',
+    ].join('\n\n'),
+    speakers: {
+      patel: { names: ['Mrs. Patel', 'Patel'], gender: 'f' },
+      ravi: { names: ['Ravi'], gender: 'm' },
+      lucy: { names: ['Lucy'], gender: 'f' },
+    },
+    gold: ['patel', 'ravi', 'patel', 'patel', 'ravi', 'patel', 'lucy', 'patel'],
+  },
+  {
+    id: 'hi-night',
+    lang: 'hi',
+    text: [
+      'रात बहुत गहरी थी।',
+      '“क्या तुमने वह आवाज़ सुनी?” सीमा फुसफुसाई।',
+      '“कौन-सी आवाज़?” विजय ने पूछा।',
+      '“छत पर कोई चल रहा है।”',
+      'विजय उठकर खिड़की तक गया। “कोई नहीं है, बस हवा है।”',
+      '“मुझे डर लग रहा है,” वह धीरे से बोली।',
+    ].join('\n\n'),
+    speakers: {
+      seema: { names: ['सीमा'], gender: 'f' },
+      vijay: { names: ['विजय'], gender: 'm' },
+    },
+    gold: ['seema', 'vijay', 'seema', 'vijay', 'seema'],
+  },
+  {
+    id: 'hinglish-exam',
+    lang: 'hi',
+    text: [
+      '"Kal exam hai aur maine kuch nahi padha," Kabir ne kaha.',
+      '"Toh ab padh le," Neha boli.',
+      '"Tu hi padha de na."',
+      'Neha hansi. "Chal, book nikaal."',
+      '"Thanks yaar," woh bola.',
+    ].join('\n\n'),
+    speakers: {
+      kabir: { names: ['Kabir'], gender: 'm' },
+      neha: { names: ['Neha'], gender: 'f' },
+    },
+    gold: ['kabir', 'neha', 'kabir', 'neha', 'kabir'],
+  },
+];

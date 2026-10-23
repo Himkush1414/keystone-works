@@ -65,9 +65,9 @@ describe('prepareDocument', () => {
       'heading',
       'narration',
     ]);
-    expect(doc.sentences[3]?.speaker).toBe('hale');
-    expect(doc.sentences[5]?.speaker).toBe('hale');
-    expect(doc.characters.map((c) => [c.id, c.gender])).toEqual([['hale', 'f']]);
+    expect(doc.sentences[3]?.speaker).toBe('hale-f');
+    expect(doc.sentences[5]?.speaker).toBe('hale-f');
+    expect(doc.characters.map((c) => [c.id, c.gender])).toEqual([['hale-f', 'f']]);
     expect(doc.confidence[3]).toBeGreaterThan(0.9);
   });
 
@@ -120,7 +120,7 @@ describe('buildQueue', () => {
       'Chapter Two',
       'Morning came [one] slowly.', // citations aren't skipped in books by default
     ]);
-    expect(q[3]?.voice).toBe(assignment.byCharacter.hale);
+    expect(q[3]?.voice).toBe(assignment.byCharacter['hale-f']);
     expect(q[3]?.voice).not.toBe('M1');
     expect(q[4]?.voice).toBe('M1');
   });
