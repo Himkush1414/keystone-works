@@ -10,6 +10,12 @@ data class Segment(
     val voice: String,
     val pauseMs: Int,
     val kind: String,
+    /** Pace relative to normal for this line (a character's pace, the line's emotion); see perform/plan.ts. */
+    val rate: Float = 1f,
+    /** Loudness change in dB for the line's emotion. */
+    val gainDb: Float = 0f,
+    /** A soft breath before the line. */
+    val breath: Boolean = false,
 ) {
     val isSilent: Boolean get() = text.isBlank()
 }
@@ -51,6 +57,9 @@ class QueueSpec(
                     voice = s.getString("voice"),
                     pauseMs = s.optInt("pauseMs", 0),
                     kind = s.optString("kind", "narration"),
+                    rate = s.optDouble("rate", 1.0).toFloat().coerceIn(0.7f, 1.4f),
+                    gainDb = s.optDouble("gainDb", 0.0).toFloat().coerceIn(-12f, 6f),
+                    breath = s.optBoolean("breath", false),
                 )
             }
             val starts = o.optJSONArray("chapterStarts")
