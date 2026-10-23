@@ -257,6 +257,17 @@ export const fr: Catalog = {
       brisk: 'vive',
     },
   },
+  tiers: {
+    title: 'Langues des voix',
+    best: 'Excellent',
+    bestDesc:
+      'Nombres, dates et heures en toutes lettres ; locuteurs reconnus par leur nom et les verbes de parole ; émotion lue dans la façon de dire. Testé sur des histoires aux locuteurs connus.',
+    good: 'Bon',
+    goodDesc:
+      'Nombres et abréviations en toutes lettres ; locuteurs reconnus par leur nom et les verbes de parole.',
+    basic: 'Simple',
+    basicDesc: 'Lu tel quel, nombres compris ; locuteurs distingués par alternance.',
+  },
   settings: {
     title: 'Réglages',
     appearance: 'Apparence',

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { cardinal, ordinal, year } from '../src/text/numbers';
-import { lineLanguage, detectLanguage } from '../src/text/language';
+import {
+  detectLanguage,
+  LANGUAGE_NAMES,
+  languagesByTier,
+  languageTier,
+  lineLanguage,
+  VOICE_LANGUAGES,
+} from '../src/text/language';
 import { normalize } from '../src/text/normalize';
 
 const say = (t: string) => normalize(t, { start: 0, end: t.length }, 'hi').text;
@@ -92,5 +99,17 @@ describe('Hinglish detection', () => {
     expect(lineLanguage('The meeting is at the end of the week.', 'hi')).toBe('en');
     expect(lineLanguage('OK, bye.', 'hi')).toBe('hi');
     expect(lineLanguage('She walked to the door and opened it.', 'en')).toBe('en');
+  });
+});
+
+describe('language tiers', () => {
+  it('states honestly how well each voice language is read', () => {
+    const tiers = languagesByTier();
+    expect(tiers.best).toEqual(['en', 'hi']);
+    expect(tiers.good.sort()).toEqual(['de', 'es', 'fr', 'it', 'pt']);
+    expect(tiers.best.length + tiers.good.length + tiers.basic.length).toBe(VOICE_LANGUAGES.length);
+    expect(languageTier('hi-IN')).toBe('best');
+    expect(languageTier('ja')).toBe('basic');
+    for (const l of VOICE_LANGUAGES) expect(LANGUAGE_NAMES[l]).toBeTruthy();
   });
 });

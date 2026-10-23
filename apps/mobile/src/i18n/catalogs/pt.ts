@@ -254,6 +254,16 @@ export const pt: Catalog = {
       brisk: 'ágil',
     },
   },
+  tiers: {
+    title: 'Idiomas das vozes',
+    best: 'Ótimo',
+    bestDesc:
+      'Números, datas e horas por extenso; falantes reconhecidos pelo nome e verbos de fala; emoção lida no jeito de dizer. Testado com histórias de falantes conhecidos.',
+    good: 'Bom',
+    goodDesc: 'Números e abreviações por extenso; falantes reconhecidos pelo nome e verbos de fala.',
+    basic: 'Básico',
+    basicDesc: 'Lido como está escrito, números também; falantes distinguidos por turno.',
+  },
   settings: {
     title: 'Ajustes',
     appearance: 'Aparência',

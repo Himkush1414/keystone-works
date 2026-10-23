@@ -1,3 +1,4 @@
+import { LANGUAGE_NAMES, languagesByTier, type LanguageTier } from '@lamplight/core';
 import Constants from 'expo-constants';
 import { type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -15,6 +16,7 @@ import { Segmented } from '@/ui/Segmented';
 import { ChoiceRow, SwitchRow } from '@/ui/SettingRows';
 import { Text } from '@/ui/Text';
 
+const TIERS: LanguageTier[] = ['best', 'good', 'basic'];
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const { colors, space, radius } = useTheme();
   return (
@@ -57,6 +59,7 @@ export function SettingsScreen({ onBack, onPronunciation }: { onBack(): void; on
     studioPlus: 'quality.studioPlusDesc',
   } as const;
   const casts: CastModePreference[] = ['off', 'dialogue', 'full'];
+  const byTier = languagesByTier();
 
   return (
     <Screen>
@@ -159,6 +162,20 @@ export function SettingsScreen({ onBack, onPronunciation }: { onBack(): void; on
               selected={s.castMode === c}
               onPress={() => update({ castMode: c })}
             />
+          ))}
+        </Section>
+
+        <Section title={t('tiers.title')}>
+          {TIERS.map((tier) => (
+            <View key={tier} style={{ gap: space.xxs }}>
+              <Text variant="bodyStrong">{t(`tiers.${tier}`)}</Text>
+              <Text variant="callout" tone="soft">
+                {t(`tiers.${tier}Desc`)}
+              </Text>
+              <Text variant="meta" tone="soft">
+                {byTier[tier].map((l) => LANGUAGE_NAMES[l]).join(' · ')}
+              </Text>
+            </View>
           ))}
         </Section>
 
