@@ -18,13 +18,13 @@ const VERBS: Record<string, string> = {
  * object, so कहा / kaha carries no gender.
  */
 // prettier-ignore
-const HI_VERBS_M = 'बोला बोले चिल्लाया फुसफुसाया हँसा हंसा मुस्कुराया मुस्कराया रोया गरजा बड़बड़ाया'.split(' ');
+const HI_VERBS_M = 'बोला बोले चिल्लाया फुसफुसाया हँसा हंसा मुस्कुराया मुस्कराया रोया गरजा बड़बड़ाया चिल्लाए फुसफुसाए हँसे हंसे मुस्कुराए मुस्कराए रोए गरजे'.split(' ');
 // prettier-ignore
-const HI_VERBS_F = 'बोली चिल्लाई चिल्लायी फुसफुसाई हँसी हंसी मुस्कुराई मुस्कराई रोई गरजी बड़बड़ाई'.split(' ');
+const HI_VERBS_F = 'बोली चिल्लाई चिल्लायी फुसफुसाई हँसी हंसी मुस्कुराई मुस्कराई रोई गरजी बड़बड़ाई बोलीं चिल्लाईं फुसफुसाईं हँसीं हंसीं मुस्कुराईं रोईं'.split(' ');
 // prettier-ignore
 const HI_VERBS_N = 'कहा पूछा जवाब दिया उत्तर दिया आवाज़ लगाई आवाज लगाई पुकारा टोका समझाया डांटा डाँटा'.split(' ');
 // prettier-ignore
-const HG_VERBS_M = 'bola bole chillaya phusphusaya hansa muskuraya roya garja'.split(' ');
+const HG_VERBS_M = 'bola bole chillaya phusphusaya hansa muskuraya roya garja chillaye chillaaye phusphusaye hanse muskuraye roye garje'.split(' ');
 // prettier-ignore
 const HG_VERBS_F = 'boli chillayi chillai phusphusayi phusphusai hansi muskurayi muskurai royi roi garji'.split(' ');
 // prettier-ignore

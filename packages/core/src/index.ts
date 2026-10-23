@@ -16,5 +16,6 @@ export * from './cast/attribute';
 export * from './cast/voices';
 export * from './cast/profile';
 export * from './perform/cues';
+export * from './perform/plan';
 export * from './cast/catalog';
 export * from './pipeline';
