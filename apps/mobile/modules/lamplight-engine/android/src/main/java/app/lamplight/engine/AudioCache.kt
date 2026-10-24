@@ -24,6 +24,7 @@ class AudioCache(context: Context, private val modelVersion: String) {
             if (segment.rate != 1f) append("|r${segment.rate}")
             if (segment.gainDb != 0f) append("|g${segment.gainDb}")
             if (segment.breath) append("|b")
+            segment.runs?.forEach { append("|${it.lang}:${it.text}") }
         }
         md.update("$modelVersion|${segment.voice}|$steps|${segment.lang}|${segment.text}$performance".toByteArray(Charsets.UTF_8))
         return md.digest().joinToString("") { "%02x".format(it) }
