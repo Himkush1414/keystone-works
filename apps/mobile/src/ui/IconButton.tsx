@@ -39,6 +39,7 @@ export function IconButton({
       onPress={onPress}
       disabled={disabled}
       pressScale={filled ? 0.94 : 0.9}
+      haptic={filled ? 'tap' : undefined}
       hitSlop={box < 56 ? 4 : 0}
       accessibilityRole="button"
       accessibilityLabel={label}

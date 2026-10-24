@@ -44,6 +44,7 @@ export function Button({
     <Tappable
       onPress={onPress}
       disabled={disabled || loading}
+      haptic={kind === 'quiet' ? undefined : 'tap'}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={hint}

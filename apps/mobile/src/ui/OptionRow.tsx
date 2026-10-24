@@ -28,6 +28,7 @@ export function OptionRow({
       onPress={onPress}
       disabled={disabled}
       pressScale={0.985}
+      haptic="tap"
       accessibilityRole="button"
       accessibilityLabel={hint ? `${label}. ${hint}` : label}
       style={[styles.row, { gap: space.md, paddingVertical: space.sm }]}
