@@ -18,6 +18,11 @@ import {
 } from '@/player/session';
 import { useServices } from '@/services/context';
 import { playDocument } from '@/services/device';
+import { lookUpWord } from '@/player/meaning';
+import { DEFAULT_NARRATOR } from '@lamplight/core';
+
+/** The meaning is short and wanted now: a quick render is plenty. */
+const MEANING_STEPS = 4;
 
 export default function PlayerRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,6 +45,14 @@ export default function PlayerRoute() {
     const run = (p: Promise<unknown>) => void p.catch(failed);
     return {
       play: () => run(LamplightEngine.play()),
+      lookUpWord: (word, context) => lookUpWord(LamplightEngine, word, context),
+      speak: (text, lang) => {
+        const voice =
+          (item?.language.slice(0, 2) === lang ? item.settings.voice : undefined) ??
+          services.settings.getState().voices[lang] ??
+          DEFAULT_NARRATOR;
+        run(LamplightEngine.previewVoice(text, lang, voice, MEANING_STEPS));
+      },
       pause: () => run(LamplightEngine.pause()),
       skip: (delta) => run(LamplightEngine.skip(delta)),
       seekTo: (index) => run(LamplightEngine.seekTo(index)),
@@ -104,7 +117,7 @@ export default function PlayerRoute() {
         ),
       close: () => (router.canGoBack() ? router.back() : router.replace('/library')),
     };
-  }, [services, t, id, content]);
+  }, [services, t, id, content, item]);
 
   // Opening a document that isn't the one in the player starts it.
   useEffect(() => {
@@ -113,6 +126,11 @@ export default function PlayerRoute() {
       services.toast.getState().show({ message: t('errors.voiceUnavailable'), tone: 'danger' }),
     );
   }, [item, loadedDoc, services, t]);
+
+  // Unpack the dictionary while the listener settles in, so the first question is answered at once.
+  useEffect(() => {
+    void LamplightEngine.warmDictionary().catch(() => undefined);
+  }, []);
 
   if (!item || !content || !clean) return null;
   return (
