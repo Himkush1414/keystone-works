@@ -6,6 +6,7 @@ export default function SettingsRoute() {
     <SettingsScreen
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/library'))}
       onPronunciation={() => router.push('/settings/pronunciation')}
+      onDiagnostics={() => router.push('/settings/diagnostics')}
     />
   );
 }

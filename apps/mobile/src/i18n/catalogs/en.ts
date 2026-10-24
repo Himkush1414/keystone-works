@@ -126,6 +126,23 @@ export const en = {
     playNow: 'Play now',
     added: { one: 'Added to your library', other: 'Added {n} items to your library' },
   },
+  diagnostics: {
+    title: 'Diagnostics',
+    desc: 'What the voice engine is doing, and a report to send if narration doesn’t work.',
+    details: 'Details',
+    engine: 'Voice engine',
+    player: 'Player',
+    volume: 'Volume',
+    device: 'Device',
+    app: 'App',
+    log: 'Engine log (last 50 lines)',
+    test: 'Test the voice',
+    refresh: 'Refresh',
+    share: 'Share report',
+    testOk: 'Spoke {audio} of speech, made in {render}.',
+    testFailed: 'The voice test failed: {reason}',
+    volumeMuted: 'Media volume is off, so narration is silent. Turn the volume up.',
+  },
   errors: {
     drm: 'This book is protected by DRM, so Lamplight can’t open it.',
     drmHint:
@@ -289,6 +306,7 @@ export const en = {
   },
   settings: {
     title: 'Settings',
+    advanced: 'Advanced',
     appearance: 'Appearance',
     playback: 'Playback',
     voices: 'Voices and quality',
