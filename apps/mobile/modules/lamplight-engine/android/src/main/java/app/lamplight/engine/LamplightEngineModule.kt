@@ -95,6 +95,16 @@ class LamplightEngineModule : Module() {
         AsyncFunction("pause") { runOnMain { controller.pause() } }
         AsyncFunction("stop") { runOnMain { controller.stop() } }
         AsyncFunction("seekTo") { index: Int -> controller.seekTo(index) }
+        AsyncFunction("playFrom") { index: Int, promise: Promise ->
+            runOnMain {
+                val failure = try {
+                    controller.playFrom(index)
+                } catch (e: Throwable) {
+                    EngineFailure.of(e)
+                }
+                if (failure == null) promise.resolve(null) else promise.reject(CodedException(failure.code, failure.message, null))
+            }
+        }
 
         AsyncFunction("getDiagnostics") { diagnostics() }
         AsyncFunction("runVoiceTest") { runVoiceTest() }
