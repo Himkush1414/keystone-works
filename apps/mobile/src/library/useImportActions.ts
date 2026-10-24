@@ -25,7 +25,11 @@ export function useImportActions() {
   const fromFile = useCallback(() => {
     services.library
       .getState()
-      .runImport(() => pickAndImport(services.db))
+      .runImport(() =>
+        pickAndImport(services.db, {
+          onUpdate: (id, replaced) => services.library.getState().touch(id, replaced),
+        }),
+      )
       .then((summary) => {
         summary?.added.forEach((id) => prepareQueueSoon(services, id));
         const message = summary

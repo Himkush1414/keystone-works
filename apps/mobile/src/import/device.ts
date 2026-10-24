@@ -4,7 +4,9 @@ import LamplightEngine from '../../modules/lamplight-engine';
 import type { Db } from '../data/db';
 import type { DocumentSource } from '../data/library';
 import { coverExtension, PICKER_TYPES, uriToPath } from './paths';
-import { importFile, type ImportResult } from './run';
+import type { PdfOpened, PdfPageLines } from '../../modules/lamplight-engine/src/types';
+import type { PdfReader } from './parse';
+import { importFile, type ImportDeps, type ImportResult } from './run';
 import type { Sample } from './samples';
 import { importSample, importText } from './text';
 
@@ -28,14 +30,27 @@ async function saveCover(documentId: string, cover: { mime: string; data: Uint8A
  * picker, or a shared file). `temporary` copies are deleted afterwards (the library keeps the parsed text),
  * except a locked PDF's, which the caller retries with `password`.
  */
+/** The engine reads PDFs a few pages at a time, off the UI thread. */
+export const pdfReader: PdfReader = {
+  open: async (path, password) => JSON.parse(await LamplightEngine.openPdf(path, password)) as PdfOpened,
+  pages: async (handle, from, to) =>
+    JSON.parse(await LamplightEngine.pdfPages(handle, from, to)) as PdfPageLines[],
+  close: (handle) => LamplightEngine.closePdf(handle),
+};
+
+/** What the library wants to hear while an import runs (see ImportDeps.onUpdate). */
+export type ImportHooks = Pick<ImportDeps, 'onUpdate'>;
+
 export async function importIncoming(
   db: Db,
   incoming: IncomingFile,
   source: DocumentSource,
   opts: { temporary?: boolean; password?: string } = {},
+  hooks: ImportHooks = {},
 ): Promise<ImportResult> {
   const file = new File(incoming.uri);
   let result: ImportResult | undefined;
+  let background = false;
   try {
     const bytes = await file.bytes();
     result = await importFile(
@@ -51,20 +66,30 @@ export async function importIncoming(
       },
       {
         sha256: () => file.digest('SHA-256'),
-        extractPdf: (path, password) => LamplightEngine.extractPdf(path, password),
+        pdf: pdfReader,
         saveCover,
+        ...hooks,
+        // The rest of a long PDF is still being read from the file after this returns: delete it after that.
+        background: (task) => {
+          background = true;
+          void task.finally(() => {
+            if (opts.temporary && file.exists) file.delete();
+          });
+        },
       },
     );
     return result;
   } finally {
-    // A locked PDF's copy stays so the import can be retried with the password.
+    // A locked PDF's copy stays so the import can be retried with the password; a PDF still being read in
+    // the background deletes its copy when done (above).
     const retry = result?.status === 'failed' && result.code === 'password';
-    if (opts.temporary && !retry && file.exists) file.delete();
+    const reading = result?.status === 'ready' && background;
+    if (opts.temporary && !retry && !reading && file.exists) file.delete();
   }
 }
 
 /** Opens the system file picker and imports each chosen file. Returns null when the user cancels. */
-export async function pickAndImport(db: Db): Promise<ImportResult[] | null> {
+export async function pickAndImport(db: Db, hooks: ImportHooks = {}): Promise<ImportResult[] | null> {
   const picked = await getDocumentAsync({ type: PICKER_TYPES, copyToCacheDirectory: true, multiple: true });
   if (picked.canceled) return null;
   const results: ImportResult[] = [];
@@ -77,6 +102,7 @@ export async function pickAndImport(db: Db): Promise<ImportResult[] | null> {
         {
           temporary: true,
         },
+        hooks,
       ),
     );
   }
@@ -96,7 +122,11 @@ async function hashBytes(bytes: Uint8Array): Promise<string> {
 
 const textDeps = {
   sha256: (file: { bytes: Uint8Array }) => hashBytes(file.bytes),
-  extractPdf: () => Promise.reject(new Error('pasted text is never a PDF')),
+  pdf: {
+    open: () => Promise.reject(new Error('pasted text is never a PDF')),
+    pages: () => Promise.resolve([]),
+    close: () => Promise.resolve(),
+  },
 };
 
 /** Adds pasted or typed text to the library. */

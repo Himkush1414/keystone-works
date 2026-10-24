@@ -48,6 +48,8 @@ export const pt: Catalog = {
     sampleHint: 'Um capítulo clássico com elenco de vozes',
   },
   library: {
+    readingPages: 'Lendo páginas: {done} de {total}',
+    scanned: 'Imagens digitalizadas, sem texto para ler',
     title: 'Biblioteca',
     continue: 'Continuar ouvindo',
     shelves: {

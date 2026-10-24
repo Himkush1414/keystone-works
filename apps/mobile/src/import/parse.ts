@@ -11,8 +11,9 @@ import {
   parsePlainText,
   type DocumentDraft,
   type DocumentKind,
+  type PdfOutlineItem,
+  type PdfPage,
 } from '@lamplight/core';
-import type { PdfExtraction } from '../../modules/lamplight-engine/src/types';
 import type { ImportFormat } from './format';
 
 export interface ParseInput {
@@ -30,9 +31,25 @@ export interface ParseInput {
   password?: string;
 }
 
+/** An open PDF, read a few pages at a time (LamplightEngine.openPdf / pdfPages / closePdf on a device). */
+export interface PdfInfo {
+  handle: number;
+  pageCount: number;
+  outline: PdfOutlineItem[];
+  title: string | null;
+  author: string | null;
+}
+
+export interface PdfReader {
+  /** Rejects with code "password" or "corrupt". */
+  open(path: string, password: string | null): Promise<PdfInfo>;
+  /** Pages `from`..`to`, 1-based and inclusive. */
+  pages(handle: number, from: number, to: number): Promise<PdfPage[]>;
+  close(handle: number): Promise<void>;
+}
+
 export interface ParseDeps {
-  /** LamplightEngine.extractPdf: JSON text, rejects with code "password" or "corrupt". */
-  extractPdf(path: string, password: string | null): Promise<string>;
+  pdf: PdfReader;
 }
 
 /** "my_paper-final.v2.pdf" → "my paper final.v2". */
@@ -101,29 +118,38 @@ export function usablePdfTitle(raw: string | null | undefined): string | undefin
   return t;
 }
 
-async function pdfDocument(
-  input: ParseInput,
-  fallbackTitle: string,
-  deps: ParseDeps,
-): Promise<DocumentDraft> {
+/** Pages read before a long PDF is published as playable, and per step after that. */
+export const PDF_FIRST_PAGES = 12;
+export const PDF_BATCH_PAGES = 40;
+
+/** Opens a PDF, mapping the engine's rejection codes to import errors. */
+export async function openPdf(input: ParseInput, deps: ParseDeps): Promise<PdfInfo> {
   if (!input.path) throw new Error('PDF import needs a local file path');
-  let json: string;
   try {
-    json = await deps.extractPdf(input.path, input.password ?? null);
+    return await deps.pdf.open(input.path, input.password ?? null);
   } catch (e) {
     const code = (e as { code?: unknown } | null)?.code;
     throw new ImportError(code === 'password' ? 'password' : 'corrupt', String(e));
   }
-  let pdf: PdfExtraction;
+}
+
+/** Title, author and kind for a PDF, from its metadata and length. */
+export function pdfMeta(info: PdfInfo, fallbackTitle: string) {
+  return {
+    title: usablePdfTitle(info.title) ?? fallbackTitle,
+    ...(info.author?.trim() ? { author: info.author.trim() } : {}),
+    kind: info.pageCount > 60 ? ('book' as const) : ('document' as const),
+  };
+}
+
+async function pdfDocument(input: ParseInput, fallbackTitle: string, deps: ParseDeps): Promise<DocumentDraft> {
+  const info = await openPdf(input, deps);
   try {
-    pdf = JSON.parse(json) as PdfExtraction;
-  } catch {
-    throw new ImportError('corrupt');
+    const pages: PdfPage[] = [];
+    for (let from = 1; from <= info.pageCount; from += PDF_BATCH_PAGES)
+      pages.push(...(await deps.pdf.pages(info.handle, from, from + PDF_BATCH_PAGES - 1)));
+    return buildPdfDocument(pages, pdfMeta(info, fallbackTitle), info.outline);
+  } finally {
+    await deps.pdf.close(info.handle).catch(() => undefined);
   }
-  const title = usablePdfTitle(pdf.title) ?? fallbackTitle;
-  return buildPdfDocument(
-    pdf.pages,
-    { title, ...(pdf.author?.trim() ? { author: pdf.author.trim() } : {}) },
-    pdf.outline,
-  );
 }
