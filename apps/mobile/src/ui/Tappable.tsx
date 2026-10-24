@@ -1,7 +1,10 @@
 import { type ReactNode } from 'react';
 import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { useStore } from 'zustand';
+import { useServices } from '@/services/context';
 import { useTheme } from '@/theme/theme';
+import { haptic as fire, type HapticKind } from './haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -10,6 +13,8 @@ export interface TappableProps extends Omit<PressableProps, 'style' | 'children'
   children: ReactNode;
   /** How far the element shrinks while pressed (0.97 default). */
   pressScale?: number;
+  /** A haptic on press: a knock for actions, a tick for choices; none by default. */
+  haptic?: HapticKind;
 }
 
 /**
@@ -21,11 +26,15 @@ export function Tappable({
   children,
   pressScale = 0.97,
   disabled,
+  onPress,
   onPressIn,
   onPressOut,
+  haptic,
   ...rest
 }: TappableProps) {
   const { motion, reduceMotion } = useTheme();
+  // The listener's "Haptic feedback" switch in Settings.
+  const hapticsOn = useStore(useServices().settings, (s) => s.haptics);
   const pressed = useSharedValue(0);
   const animated = useAnimatedStyle(() => ({
     opacity: disabled ? 0.4 : 1 - pressed.value * 0.18,
@@ -36,6 +45,13 @@ export function Tappable({
       {...rest}
       disabled={disabled}
       accessibilityState={{ disabled: !!disabled, ...rest.accessibilityState }}
+      onPress={
+        onPress &&
+        ((e) => {
+          if (haptic && hapticsOn) fire(haptic);
+          onPress(e);
+        })
+      }
       onPressIn={(e) => {
         pressed.value = reduceMotion ? withTiming(1, { duration: 80 }) : withSpring(1, motion.spring.snappy);
         onPressIn?.(e);
