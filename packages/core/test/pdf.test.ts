@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildPdfDocument,
-  classifyEdges,
+  classifyFurniture,
   cleanPdfText,
   joinLines,
   type PdfLine,
@@ -55,10 +55,10 @@ describe('joinLines', () => {
   });
 });
 
-describe('classifyEdges', () => {
+describe('classifyFurniture', () => {
   it('finds headers that repeat with changing numbers, alternating pages and page numbers', () => {
     const pages = paper(6);
-    const edges = classifyEdges(pages);
+    const edges = classifyFurniture(pages);
     expect(edges.get('0:0')).toBe('header');
     expect(edges.get('1:0')).toBe('header');
     const lastLine = (pages[0]?.lines.length ?? 1) - 1;
@@ -72,7 +72,7 @@ describe('classifyEdges', () => {
       { width: W, height: H, lines: [line('Body again', 300)] },
       { width: W, height: H, lines: [line('More body', 300)] },
     ];
-    expect(classifyEdges(pages).size).toBe(0);
+    expect(classifyFurniture(pages).size).toBe(0);
   });
 });
 
@@ -206,5 +206,102 @@ describe('a long book', () => {
     expect(new Set(furniture.map((b) => b.skips[0]?.reason))).toEqual(new Set(['header', 'pageNumber']));
     expect(d.chapters).toHaveLength(26);
     expect(d.meta.kind).toBe('book');
+  });
+});
+
+describe('document-level furniture', () => {
+  const page = (lines: PdfLine[]): PdfPage => ({ width: W, height: H, lines });
+  const body = (n: number, k: number) =>
+    line(`Line ${k} of page ${n} goes on with the story and never quite stops`, 100 + k * 12);
+
+  it('skips Devanagari page numbers and a chapter title that runs over only its own pages', () => {
+    const pages = Array.from({ length: 40 }, (_, i) =>
+      page([
+        line(i < 10 ? 'नाव' : `Other running title ${Math.floor(i / 10)}`, 40, { size: 8 }),
+        body(i, 0),
+        body(i, 1),
+        line('०१२३४५६७८९'.slice(i % 10, (i % 10) + 1), 760, { size: 8, x: 300, width: 10 }),
+      ]),
+    );
+    const kinds = classifyFurniture(pages);
+    expect(kinds.get('0:0')).toBe('header');
+    expect(kinds.get('3:3')).toBe('pageNumber');
+    expect([...kinds.values()].filter((k) => k === 'header')).toHaveLength(40);
+  });
+
+  it('keeps a sentence that runs over a page whole, with the page furniture after it', () => {
+    const pages = [
+      page([
+        line('Night fell over the river and the ferry, and the lamp on its prow was', 576),
+        line('the only light for miles. Asha watched it, and the boatman watched her.', 588),
+        line('The lamp burned all night while the ferry crossed the wide and', 600),
+        line('1', 760, { size: 8, x: 300, width: 8 }),
+      ]),
+      page([
+        line('THE RIVER', 40, { size: 8 }),
+        line('unhurried river towards the town.', 100, { width: 200 }),
+        line('2', 760, { size: 8, x: 300, width: 8 }),
+      ]),
+      page([
+        line('THE RIVER', 40, { size: 8 }),
+        line('Another paragraph.', 100, { width: 120 }),
+        line('3', 760, { size: 8, x: 300, width: 8 }),
+      ]),
+    ];
+    const d = buildPdfDocument(pages, { title: 'x' });
+    expect(d.blocks.map((b) => [b.text, b.skips[0]?.reason])).toEqual([
+      [
+        'Night fell over the river and the ferry, and the lamp on its prow was the only light for miles. Asha watched it, and the boatman watched her. The lamp burned all night while the ferry crossed the wide and unhurried river towards the town.',
+        undefined,
+      ],
+      ['1', 'pageNumber'],
+      ['THE RIVER', 'header'],
+      ['2', 'pageNumber'],
+      ['THE RIVER', 'header'],
+      ['Another paragraph.', undefined],
+      ['3', 'pageNumber'],
+    ]);
+  });
+
+  it('finds watermarks, the copyright page, footnotes, scan noise and margin numbers', () => {
+    const pages = Array.from({ length: 10 }, (_, i) =>
+      page([
+        ...(i === 1
+          ? [
+              line('Copyright © 2021 Asha Verma', 300, { size: 9 }),
+              line('First published in 2021 by Lantern House', 312, { size: 9 }),
+            ]
+          : []),
+        body(i, 0),
+        line('5', 112, { x: 40, width: 8, size: 8 }),
+        body(i, 1),
+        line("' . , '", 300, { x: 200, width: 30 }),
+        line('* * *', 310, { x: 280, width: 30 }),
+        line('Downloaded from www.books.example', 400, { size: 7, x: 150 }),
+        line(`1 A note about ferry crossing ${'abcdefghij'[i]}.`, 700, { size: 8 }),
+      ]),
+    );
+    const kinds = classifyFurniture(pages);
+    const of = (pi: number, text: string) =>
+      kinds.get(`${pi}:${pages[pi]?.lines.findIndex((l) => l.text === text)}`);
+    expect(of(1, 'Copyright © 2021 Asha Verma')).toBe('copyright');
+    expect(of(1, 'First published in 2021 by Lantern House')).toBe('copyright');
+    expect(of(4, '5')).toBe('strayNumber');
+    expect(of(4, "' . , '")).toBe('scanNoise');
+    expect(of(4, '* * *')).toBeUndefined(); // a scene break: the narration pauses for it
+    expect(of(4, 'Downloaded from www.books.example')).toBe('watermark');
+    expect(of(4, '1 A note about ferry crossing e.')).toBe('footnote');
+    expect(of(4, pages[4]?.lines[0]?.text ?? '')).toBeUndefined();
+  });
+
+  it('never skips body text for repeating alone, and keeps a copyright discussion in the body', () => {
+    const pages = Array.from({ length: 6 }, (_, i) =>
+      page([
+        body(i, 0),
+        line('The chorus came back again and again.', 300),
+        line('Copyright law protects the expression of ideas.', 320),
+      ]),
+    );
+    expect(classifyFurniture(pages).size).toBe(0);
   });
 });
