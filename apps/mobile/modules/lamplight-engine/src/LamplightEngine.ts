@@ -1,5 +1,13 @@
 import { NativeModule, requireNativeModule } from 'expo';
-import type { Calibration, EngineInfo, LamplightEngineEvents, PlayerState, Quality } from './types';
+import type {
+  Calibration,
+  Diagnostics,
+  EngineInfo,
+  LamplightEngineEvents,
+  PlayerState,
+  Quality,
+  VoiceTest,
+} from './types';
 
 declare class LamplightEngineModule extends NativeModule<LamplightEngineEvents> {
   initialize(): Promise<EngineInfo>;
@@ -12,6 +20,7 @@ declare class LamplightEngineModule extends NativeModule<LamplightEngineEvents> 
     quality: Quality,
   ): Promise<void>;
   updateSegments(json: string): Promise<void>;
+  /** Rejects with a code and a plain-words message when narration can't start. */
   play(): Promise<void>;
   pause(): Promise<void>;
   stop(): Promise<void>;
@@ -24,6 +33,9 @@ declare class LamplightEngineModule extends NativeModule<LamplightEngineEvents> 
   prepareOffline(path: string, quality: Quality, chargingOnly: boolean): Promise<void>;
   cancelPrepare(docId: string): Promise<void>;
   getState(): Promise<PlayerState>;
+  getDiagnostics(): Promise<Diagnostics>;
+  /** Speaks a short test sentence through the engine and the speaker. */
+  runVoiceTest(): Promise<VoiceTest>;
   lastPosition(): Promise<string | null>;
   cacheBytes(): Promise<number>;
   clearCache(): Promise<void>;
