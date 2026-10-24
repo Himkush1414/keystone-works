@@ -39,6 +39,21 @@ describe('detectInBlock', () => {
     expect(pdf).toEqual(['¹²', '3']);
   });
 
+  it('finds asterisk and dagger footnote markers glued to what they annotate, not a lone asterisk', () => {
+    const b = para('The ferry ran until 1962.* The ghat was rebuilt† later. 3 * 4 is twelve.');
+    expect(detectInBlock(b, false).map((s) => b.text.slice(s.start, s.end))).toEqual(['*', '†']);
+  });
+
+  it('marks a short copyright notice in any format, but not a sentence about copyright', () => {
+    const notice = para('© 2026 The Daily Lamp. All rights reserved.');
+    expect(detectInBlock(notice, false)).toEqual([
+      { start: 0, end: notice.text.length, reason: 'copyright' },
+    ]);
+    expect(
+      detectInBlock(para('Copyright law protects how an idea is expressed, not the idea.'), false),
+    ).toEqual([]);
+  });
+
   it('finds links and e-mail addresses', () => {
     const b = para('See https://lamplight.app/help or write to help@lamplight.app.');
     expect(detectInBlock(b, false).map((s) => b.text.slice(s.start, s.end))).toEqual([
