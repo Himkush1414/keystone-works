@@ -115,6 +115,11 @@ class LamplightEngineWeb extends NativeModule<LamplightEngineEvents> {
     this.emit('onState', { ...this.state });
   }
 
+  async playFrom(index: number) {
+    await this.seekTo(index);
+    await this.play();
+  }
+
   async skip(delta: number) {
     await this.seekTo(Math.max(0, this.state.index + delta));
   }

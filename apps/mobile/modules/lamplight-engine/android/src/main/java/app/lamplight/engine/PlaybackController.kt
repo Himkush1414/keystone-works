@@ -280,6 +280,13 @@ class PlaybackController private constructor(private val context: Context) : Str
         emitState()
     }
 
+    /** A tapped sentence: narration moves there and plays from its start, whether it was playing or not. */
+    fun playFrom(index: Int): EngineFailure? {
+        if (queue == null) return play()
+        seekTo(index)
+        return if (playing) null else play()
+    }
+
     fun skip(delta: Int) = seekTo(currentIndex + delta)
 
     fun skipChapter(delta: Int) {

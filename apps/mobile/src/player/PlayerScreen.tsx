@@ -51,6 +51,8 @@ export interface PlayerActions {
   lookUpWord(word: string, context: string): Promise<Meaning | null>;
   /** Says a short text in the narrator's voice (the meaning, while paused). */
   speak(text: string, lang: AnswerLanguage): void;
+  /** A tapped sentence: narration moves there and plays from it, paused or not. */
+  playFrom(index: number): void;
   close(): void;
   /** Settings › Diagnostics, from the failure banner. */
   openDiagnostics(): void;
@@ -183,7 +185,7 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
         size={reader.readerSize}
         lineHeight={reader.readerLineHeight}
         showSkipped={reader.showSkipped}
-        onSentencePress={actions.seekTo}
+        onSentencePress={actions.playFrom}
         onSentenceLongPress={ask}
         backToVoiceLabel={t('player.backToVoice')}
       />

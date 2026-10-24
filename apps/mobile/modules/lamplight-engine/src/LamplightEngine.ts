@@ -25,6 +25,8 @@ declare class LamplightEngineModule extends NativeModule<LamplightEngineEvents> 
   pause(): Promise<void>;
   stop(): Promise<void>;
   seekTo(index: number): Promise<void>;
+  /** Moves to sentence `index` and plays from it, paused or not; rejects like play(). */
+  playFrom(index: number): Promise<void>;
   skip(delta: number): Promise<void>;
   skipChapter(delta: number): Promise<void>;
   setSpeed(speed: number): Promise<void>;
