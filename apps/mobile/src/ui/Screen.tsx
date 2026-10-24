@@ -1,7 +1,10 @@
+import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { type ReactNode } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import { StyleSheet, useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import LamplightEngine from '../../modules/lamplight-engine';
+import { isDarkColor } from '@/theme/color';
 import { useTheme } from '@/theme/theme';
 
 /** Side gutter by width: 16 on the smallest phones, 20 on phones, 32 on tablets. */
@@ -34,15 +37,24 @@ export function Screen({
   background,
   style,
 }: ScreenProps) {
-  const { colors, name } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const bg = background ?? colors.bg;
+  const dark = isDarkColor(bg);
+  // The window behind the app and the navigation bar follow the screen in front (the reader's sepia or
+  // night theme can differ from the app's), so no other colour shows at the edges or during transitions.
+  useFocusEffect(
+    useCallback(() => {
+      void LamplightEngine.setSystemBars(dark, bg).catch(() => undefined);
+    }, [dark, bg]),
+  );
   const gutter = useGutter();
   return (
     <View
       style={[
         styles.root,
         {
-          backgroundColor: background ?? colors.bg,
+          backgroundColor: bg,
           paddingTop: top ? insets.top : 0,
           paddingBottom: bottom ? insets.bottom : 0,
           paddingHorizontal: padded ? gutter : 0,
@@ -50,7 +62,7 @@ export function Screen({
         style,
       ]}
     >
-      <StatusBar style={name === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style={dark ? 'light' : 'dark'} />
       {children}
     </View>
   );

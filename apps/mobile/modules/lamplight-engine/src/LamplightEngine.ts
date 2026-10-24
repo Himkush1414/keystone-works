@@ -38,6 +38,8 @@ declare class LamplightEngineModule extends NativeModule<LamplightEngineEvents> 
   cancelPrepare(docId: string): Promise<void>;
   getState(): Promise<PlayerState>;
   getDiagnostics(): Promise<Diagnostics>;
+  /** System bar icons for a dark (true) or light background, and the window colour behind the app. */
+  setSystemBars(dark: boolean, background: string | null): Promise<void>;
   /** Speaks a short test sentence through the engine and the speaker. */
   runVoiceTest(): Promise<VoiceTest>;
   lastPosition(): Promise<string | null>;
