@@ -1,7 +1,9 @@
 import type { ExpoConfig } from 'expo/config';
 
+// Theme colours from packages/tokens (palettes.light / palettes.dark), needed here before any JS runs.
 const PAPER = '#F4EEE3';
 const NIGHT = '#100E0B';
+const ACCENT = '#9C5313';
 
 const fonts = [
   'Fraunces-SemiBold.ttf',
@@ -27,7 +29,9 @@ const config: ExpoConfig = {
   orientation: 'default',
   userInterfaceStyle: 'automatic',
   icon: './assets/brand/icon.png',
-  backgroundColor: NIGHT,
+  // The window behind the app in light mode; ./plugins/withNightBackground.js sets the dark-mode one.
+  backgroundColor: PAPER,
+  primaryColor: ACCENT,
   ios: {
     bundleIdentifier: 'app.lamplight.reader',
     supportsTablet: true,
@@ -73,6 +77,7 @@ const config: ExpoConfig = {
     'expo-localization',
     'expo-sharing',
     './modules/lamplight-engine/plugin/withLamplightEngine.js',
+    ['./plugins/withNightBackground.js', { color: NIGHT }],
     ['expo-font', { fonts }],
     [
       'expo-splash-screen',
