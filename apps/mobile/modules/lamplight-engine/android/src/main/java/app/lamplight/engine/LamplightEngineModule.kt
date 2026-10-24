@@ -75,10 +75,15 @@ class LamplightEngineModule : Module() {
             controller.load(spec, startIndex, startMs.toLong(), speed.toFloat(), parseQuality(quality))
         }
 
+        AsyncFunction("fillSegments") { json: String ->
+            controller.fillSegments(QueueSpec.parseSegments(org.json.JSONObject(json)))
+        }
+
         AsyncFunction("updateSegments") { json: String ->
-            val spec = QueueSpec.parse(json)
-            val from = spec.segments.minOfOrNull { it.index } ?: return@AsyncFunction
-            controller.updateSegments(from, spec.segments)
+            // Only the segments sent: the file's `count` would otherwise stand pending placeholders over the rest.
+            val segments = QueueSpec.parseSegments(org.json.JSONObject(json))
+            val from = segments.minOfOrNull { it.index } ?: return@AsyncFunction
+            controller.updateSegments(from, segments)
         }
 
         // Resolves once narration has started, or rejects with the reason it can't (code + plain message).

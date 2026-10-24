@@ -104,6 +104,10 @@ export type LamplightEngineEvents = {
 /** The queue file the player reads (written by apps/mobile/src/player/queue.ts). */
 export interface QueueFile {
   docId: string;
+  /** Sentences in the whole document; segments not built yet are sent later (fillSegments). */
+  count?: number;
+  /** Hash of everything the queue was built from; set once it is complete, so it can be reused. */
+  key?: string;
   title: string;
   author?: string;
   artworkUri?: string;
@@ -124,6 +128,8 @@ export interface QueueFile {
     breath?: boolean;
     /** The line split by voice language when it mixes them; each run is rendered in its own language. */
     runs?: { text: string; lang: string }[];
+    /** Not built yet: a placeholder in the app's copy, never sent to the player. */
+    pending?: true;
   }[];
 }
 

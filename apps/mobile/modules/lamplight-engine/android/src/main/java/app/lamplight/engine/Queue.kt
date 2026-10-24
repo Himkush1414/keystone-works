@@ -19,8 +19,14 @@ data class Segment(
     val breath: Boolean = false,
     /** The line split by voice language (a Hindi phrase in an English line, or the reverse); null for one language. */
     val runs: List<Run>? = null,
+    /** Not built by the app yet (a long book is queued around where listening starts, then filled in). */
+    val pending: Boolean = false,
 ) {
-    val isSilent: Boolean get() = text.isBlank()
+    val isSilent: Boolean get() = !pending && text.isBlank()
+
+    companion object {
+        fun pending(index: Int) = Segment(index, "", "en", "", 0, "pending", pending = true)
+    }
 }
 
 /** Everything the player needs to narrate a document without the JavaScript side. */
@@ -50,8 +56,28 @@ class QueueSpec(
         /** Parses the queue file written by the app (see apps/mobile/src/player/queue.ts). */
         fun parse(json: String): QueueSpec {
             val o = JSONObject(json)
+            val given = parseSegments(o)
+            // `count` covers the whole document; sentences not sent yet wait as pending placeholders.
+            val count = maxOf(o.optInt("count", 0), (given.maxOfOrNull { it.index } ?: -1) + 1)
+            val segments = MutableList(count) { Segment.pending(it) }
+            for (s in given) segments[s.index] = s
+            val starts = o.optJSONArray("chapterStarts")
+            val titles = o.optJSONArray("chapterTitles")
+            return QueueSpec(
+                docId = o.getString("docId"),
+                title = o.optString("title", ""),
+                author = o.optString("author").ifBlank { null },
+                artworkUri = o.optString("artworkUri").ifBlank { null },
+                segments = segments,
+                chapterStarts = if (starts == null) intArrayOf(0) else IntArray(starts.length()) { starts.getInt(it) },
+                chapterTitles = if (titles == null) emptyList() else List(titles.length()) { titles.getString(it) },
+            )
+        }
+
+        /** The segments in a queue file or an update, by their own index. */
+        fun parseSegments(o: JSONObject): List<Segment> {
             val segs = o.getJSONArray("segments")
-            val segments = List(segs.length()) { k ->
+            return List(segs.length()) { k ->
                 val s = segs.getJSONObject(k)
                 Segment(
                     index = s.getInt("i"),
@@ -68,17 +94,6 @@ class QueueSpec(
                     },
                 )
             }
-            val starts = o.optJSONArray("chapterStarts")
-            val titles = o.optJSONArray("chapterTitles")
-            return QueueSpec(
-                docId = o.getString("docId"),
-                title = o.optString("title", ""),
-                author = o.optString("author").ifBlank { null },
-                artworkUri = o.optString("artworkUri").ifBlank { null },
-                segments = segments,
-                chapterStarts = if (starts == null) intArrayOf(0) else IntArray(starts.length()) { starts.getInt(it) },
-                chapterTitles = if (titles == null) emptyList() else List(titles.length()) { titles.getString(it) },
-            )
         }
     }
 }
