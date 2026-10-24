@@ -22,6 +22,8 @@ export interface ReadAlongProps {
   /** Skipped text dimmed (true) or hidden (false). */
   showSkipped: boolean;
   onSentencePress(index: number): void;
+  /** Long press on a sentence: ask what one of its words means. */
+  onSentenceLongPress?(index: number): void;
   backToVoiceLabel: string;
 }
 
@@ -54,6 +56,7 @@ export function ReadAlong(props: ReadAlongProps) {
         lineHeight={props.lineHeight}
         showSkipped={props.showSkipped}
         onSentencePress={props.onSentencePress}
+        onSentenceLongPress={props.onSentenceLongPress}
       />
     ),
     [
@@ -66,6 +69,7 @@ export function ReadAlong(props: ReadAlongProps) {
       props.lineHeight,
       props.showSkipped,
       props.onSentencePress,
+      props.onSentenceLongPress,
     ],
   );
 
@@ -101,6 +105,7 @@ const BlockText = memo(function BlockText({
   lineHeight,
   showSkipped,
   onSentencePress,
+  onSentenceLongPress,
 }: Omit<ReadAlongProps, 'blocks' | 'currentBlock' | 'backToVoiceLabel'> & { block: ReadBlock }) {
   const { space } = useTheme();
   if (!block.text.trim()) return <View style={{ height: space.lg }} />;
@@ -128,6 +133,7 @@ const BlockText = memo(function BlockText({
             theme={theme}
             showSkipped={showSkipped}
             onSentencePress={onSentencePress}
+            onSentenceLongPress={onSentenceLongPress}
           />
         ))}
       </RNText>
@@ -143,6 +149,7 @@ function RunText({
   theme,
   showSkipped,
   onSentencePress,
+  onSentenceLongPress,
 }: {
   text: string;
   run: Run;
@@ -151,6 +158,7 @@ function RunText({
   theme: ReaderTheme;
   showSkipped: boolean;
   onSentencePress(index: number): void;
+  onSentenceLongPress?(index: number): void;
 }) {
   if (run.skipped && !showSkipped) return null;
   const style: TextStyle = {
@@ -158,12 +166,16 @@ function RunText({
     ...(run.skipped ? { color: theme.inkSoft, opacity: 0.6 } : null),
   };
   const press = run.sentence === null ? undefined : () => onSentencePress(run.sentence as number);
+  const longPress =
+    run.sentence === null || !onSentenceLongPress
+      ? undefined
+      : () => onSentenceLongPress(run.sentence as number);
   // Underline only the slice of the current word that falls inside this run.
   if (current && word && word.end > run.start && word.start < run.end) {
     const a = Math.max(run.start, word.start);
     const b = Math.min(run.end, word.end);
     return (
-      <RNText style={style} onPress={press} suppressHighlighting>
+      <RNText style={style} onPress={press} onLongPress={longPress} suppressHighlighting>
         {text.slice(run.start, a)}
         <RNText style={{ textDecorationLine: 'underline', textDecorationColor: theme.underline }}>
           {text.slice(a, b)}
@@ -173,7 +185,7 @@ function RunText({
     );
   }
   return (
-    <RNText style={style} onPress={press} suppressHighlighting>
+    <RNText style={style} onPress={press} onLongPress={longPress} suppressHighlighting>
       {text.slice(run.start, run.end)}
     </RNText>
   );
