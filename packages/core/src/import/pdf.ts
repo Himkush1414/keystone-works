@@ -77,6 +77,18 @@ export function classifyEdges(pages: readonly PdfPage[]): Map<string, EdgeKind> 
   return result;
 }
 
+/**
+ * Text as PDF extraction leaves it, made safe to store and speak: control characters dropped (a glyph with no
+ * Unicode mapping comes out as NUL, and Android's text stack ends a string at the first NUL, which cut
+ * paragraphs short) and a vowel sign or other combining mark rejoined to the letter a stray space separated
+ * it from (it would otherwise be drawn on a dotted circle, apart from its word).
+ */
+export function cleanPdfText(text: string): string {
+  return text
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\ufffe\uffff]/g, '')
+    .replace(/(\p{L}\p{M}*)[ \u00a0]+(?=\p{M})/gu, '$1');
+}
+
 /** Joins two lines, repairing a word broken by a line-end hyphen. */
 export function joinLines(left: string, right: string): string {
   const l = left.trimEnd();
@@ -96,10 +108,14 @@ interface Row extends PdfLine {
 
 /** Builds a document from positioned PDF lines. Throws ImportError('scanned') when no page has text. */
 export function buildPdfDocument(
-  pages: readonly PdfPage[],
+  input: readonly PdfPage[],
   meta: Omit<DocumentMeta, 'kind'> & { kind?: DocumentMeta['kind'] },
   outline: readonly PdfOutlineItem[] = [],
 ): DocumentDraft {
+  const pages = input.map((p) => ({
+    ...p,
+    lines: p.lines.map((l) => ({ ...l, text: cleanPdfText(l.text) })),
+  }));
   const textChars = pages.reduce((n, p) => n + p.lines.reduce((m, l) => m + l.text.trim().length, 0), 0);
   if (textChars === 0) throw new ImportError('scanned');
 
@@ -165,7 +181,8 @@ export function buildPdfDocument(
       (prev.page === r.page && r.y - prev.y > lineGap * 1.55) ||
       (prev.page === r.page && r.y < prev.y - lineGap * 0.5 && r.x > prev.x + columnWidth * 0.5) || // next column
       (!isHeading && r.x > leftEdge + bodySize * 1.2 && r.x < leftEdge + columnWidth * 0.3) || // first-line indent
-      (!isHeading && /[.!?:”"’)]$/.test(prev.text.trim()) && prev.width < columnWidth * 0.8);
+      // A short line ending a sentence ends its paragraph (। and ॥ end sentences in Devanagari).
+      (!isHeading && /[.!?:”"’)।॥]$/u.test(prev.text.trim()) && prev.width < columnWidth * 0.8);
     if (startsNew) {
       flush();
       current = { text: r.text, page: r.page, size: r.size, heading: isHeading };
@@ -209,7 +226,11 @@ function chaptersFor(blocks: readonly Block[], outline: readonly PdfOutlineItem[
       return chapters;
     }
   }
-  const heads = blocks.map((b, i) => ({ b, i })).filter(({ b }) => b.kind === 'heading' && b.level === 1);
+  // The biggest heading size that repeats: a book's title is often the only level-1 heading, with its
+  // chapters one size down (which used to leave the whole book as one chapter).
+  const all = blocks.map((b, i) => ({ b, i })).filter(({ b }) => b.kind === 'heading');
+  const level = [1, 2, 3, 4, 5, 6].find((l) => all.filter(({ b }) => b.level === l).length >= 2);
+  const heads = all.filter(({ b }) => b.level === level);
   if (heads.length >= 2) {
     return heads.map(({ b, i }, k) => ({ title: b.text, level: 1, blockStart: k === 0 ? 0 : i }));
   }

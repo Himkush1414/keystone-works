@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildPdfDocument, classifyEdges, joinLines, type PdfLine, type PdfPage } from '../src/import/pdf';
+import {
+  buildPdfDocument,
+  classifyEdges,
+  cleanPdfText,
+  joinLines,
+  type PdfLine,
+  type PdfPage,
+} from '../src/import/pdf';
 import { ImportError } from '../src/model';
 
 const H = 792;
@@ -107,5 +114,97 @@ describe('buildPdfDocument', () => {
 
   it('calls long PDFs books', () => {
     expect(buildPdfDocument(paper(61), { title: 'x' }).meta.kind).toBe('book');
+  });
+});
+
+describe('cleanPdfText', () => {
+  it('drops the NUL a glyph without a Unicode mapping turns into (Android cut text at the first one)', () => {
+    expect(cleanPdfText('आज इ\u0000द आइ\u0000 है')).toBe('आज इद आइ है');
+  });
+
+  it('rejoins a vowel sign that a stray space separated from its letter', () => {
+    expect(cleanPdfText('प्र ेमचंद')).toBe('प्रेमचंद');
+    expect(cleanPdfText('वृक्षा ें पर')).toBe('वृक्षाें पर');
+    // Ordinary spaces between words stay.
+    expect(cleanPdfText('आज ईद आई है।')).toBe('आज ईद आई है।');
+  });
+});
+
+/** A Hindi page: short lines ending with । close their paragraph, as a full stop does in English. */
+function hindiPage(): PdfPage {
+  const lines: PdfLine[] = [
+    line('रमज़ान के पूरे तीस रोज़ के बाद आज ईद आई है। कितना मनोहर, कितना', 100),
+    line('सुहावना प्रभात है।', 112, { width: 120 }),
+    line('गाँव में कितनी हलचल है। ईदगाह जाने की तैयारियाँ हो रही हैं। किसी', 124),
+    line('के कुरते में बटन नहीं है।', 136, { width: 160 }),
+  ];
+  return { width: W, height: H, lines };
+}
+
+describe('Hindi PDFs', () => {
+  it('ends a paragraph at a short line that ends with a danda', () => {
+    const d = buildPdfDocument([hindiPage()], { title: 'ईदगाह' });
+    expect(d.blocks.map((b) => b.text)).toEqual([
+      'रमज़ान के पूरे तीस रोज़ के बाद आज ईद आई है। कितना मनोहर, कितना सुहावना प्रभात है।',
+      'गाँव में कितनी हलचल है। ईदगाह जाने की तैयारियाँ हो रही हैं। किसी के कुरते में बटन नहीं है।',
+    ]);
+  });
+});
+
+describe('chapters without an outline', () => {
+  it('uses the biggest heading size that repeats, so a one-off title does not hide the chapters', () => {
+    const pages: PdfPage[] = [1, 2, 3].map((n) => ({
+      width: W,
+      height: H,
+      lines: [
+        ...(n === 1 ? [line('Pride and Prejudice', 90, { size: 26, width: 300 })] : []),
+        line(`Chapter ${n}`, 140, { size: 20, width: 120 }),
+        line('It is a truth universally acknowledged, that a single man in possession', 180),
+        line('of a good fortune must be in want of a wife.', 192, { width: 300 }),
+      ],
+    }));
+    const d = buildPdfDocument(pages, { title: 'P' });
+    expect(d.chapters.map((c) => c.title)).toEqual(['Chapter 1', 'Chapter 2', 'Chapter 3']);
+    expect(d.chapters[0]?.blockStart).toBe(0);
+  });
+});
+
+describe('a long book', () => {
+  /** 520 pages: running header, page number, 30 body lines each, a chapter every 20 pages. */
+  function book(): { pages: PdfPage[]; body: string[] } {
+    const body: string[] = [];
+    const pages = Array.from({ length: 520 }, (_, i): PdfPage => {
+      const n = i + 1;
+      const lines: PdfLine[] = [line('THE LONG BOOK', 30, { size: 8, width: 120 })];
+      let y = 80;
+      if (n % 20 === 1) {
+        const title = `Chapter ${(n - 1) / 20 + 1}`;
+        lines.push(line(title, y, { size: 18, width: 140 }));
+        body.push(title);
+        y += 40;
+      }
+      for (let k = 0; k < 30; k++, y += 12) {
+        const text = `Page ${n} line ${k} carries on the story of the lamp and the reader`;
+        lines.push(line(k === 29 ? `${text}.` : text, y, { width: k === 29 ? 300 : 460 }));
+        body.push(k === 29 ? `${text}.` : text);
+      }
+      lines.push(line(String(n), 770, { size: 8, width: 12, x: 300 }));
+      return { width: W, height: H, lines };
+    });
+    return { pages, body };
+  }
+
+  it('keeps every page and every character of the body; only page furniture is skipped', () => {
+    const { pages, body } = book();
+    const d = buildPdfDocument(pages, { title: 'Long' });
+    const spoken = d.blocks.filter((b) => b.skips.length === 0);
+    const squash = (s: string) => s.replace(/\s+/g, '');
+    expect(squash(spoken.map((b) => b.text).join(''))).toBe(squash(body.join('')));
+    expect(new Set(spoken.map((b) => b.page)).size).toBe(520);
+    const furniture = d.blocks.filter((b) => b.skips.length > 0);
+    expect(furniture.length).toBe(520 * 2);
+    expect(new Set(furniture.map((b) => b.skips[0]?.reason))).toEqual(new Set(['header', 'pageNumber']));
+    expect(d.chapters).toHaveLength(26);
+    expect(d.meta.kind).toBe('book');
   });
 });
