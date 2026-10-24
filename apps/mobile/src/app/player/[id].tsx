@@ -18,6 +18,7 @@ import {
 } from '@/player/session';
 import { useServices } from '@/services/context';
 import { playDocument } from '@/services/device';
+import { failureOf } from '@/player/failure';
 import { lookUpWord } from '@/player/meaning';
 import { DEFAULT_NARRATOR } from '@lamplight/core';
 
@@ -40,11 +41,19 @@ export default function PlayerRoute() {
   );
 
   const actions = useMemo<PlayerActions>(() => {
-    const failed = () =>
-      services.toast.getState().show({ message: t('errors.voiceUnavailable'), tone: 'danger' });
+    // Every failure is shown with its reason (PlayerScreen's banner), never swallowed.
+    const failed = (e: unknown) =>
+      services.player.getState().setFailure(failureOf(e, t('errors.voiceUnavailable')));
     const run = (p: Promise<unknown>) => void p.catch(failed);
     return {
-      play: () => run(LamplightEngine.play()),
+      // The native player may not hold this book (its load failed, or another book took over): load it first.
+      play: () =>
+        id &&
+        run(
+          services.player.getState().native.docId === id
+            ? LamplightEngine.play()
+            : playDocument(services, id, { autoplay: true }),
+        ),
       lookUpWord: (word, context) => lookUpWord(LamplightEngine, word, context),
       speak: (text, lang) => {
         const voice =
@@ -116,14 +125,15 @@ export default function PlayerRoute() {
           ),
         ),
       close: () => (router.canGoBack() ? router.back() : router.replace('/library')),
+      openDiagnostics: () => router.push('/settings/diagnostics'),
     };
   }, [services, t, id, content, item]);
 
   // Opening a document that isn't the one in the player starts it.
   useEffect(() => {
     if (!item || item.status !== 'ready' || loadedDoc === item.id) return;
-    playDocument(services, item.id).catch(() =>
-      services.toast.getState().show({ message: t('errors.voiceUnavailable'), tone: 'danger' }),
+    playDocument(services, item.id).catch((e: unknown) =>
+      services.player.getState().setFailure(failureOf(e, t('errors.voiceUnavailable'))),
     );
   }, [item, loadedDoc, services, t]);
 

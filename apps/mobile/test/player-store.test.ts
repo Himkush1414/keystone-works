@@ -81,6 +81,30 @@ describe('connectEngine', () => {
     (listeners.get('onState') as LamplightEngineEvents['onState'])(playing);
     expect(store.getState().native.playing).toBe(true);
     stop();
-    expect(removed).toBe(3);
+    expect(removed).toBe(4);
+  });
+
+  it('keeps the reason narration failed until audio flows again', () => {
+    const listeners = new Map<string, (e: never) => void>();
+    const engine = {
+      addListener<E extends keyof LamplightEngineEvents>(event: E, fn: LamplightEngineEvents[E]) {
+        listeners.set(event, fn as (e: never) => void);
+        return { remove: () => undefined };
+      },
+    };
+    const store = createPlayerStore();
+    connectEngine(store, engine, () => 1);
+    const failure = { code: 'runtime-error', message: 'The voice engine stopped with an error while speaking.' };
+    (listeners.get('onError') as LamplightEngineEvents['onError'])(failure);
+    expect(store.getState().failure).toEqual(failure);
+    // Still waiting for audio: the reason stays on screen.
+    (listeners.get('onState') as LamplightEngineEvents['onState'])({ ...playing, buffering: true });
+    expect(store.getState().failure).toEqual(failure);
+    (listeners.get('onState') as LamplightEngineEvents['onState'])(playing);
+    expect(store.getState().failure).toBeNull();
+    // A failure the engine reports in its state wins.
+    const error = { code: 'model-missing', message: 'The voice files are missing.', detail: 'x', at: 2 };
+    (listeners.get('onState') as LamplightEngineEvents['onState'])({ ...playing, error });
+    expect(store.getState().failure).toEqual({ code: 'model-missing', message: 'The voice files are missing.' });
   });
 });

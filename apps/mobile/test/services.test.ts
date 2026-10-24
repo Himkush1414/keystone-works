@@ -45,11 +45,11 @@ describe('createServices', () => {
     const services = createServices(testDb(), fake.engine, () => 10);
     expect(services.settings.getState().hydrated).toBe(true);
     expect(services.library.getState().items).toEqual([]);
-    expect([...fake.listeners.keys()].sort()).toEqual(['onProgress', 'onSentence', 'onState']);
+    expect([...fake.listeners.keys()].sort()).toEqual(['onError', 'onProgress', 'onSentence', 'onState']);
     (fake.listeners.get('onProgress') as LamplightEngineEvents['onProgress'])({ index: 4, positionMs: 20 });
     expect(services.player.getState().progress).toEqual({ index: 4, positionMs: 20, at: 10 });
     services.dispose();
-    expect(fake.removed()).toBe(3);
+    expect(fake.removed()).toBe(4);
   });
 });
 

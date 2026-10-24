@@ -1,5 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import type {
+  EngineErrorEvent,
   LamplightEngineEvents,
   PlayerState,
   ProgressEvent,
@@ -30,6 +31,9 @@ export interface PlayerMirror {
   progress: { index: number; positionMs: number; at: number };
   /** Bumped when the timeline learns a measured length, so selectors recompute. */
   timelineVersion: number;
+  /** Why narration isn't playing, in plain words; cleared once it plays again. */
+  failure: EngineErrorEvent | null;
+  setFailure(failure: EngineErrorEvent | null): void;
   setQueue(queue: QueueFile | null): void;
   onState(state: PlayerState, now: number): void;
   onProgress(e: ProgressEvent, now: number): void;
@@ -43,6 +47,10 @@ export function createPlayerStore(): StoreApi<PlayerMirror> {
     timeline: null,
     progress: { index: 0, positionMs: 0, at: 0 },
     timelineVersion: 0,
+    failure: null,
+    setFailure(failure) {
+      set({ failure });
+    },
     setQueue(queue) {
       set({ queue, timeline: queue ? new Timeline(queue) : null, timelineVersion: 0 });
     },
@@ -53,7 +61,12 @@ export function createPlayerStore(): StoreApi<PlayerMirror> {
         state.playing !== prev.native.playing || state.index !== prev.progress.index
           ? { index: state.index, positionMs: state.positionMs, at: now }
           : prev.progress;
-      set({ native: state, progress: anchor });
+      const failure = state.error
+        ? { code: state.error.code, message: state.error.message }
+        : state.playing && !state.buffering
+          ? null
+          : prev.failure;
+      set({ native: state, progress: anchor, failure });
     },
     onProgress(e, now) {
       set({ progress: { index: e.index, positionMs: e.positionMs, at: now } });
@@ -98,6 +111,7 @@ export function connectEngine(
     engine.addListener('onState', (e) => s.onState(e, clock())),
     engine.addListener('onProgress', (e) => s.onProgress(e, clock())),
     engine.addListener('onSentence', (e) => s.onSentence(e, clock())),
+    engine.addListener('onError', (e) => s.setFailure(e)),
   ];
   return () => subs.forEach((sub) => sub.remove());
 }
