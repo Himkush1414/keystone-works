@@ -5,11 +5,13 @@
 import { NativeModule, registerWebModule } from 'expo';
 import type {
   Calibration,
+  Diagnostics,
   EngineInfo,
   LamplightEngineEvents,
   PlayerState,
   QueueFile,
   Quality,
+  VoiceTest,
 } from './types';
 
 const queues = new Map<string, QueueFile>();
@@ -142,6 +144,13 @@ class LamplightEngineWeb extends NativeModule<LamplightEngineEvents> {
   async cancelPrepare() {}
   async getState() {
     return { ...this.state };
+  }
+  async getDiagnostics(): Promise<Diagnostics> {
+    const web = 'not available on the web';
+    return { engine: web, player: { ...this.state }, volume: web, device: web, app: web, log: [] };
+  }
+  async runVoiceTest(): Promise<VoiceTest> {
+    return { ok: true, renderMs: 0, audioMs: 0 };
   }
   async lastPosition() {
     return null;

@@ -11,7 +11,6 @@ import android.os.BatteryManager
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
-import android.util.Log
 import app.lamplight.engine.core.Chunks
 import app.lamplight.engine.core.Pacing
 import app.lamplight.engine.core.Performance
@@ -74,6 +73,10 @@ class PlaybackController private constructor(private val context: Context) : Str
     @Volatile private var sleepAtMs: Long? = null
     @Volatile private var sleepAtIndex: Int? = null
     private var fading = false
+    /** Why narration isn't producing sound, until a piece renders again; shown to the listener as is. */
+    @Volatile var failure: EngineFailure? = null
+        private set
+    private var failures = 0
 
     private var player: StreamPlayer? = null
 
@@ -156,7 +159,7 @@ class PlaybackController private constructor(private val context: Context) : Str
             .putFloat("rtf4", r4.toFloat())
             .putFloat("rtf8", r8.toFloat())
             .apply()
-        Log.i(TAG, "calibrated rtf4=$r4 rtf8=$r8 live=$live studio=$studio threads=${host.threads}")
+        EngineLog.i(TAG, "calibrated rtf4=$r4 rtf8=$r8 live=$live studio=$studio threads=${host.threads}")
         return mapOf("rtf4" to r4, "rtf8" to r8, "liveSteps" to live, "studioSteps" to studio, "threads" to host.threads)
     }
 
@@ -186,6 +189,7 @@ class PlaybackController private constructor(private val context: Context) : Str
         }
         speed = playbackSpeed
         quality = q
+        EngineLog.i(TAG, "queue ${spec.docId}: ${spec.segments.size} sentences, from $startIndex, quality $q")
         ensurePlayer().setSpeed(speed)
         player?.start(playhead)
         emitState()
@@ -206,17 +210,32 @@ class PlaybackController private constructor(private val context: Context) : Str
         }
     }
 
-    fun play() {
-        if (queue == null) return
-        if (!requestFocus()) return
+    /** Starts or resumes narration; returns why it can't, instead of doing nothing. Main thread. */
+    fun play(): EngineFailure? {
+        if (queue == null) return EngineFailure(
+            "no-queue", "Nothing is loaded to play yet. Close the book and open it again.", "play() before loadQueue()",
+        ).also { EngineLog.w(TAG, "play: no queue loaded") }
+        if (!requestFocus()) return EngineFailure(
+            "audio-focus",
+            "Another app is holding the audio (a call, or another player). Stop it, then press play.",
+            "requestAudioFocus was not granted",
+        ).also { EngineLog.w(TAG, "play: audio focus refused") }
+        try {
+            ensurePlayer().play()
+        } catch (e: Exception) {
+            EngineLog.e(TAG, "play: audio output failed", e)
+            return EngineFailure("audio-output", "Lamplight couldn't open the phone's audio output.", e.toString())
+        }
         playing = true
         registerNoisy()
-        ensurePlayer().play()
         startTicker()
+        EngineLog.i(TAG, "play at sentence $currentIndex (engine ${host.status.name.lowercase()})")
         emitState()
+        return null
     }
 
     fun pause() {
+        if (playing) EngineLog.i(TAG, "pause at sentence $currentIndex")
         playing = false
         player?.pause()
         persistPosition()
@@ -241,6 +260,7 @@ class PlaybackController private constructor(private val context: Context) : Str
     fun seekTo(index: Int) {
         val q = queue ?: return
         val target = index.coerceIn(0, q.segments.lastIndex)
+        EngineLog.i(TAG, "seek to sentence $target")
         lock.withLock {
             playhead = target
             currentIndex = target
@@ -317,7 +337,24 @@ class PlaybackController private constructor(private val context: Context) : Str
         "sleepAt" to sleepAtMs,
         "sleepAtIndex" to sleepAtIndex,
         "engineLoaded" to host.isLoaded,
+        "engineStatus" to host.status.name.lowercase(),
+        "error" to failure?.toMap(),
     )
+
+    /** What the player knows about itself, for the Diagnostics screen. */
+    fun diagnostics(): Map<String, Any?> {
+        val (rendered, segments) = lock.withLock { renders.keys.sorted() to (queue?.segments?.size ?: 0) }
+        return mapOf(
+            "segments" to segments,
+            "rendered" to rendered.take(40),
+            "focus" to focus,
+            "audio" to player?.stats(),
+            "lastRender" to lastRender,
+            "pacing" to mapOf("rtf4" to pacing.rtf(4), "rtf8" to pacing.rtf(8), "samples" to pacing.measured),
+            "steps" to mapOf("live" to liveSteps, "studio" to studioSteps, "target" to targetSteps()),
+            "service" to PlaybackService.running,
+        )
+    }
 
     /** Estimated position in the whole document and its estimated total length, for media controls. */
     fun mediaPositionMs(): Pair<Long, Long> = lock.withLock {
@@ -392,6 +429,10 @@ class PlaybackController private constructor(private val context: Context) : Str
 
     override fun onUnderrun(index: Int) = setBuffering(true)
 
+    /** Timings of the last piece rendered (whole and per stage), for the Diagnostics screen. */
+    @Volatile var lastRender: Map<String, Long> = emptyMap()
+        private set
+
     override fun onEnded() {
         main.post {
             playing = false
@@ -410,9 +451,15 @@ class PlaybackController private constructor(private val context: Context) : Str
             } catch (e: InterruptedException) {
                 return
             } catch (e: Throwable) {
-                Log.e(TAG, "render failed", e)
-                main.post { listeners.forEach { it.onError("render", e.message ?: e.javaClass.simpleName) } }
-                Thread.sleep(500)
+                // Never silent: the listener sees why, and the next attempt waits longer each time.
+                val f = host.failure?.takeIf { host.status == EngineHost.Status.FAILED } ?: EngineFailure.of(e)
+                EngineLog.e(TAG, "render failed (${f.code}, attempt ${failures + 1})", e)
+                failure = f
+                failures++
+                if (buffering) buffering = false
+                main.post { listeners.forEach { it.onError(f.code, f.message) } }
+                emitState()
+                Thread.sleep(minOf(10_000L, 500L shl minOf(failures - 1, 5)))
             }
         }
     }
@@ -477,7 +524,15 @@ class PlaybackController private constructor(private val context: Context) : Str
             val t0 = System.nanoTime()
             val raw = engineLock.withLock { host.engine().synthesize(piece.text, piece.lang, voice, job.steps, BASE_RATE * seg.rate) }
             val workMs = (System.nanoTime() - t0) / 1_000_000
-            if (raw.dropped.isNotEmpty()) Log.d(TAG, "dropped characters ${raw.dropped}")
+            if (raw.dropped.isNotEmpty()) EngineLog.i(TAG, "dropped characters ${raw.dropped}")
+            lastRender = mapOf("sentence" to i.toLong(), "piece" to k.toLong(), "steps" to job.steps.toLong(), "workMs" to workMs, "audioMs" to raw.durationMs) +
+                host.engine().lastTimings
+            if (failure != null || failures > 0) {
+                EngineLog.i(TAG, "rendering again after ${failures} failure(s)")
+                failure = null
+                failures = 0
+                emitState()
+            }
             pacing.record(job.steps, workMs, raw.durationMs, piece.text.length)
             val seed = Seed.forSentence(piece.text, voice.id, job.steps)
             val performed = Performance.apply(raw.samples, raw.sampleRate, seg.gainDb, seg.breath && k == 0, seed)
@@ -602,8 +657,10 @@ class PlaybackController private constructor(private val context: Context) : Str
         )
         .setWillPauseWhenDucked(true)
         .setOnAudioFocusChangeListener({ change ->
+            EngineLog.i(TAG, "audio focus change $change")
             when (change) {
                 AudioManager.AUDIOFOCUS_LOSS -> {
+                    focus = "lost"
                     resumeOnGain = false
                     pause()
                 }
@@ -620,10 +677,16 @@ class PlaybackController private constructor(private val context: Context) : Str
         }, main)
         .build()
 
-    private fun requestFocus(): Boolean =
-        audio.requestAudioFocus(focusRequest) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    @Volatile var focus = "none"
+        private set
 
-    private fun abandonFocus() = audio.abandonAudioFocusRequest(focusRequest)
+    private fun requestFocus(): Boolean =
+        (audio.requestAudioFocus(focusRequest) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED).also { focus = if (it) "granted" else "refused" }
+
+    private fun abandonFocus() {
+        audio.abandonAudioFocusRequest(focusRequest)
+        focus = "none"
+    }
 
     private val noisy = object : BroadcastReceiver() {
         override fun onReceive(c: Context?, i: Intent?) {
@@ -654,6 +717,7 @@ class PlaybackController private constructor(private val context: Context) : Str
     private fun ensurePlayer(): StreamPlayer = player ?: StreamPlayer(SAMPLE_RATE, this).also { player = it }
 
     private fun setBuffering(b: Boolean) {
+        if (b != buffering) EngineLog.i(TAG, if (b) "waiting for sentence $currentIndex" else "audio flowing at sentence $currentIndex")
         buffering = b
         emitState()
     }

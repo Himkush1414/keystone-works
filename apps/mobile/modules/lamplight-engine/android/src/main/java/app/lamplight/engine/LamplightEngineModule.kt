@@ -1,6 +1,13 @@
 package app.lamplight.engine
 
+import android.Manifest
+import android.app.ActivityManager
 import android.content.ComponentName
+import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.media.AudioManager
+import android.os.Build
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
@@ -10,6 +17,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
+import expo.modules.kotlin.Promise
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -73,10 +81,23 @@ class LamplightEngineModule : Module() {
             controller.updateSegments(from, spec.segments)
         }
 
-        AsyncFunction("play") { runOnMain { controller.play() } }
+        // Resolves once narration has started, or rejects with the reason it can't (code + plain message).
+        AsyncFunction("play") { promise: Promise ->
+            runOnMain {
+                val failure = try {
+                    controller.play()
+                } catch (e: Throwable) {
+                    EngineFailure.of(e)
+                }
+                if (failure == null) promise.resolve(null) else promise.reject(CodedException(failure.code, failure.message, null))
+            }
+        }
         AsyncFunction("pause") { runOnMain { controller.pause() } }
         AsyncFunction("stop") { runOnMain { controller.stop() } }
         AsyncFunction("seekTo") { index: Int -> controller.seekTo(index) }
+
+        AsyncFunction("getDiagnostics") { diagnostics() }
+        AsyncFunction("runVoiceTest") { runVoiceTest() }
         AsyncFunction("skip") { delta: Int -> controller.skip(delta) }
         AsyncFunction("skipChapter") { delta: Int -> controller.skipChapter(delta) }
         AsyncFunction("setSpeed") { speed: Double -> controller.setPlaybackSpeed(speed.toFloat()) }
@@ -125,6 +146,88 @@ class LamplightEngineModule : Module() {
             controller.removeListener(listener)
             mediaController?.let { MediaController.releaseFuture(it) }
             stopPreview()
+        }
+    }
+
+    /** Everything the Diagnostics screen shows; each part is read on its own so one failure can't hide the rest. */
+    private fun diagnostics(): Map<String, Any?> {
+        val host = controller.host
+        val am = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val activity = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val mem = ActivityManager.MemoryInfo().also { activity.getMemoryInfo(it) }
+        val pkg = runCatching { context.packageManager.getPackageInfo(context.packageName, 0) }.getOrNull()
+        fun part(block: () -> Any?): Any? = try {
+            block()
+        } catch (e: Throwable) {
+            "unavailable: ${e.javaClass.simpleName}: ${e.message}"
+        }
+        return mapOf(
+            "engine" to part {
+                mapOf(
+                    "status" to host.status.name.lowercase(),
+                    "error" to host.failure?.toMap(),
+                    "runtimeVersion" to host.runtimeVersion,
+                    "threads" to host.threads,
+                    "loadTimings" to host.loadTimings,
+                    "modelVersion" to PlaybackController.MODEL_VERSION,
+                    "modelLocation" to host.modelLocation,
+                    "modelFiles" to host.modelFiles(),
+                )
+            },
+            "player" to part { controller.snapshot() + controller.diagnostics() },
+            "volume" to part {
+                mapOf(
+                    "media" to am.getStreamVolume(AudioManager.STREAM_MUSIC),
+                    "max" to am.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
+                    "muted" to am.isStreamMute(AudioManager.STREAM_MUSIC),
+                )
+            },
+            "device" to part {
+                mapOf(
+                    "manufacturer" to Build.MANUFACTURER,
+                    "model" to Build.MODEL,
+                    "android" to Build.VERSION.RELEASE,
+                    "sdk" to Build.VERSION.SDK_INT,
+                    "abis" to Build.SUPPORTED_ABIS.toList(),
+                    "is64Bit" to android.os.Process.is64Bit(),
+                    "cores" to Runtime.getRuntime().availableProcessors(),
+                    "memoryClassMb" to activity.memoryClass,
+                    "totalMemMb" to mem.totalMem / (1 shl 20),
+                    "availMemMb" to mem.availMem / (1 shl 20),
+                    "lowRam" to activity.isLowRamDevice,
+                )
+            },
+            "app" to part {
+                mapOf(
+                    "version" to pkg?.versionName,
+                    "debuggable" to ((context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0),
+                    "notifications" to (Build.VERSION.SDK_INT < 33 ||
+                        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED),
+                )
+            },
+            "log" to EngineLog.tail(50),
+        )
+    }
+
+    /** Speaks one short sentence through the real engine and the speaker, timing each stage. */
+    private fun runVoiceTest(): Map<String, Any?> {
+        val t0 = System.nanoTime()
+        return try {
+            val engine = controller.host.engine()
+            val loadMs = (System.nanoTime() - t0) / 1_000_000
+            val t1 = System.nanoTime()
+            val audio = engine.synthesize("This is Lamplight, reading to you.", "en", controller.host.voice("F1"), 4)
+            val renderMs = (System.nanoTime() - t1) / 1_000_000
+            runOnMain {
+                if (controller.playing) controller.pause()
+                playPreview(audio.samples, audio.sampleRate)
+            }
+            EngineLog.i("LamplightEngine", "voice test: load $loadMs ms, render $renderMs ms for ${audio.durationMs} ms of speech")
+            mapOf("ok" to true, "loadMs" to loadMs, "renderMs" to renderMs, "audioMs" to audio.durationMs, "stages" to engine.lastTimings)
+        } catch (e: Throwable) {
+            val f = EngineFailure.of(e)
+            EngineLog.e("LamplightEngine", "voice test failed", e)
+            mapOf("ok" to false, "error" to f.toMap())
         }
     }
 

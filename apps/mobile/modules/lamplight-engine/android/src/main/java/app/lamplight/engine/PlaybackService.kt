@@ -16,6 +16,8 @@ class PlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
+        running = true
+        EngineLog.i("LamplightService", "media session service started")
         val controller = PlaybackController.get(this)
         val player = LamplightPlayer(mainLooper, controller)
         val launch = packageManager.getLaunchIntentForPackage(packageName)?.let {
@@ -40,6 +42,13 @@ class PlaybackService : MediaSessionService() {
             release()
         }
         session = null
+        running = false
+        EngineLog.i("LamplightService", "media session service stopped")
         super.onDestroy()
+    }
+
+    companion object {
+        @Volatile var running = false
+            private set
     }
 }

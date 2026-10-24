@@ -5,7 +5,6 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.PlaybackParams
 import android.os.Process
-import android.util.Log
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -95,7 +94,7 @@ class StreamPlayer(
         try {
             track.playbackParams = PlaybackParams().setSpeed(speed).setPitch(1f).allowDefaults()
         } catch (e: IllegalArgumentException) {
-            Log.w(TAG, "speed $speed not supported", e)
+            EngineLog.w(TAG, "speed $speed not supported", e)
         }
     }
 
@@ -183,15 +182,37 @@ class StreamPlayer(
         }
     }
 
+    @Volatile private var lastWriteError = 0
+
+    /** The audio output as the Diagnostics screen shows it. */
+    fun stats(): Map<String, Any?> = mapOf(
+        "state" to when (track.playState) {
+            AudioTrack.PLAYSTATE_PLAYING -> "playing"
+            AudioTrack.PLAYSTATE_PAUSED -> "paused"
+            else -> "stopped"
+        },
+        "framesWritten" to framesWritten.get().toDouble(),
+        "framesPlayed" to playedFrames().toDouble(),
+        "underruns" to track.underrunCount,
+        "writingSentence" to nextIndex,
+        "lastWriteError" to lastWriteError,
+        "device" to track.routedDevice?.let { "${it.productName} (type ${it.type})" },
+        "sampleRate" to sampleRate,
+    )
+
     private fun writeFully(samples: FloatArray, gen: Int): Boolean {
         var off = 0
         while (off < samples.size) {
             if (!running.get() || gen != generation) return false
             val n = track.write(samples, off, samples.size - off, AudioTrack.WRITE_BLOCKING)
             if (n < 0) {
-                Log.e(TAG, "AudioTrack write failed: $n")
+                lastWriteError = n
+                EngineLog.e(TAG, "AudioTrack write failed: $n")
                 return false
             }
+            // A paused track takes nothing once its buffer is full; a blocking write then returns 0 at once,
+            // and looping straight back kept a core busy for as long as narration stayed paused.
+            if (n == 0) Thread.sleep(PAUSED_POLL_MS)
             off += n
             framesWritten.addAndGet(n.toLong())
         }
@@ -213,5 +234,6 @@ class StreamPlayer(
 
     companion object {
         private const val TAG = "LamplightAudio"
+        private const val PAUSED_POLL_MS = 20L
     }
 }

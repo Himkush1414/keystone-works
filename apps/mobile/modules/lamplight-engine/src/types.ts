@@ -28,6 +28,48 @@ export interface PlayerState {
   sleepAt: number | null;
   sleepAtIndex: number | null;
   engineLoaded: boolean;
+  /** notLoaded | loading | ready | failed */
+  engineStatus?: string;
+  /** Why narration isn't producing sound, until it renders again. */
+  error?: EngineFailure | null;
+}
+
+/** A failure the engine reports: a stable code for support and a message written for the listener. */
+export interface EngineFailure {
+  code: string;
+  message: string;
+  detail: string;
+  at: number;
+}
+
+/** What the Diagnostics screen shows; each part is a string when it couldn't be read. */
+export interface Diagnostics {
+  engine:
+    | {
+        status: string;
+        error: EngineFailure | null;
+        runtimeVersion: string;
+        threads: number;
+        loadTimings: Record<string, number>;
+        modelVersion: string;
+        modelLocation: string;
+        modelFiles: { name: string; bytes: number; present: boolean; stored: boolean }[];
+      }
+    | string;
+  player: (PlayerState & Record<string, unknown>) | string;
+  volume: { media: number; max: number; muted: boolean } | string;
+  device: Record<string, unknown> | string;
+  app: Record<string, unknown> | string;
+  log: string[];
+}
+
+export interface VoiceTest {
+  ok: boolean;
+  loadMs?: number;
+  renderMs?: number;
+  audioMs?: number;
+  stages?: Record<string, number>;
+  error?: EngineFailure;
 }
 
 export interface ProgressEvent {

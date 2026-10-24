@@ -21,6 +21,7 @@ import { formatDuration } from '@/i18n/translate';
 import { useLocale, useT } from '@/i18n/useLocale';
 import { useServices } from '@/services/context';
 import { useTheme } from '@/theme/theme';
+import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
 import { IconButton } from '@/ui/IconButton';
 import { ProgressBar } from '@/ui/ProgressBar';
@@ -51,6 +52,8 @@ export interface PlayerActions {
   /** Says a short text in the narrator's voice (the meaning, while paused). */
   speak(text: string, lang: AnswerLanguage): void;
   close(): void;
+  /** Settings › Diagnostics, from the failure banner. */
+  openDiagnostics(): void;
 }
 
 export interface PlayerScreenProps {
@@ -78,7 +81,7 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
   const { player, settings } = useServices();
   const mirror = useStore(player);
   const reader = useStore(settings);
-  const { name, space } = useTheme();
+  const { name, space, colors } = useTheme();
   const { width } = useWindowDimensions();
   const locale = useLocale();
   const t = useT();
@@ -191,6 +194,17 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
           { paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.lg, gap: space.sm },
         ]}
       >
+        {mirror.failure ? (
+          <View
+            accessibilityRole="alert"
+            style={[styles.failure, { borderColor: colors.danger, padding: space.sm, gap: space.sm }]}
+          >
+            <Text variant="callout" style={{ color: theme.ink, flex: 1 }}>
+              {mirror.failure.message}
+            </Text>
+            <Button label={t('diagnostics.details')} kind="quiet" onPress={actions.openDiagnostics} />
+          </View>
+        ) : null}
         <View style={{ gap: space.xs }}>
           <ProgressBar
             value={progress}
@@ -339,6 +353,7 @@ const styles = StyleSheet.create({
   bar: { flexDirection: 'row', alignItems: 'center', minHeight: 56 },
   titles: { flex: 1 },
   controls: {},
+  failure: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   speed: { minWidth: 56, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
   chip: { flexDirection: 'row', alignItems: 'center', minHeight: 24 },

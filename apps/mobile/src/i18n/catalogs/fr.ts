@@ -130,6 +130,23 @@ export const fr: Catalog = {
     playNow: 'Lire maintenant',
     added: { one: 'Ajouté à votre bibliothèque', other: '{n} éléments ajoutés à votre bibliothèque' },
   },
+  diagnostics: {
+    title: 'Diagnostic',
+    desc: 'Ce que fait le moteur vocal, et un rapport à envoyer si la lecture ne fonctionne pas.',
+    details: 'Détails',
+    engine: 'Moteur vocal',
+    player: 'Lecteur',
+    volume: 'Volume',
+    device: 'Appareil',
+    app: 'App',
+    log: 'Journal (50 dernières lignes)',
+    test: 'Tester la voix',
+    refresh: 'Actualiser',
+    share: 'Partager le rapport',
+    testOk: '{audio} de parole, produite en {render}.',
+    testFailed: 'Le test de la voix a échoué : {reason}',
+    volumeMuted: 'Le volume multimédia est coupé, la lecture est donc muette. Montez le volume.',
+  },
   errors: {
     drm: 'Ce livre est protégé par DRM, Lamplight ne peut donc pas l’ouvrir.',
     drmHint:
@@ -294,6 +311,7 @@ export const fr: Catalog = {
   },
   settings: {
     title: 'Réglages',
+    advanced: 'Avancé',
     appearance: 'Apparence',
     playback: 'Lecture',
     voices: 'Voix et qualité',

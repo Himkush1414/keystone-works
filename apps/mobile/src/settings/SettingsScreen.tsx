@@ -17,7 +17,7 @@ import { ChoiceRow, SwitchRow } from '@/ui/SettingRows';
 import { Text } from '@/ui/Text';
 
 const TIERS: LanguageTier[] = ['best', 'good', 'basic'];
-function Section({ title, children }: { title: string; children: ReactNode }) {
+export function Section({ title, children }: { title: string; children: ReactNode }) {
   const { colors, space, radius } = useTheme();
   return (
     <View style={{ gap: space.xs }}>
@@ -43,7 +43,15 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /** Settings (R-SE-1): every choice applies at once and is kept in the app database. */
-export function SettingsScreen({ onBack, onPronunciation }: { onBack(): void; onPronunciation(): void }) {
+export function SettingsScreen({
+  onBack,
+  onPronunciation,
+  onDiagnostics,
+}: {
+  onBack(): void;
+  onPronunciation(): void;
+  onDiagnostics(): void;
+}) {
   const { settings } = useServices();
   const s = useStore(settings);
   const update = s.update;
@@ -211,6 +219,15 @@ export function SettingsScreen({ onBack, onPronunciation }: { onBack(): void; on
           <Text variant="callout" tone="soft">
             {t('privacy.network')}
           </Text>
+        </Section>
+
+        <Section title={t('settings.advanced')}>
+          <OptionRow
+            icon="info"
+            label={t('diagnostics.title')}
+            hint={t('diagnostics.desc')}
+            onPress={onDiagnostics}
+          />
         </Section>
 
         <Section title={t('settings.about')}>
