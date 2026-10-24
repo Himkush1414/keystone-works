@@ -25,6 +25,7 @@ class LamplightEngineModule : Module() {
     private val controller get() = PlaybackController.get(context)
     private var mediaController: ListenableFuture<MediaController>? = null
     private var preview: AudioTrack? = null
+    private val lexicon by lazy { Lexicon(context.applicationContext) }
 
     private val listener = object : PlaybackController.Listener {
         override fun onState(state: Map<String, Any?>) = sendEvent("onState", state)
@@ -103,6 +104,8 @@ class LamplightEngineModule : Module() {
             audio.durationMs.toDouble()
         }
         AsyncFunction("stopPreview") { runOnMain { stopPreview() } }
+        AsyncFunction("lookupWord") { request: String -> lexicon.lookup(request) }
+        AsyncFunction("warmDictionary") { lexicon.warm() }
 
         AsyncFunction("synthesizeToFile") { text: String, lang: String, voice: String, steps: Int, path: String ->
             val audio = controller.host.engine().synthesize(text, lang, controller.host.voice(voice), steps)
