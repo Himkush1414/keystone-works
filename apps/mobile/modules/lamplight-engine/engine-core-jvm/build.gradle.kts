@@ -11,17 +11,25 @@ kotlin {
     jvmToolchain(17)
 }
 
+// The queue file format (Queue.kt) is plain Kotlin and org.json, so it's compiled here too and tested.
+val queueSources = layout.buildDirectory.dir("generated/queue")
+val copyQueueSource by tasks.registering(Copy::class) {
+    from("../android/src/main/java/app/lamplight/engine") { include("Queue.kt") }
+    into(queueSources)
+}
+
 sourceSets {
     main {
         kotlin.srcDir("../android/src/main/java/app/lamplight/engine/core")
+        kotlin.srcDir(copyQueueSource)
     }
 }
 
 dependencies {
     implementation("com.microsoft.onnxruntime:onnxruntime:1.31.0")
+    implementation("org.json:json:20250517")
     testImplementation(platform("org.junit:junit-bom:5.13.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.json:json:20250517")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

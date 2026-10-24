@@ -211,6 +211,27 @@ class PlaybackController private constructor(private val context: Context) : Str
     }
 
     /** Starts or resumes narration; returns why it can't, instead of doing nothing. Main thread. */
+    /**
+     * Fills sentences that were queued as pending (a long book is queued around where listening starts, then
+     * completed in the background). Unlike [updateSegments], nothing already rendered is dropped.
+     */
+    fun fillSegments(segments: List<Segment>) {
+        lock.withLock {
+            val q = queue ?: return
+            val merged = q.segments.toMutableList()
+            var filled = 0
+            for (s in segments) if (s.index in merged.indices && merged[s.index].pending) {
+                merged[s.index] = s
+                durationsMs[s.index] = estimateMs(s)
+                filled++
+            }
+            if (filled == 0) return
+            queue = QueueSpec(q.docId, q.title, q.author, q.artworkUri, merged, q.chapterStarts, q.chapterTitles)
+            work.signalAll()
+            ready.signalAll()
+        }
+    }
+
     fun play(): EngineFailure? {
         if (queue == null) return EngineFailure(
             "no-queue", "Nothing is loaded to play yet. Close the book and open it again.", "play() before loadQueue()",
@@ -422,6 +443,7 @@ class PlaybackController private constructor(private val context: Context) : Str
     /** Loads sentence [index] from the disk cache if it's there (decoding takes a few ms, outside the lock). */
     private fun readFromCache(index: Int, gen: Int): Boolean {
         val seg = lock.withLock { if (renders[index] == null) queue?.segments?.getOrNull(index) else null } ?: return false
+        if (seg.pending) return false
         val (steps, samples) = cache.best(seg, cachedSteps())?.let { (steps, key) -> cache.read(key)?.let { steps to it } } ?: return false
         lock.withLock {
             if (gen != generation || renders[index] != null) return false
@@ -491,8 +513,9 @@ class PlaybackController private constructor(private val context: Context) : Str
                 target = targetSteps(),
                 pacing = pacing,
             )
-            // A sentence the player is already in can't be swapped for a better render.
-            if (plan != null && !(plan.upgrade && plan.index <= (player?.writingIndex ?: -1))) {
+            // A sentence the player is already in can't be swapped for a better render; a pending one isn't
+            // written yet (the app is still queueing it), so the renderer waits for it.
+            if (plan != null && !q.segments[plan.index].pending && !(plan.upgrade && plan.index <= (player?.writingIndex ?: -1))) {
                 return Job(generation, q.segments[plan.index], plan.steps, plan.upgrade, null)
             }
         }
@@ -501,7 +524,7 @@ class PlaybackController private constructor(private val context: Context) : Str
         if (isTooHot()) return null
         while (p.next < p.spec.segments.size) {
             val s = p.spec.segments[p.next]
-            if (!s.isSilent && !cache.has(cache.key(s, p.steps))) return Job(generation, s, p.steps, false, p)
+            if (!s.isSilent && !s.pending && !cache.has(cache.key(s, p.steps))) return Job(generation, s, p.steps, false, p)
             p.next++
         }
         prepare = null
@@ -735,7 +758,7 @@ class PlaybackController private constructor(private val context: Context) : Str
     }
 
     private fun estimateMs(s: Segment): Long =
-        if (s.isSilent) 0
+        if (s.isSilent || s.pending) 0
         else pacing.estimateAudioMs(s.text.length, s.rate).coerceAtLeast(400) + if (s.breath) Performance.BREATH_MS else 0
 
     private fun isCharging(): Boolean {

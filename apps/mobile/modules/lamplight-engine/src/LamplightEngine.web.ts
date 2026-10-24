@@ -66,6 +66,7 @@ class LamplightEngineWeb extends NativeModule<LamplightEngineEvents> {
   }
 
   async updateSegments() {}
+  async fillSegments() {}
 
   private durationOf(i: number) {
     const text = this.queue?.segments[i]?.text ?? '';

@@ -20,6 +20,8 @@ declare class LamplightEngineModule extends NativeModule<LamplightEngineEvents> 
     quality: Quality,
   ): Promise<void>;
   updateSegments(json: string): Promise<void>;
+  /** Fills sentences queued as pending, without dropping audio already made. */
+  fillSegments(json: string): Promise<void>;
   /** Rejects with a code and a plain-words message when narration can't start. */
   play(): Promise<void>;
   pause(): Promise<void>;
