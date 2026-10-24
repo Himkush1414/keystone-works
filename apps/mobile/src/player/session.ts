@@ -13,6 +13,7 @@ import {
 } from '@lamplight/core';
 import type { StoreApi } from 'zustand/vanilla';
 import type { Quality, QueueFile } from '../../modules/lamplight-engine/src/types';
+import type { QueueSegment } from '@lamplight/core';
 import {
   loadContent,
   mergeCharacters,
@@ -24,7 +25,7 @@ import type { Db } from '../data/db';
 import { getItem, markOpened, updateSettings, type LibraryItem } from '../data/library';
 import { getPosition, rulesFor, savePosition } from '../data/userdata';
 import type { Settings } from '../state/settings';
-import { toQueueFile } from './queue';
+import { forPlayer, isComplete, partialQueueFile, toQueueFile, withSegments, type QueueMeta } from './queue';
 import type { PlayerMirror } from './store';
 
 export type SessionSettings = Pick<
@@ -62,14 +63,21 @@ export function cleanSettingsFor(
   return { ...defaultCleanSettings(item.kind, fromPdf), url: !speakUrls, ...own };
 }
 
-/** Everything the native player needs to narrate `documentId` from where the listener left off. */
-export function planSession(
-  db: Db,
-  documentId: string,
-  settings: SessionSettings,
-  /** Start at this sentence instead of the saved position (a search result). */
-  at?: number,
-): SessionPlan {
+/** What building a document's queue needs, read once; the queue itself is built in ranges from it. */
+export interface QueueContext {
+  item: LibraryItem;
+  content: DocumentContent;
+  options: QueueOptions;
+  meta: QueueMeta;
+  /** Hash of every input of the queue: a queue built with the same key can be reused as is. */
+  key: string;
+}
+
+/** Bump when the queue format or how it's built changes, so cached queues are rebuilt. */
+const QUEUE_FORMAT = 1;
+
+/** Reads the document and the listener's choices, and settles Cast's voices (saved the first time). */
+export function queueContext(db: Db, documentId: string, settings: SessionSettings): QueueContext {
   const item = getItem(db, documentId);
   if (!item || item.status !== 'ready') throw new Error(`document ${documentId} is not ready to play`);
   const content = loadContent(db, documentId);
@@ -109,14 +117,52 @@ export function planSession(
     expressive: settings.expressive,
     breaths: settings.breaths,
   };
-  const segments = buildQueue({ ...content, language: item.language }, options);
-  const queue = toQueueFile(
-    { docId: item.id, title: item.title, author: item.author, artworkUri: item.coverPath },
-    content.chapters,
-    content.sentences,
-    segments,
+  const meta = { docId: item.id, title: item.title, author: item.author, artworkUri: item.coverPath };
+  const key = hashKey(
+    JSON.stringify([
+      QUEUE_FORMAT,
+      item.addedAt,
+      item.language,
+      content.sentences.length,
+      content.blocks.length,
+      // Cast's automatic picks are saved on first play; the assignment in `options` already carries them.
+      content.characters.map(({ autoVoiceId: _, ...c }) => c),
+      meta,
+      options,
+    ]),
   );
+  return { item, content, options, meta, key };
+}
 
+/** Sentences built per step when a queue is built in the background (yielding to the UI in between). */
+export const QUEUE_CHUNK = 200;
+/** Sentences built before narration starts, when no finished queue is cached. */
+export const QUEUE_WINDOW = 40;
+/** Neighbours built on each side of a range so its pauses and breaths match a whole-book build. */
+const OVERLAP = 8;
+
+/** The queue segments for sentences `from` (inclusive) to `to` (exclusive), as a whole-book build makes them. */
+export function buildRange(ctx: QueueContext, from: number, to: number): QueueSegment[] {
+  const n = ctx.content.sentences.length;
+  const a = Math.max(0, from);
+  const b = Math.min(n, to);
+  if (b <= a) return [];
+  return buildQueue(
+    { ...ctx.content, language: ctx.item.language },
+    { ...ctx.options, from: Math.max(0, a - OVERLAP), to: Math.min(n, b + OVERLAP) },
+  ).filter((s) => s.i >= a && s.i < b);
+}
+
+/** Where narration starts: the saved position (from the start of that sentence), or `at`. */
+export function startPoint(
+  db: Db,
+  ctx: QueueContext,
+  settings: SessionSettings,
+  at?: number,
+): Omit<SessionPlan, 'queue'> {
+  const { item } = ctx;
+  const documentId = item.id;
+  const segments = ctx.content.sentences;
   // Resume where the listener stopped, from the start of that sentence (R-PL-9); a finished item restarts.
   const pos = getPosition(db, documentId);
   const finished = item.finishedAt !== null || (pos?.progress ?? 0) >= 1;
@@ -125,12 +171,37 @@ export function planSession(
   const startIndex = at === undefined ? resumeAt : Math.min(Math.max(0, at), last);
   const startMs = at !== undefined || finished || !pos || settings.rewindOnResume ? 0 : pos.offsetMs;
   return {
-    queue,
     startIndex,
     startMs,
     speed: item.settings.speed ?? settings.defaultSpeed,
     quality: item.settings.quality ?? settings.quality,
   };
+}
+
+/** Everything the native player needs to narrate `documentId` from where the listener left off (whole book). */
+export function planSession(
+  db: Db,
+  documentId: string,
+  settings: SessionSettings,
+  /** Start at this sentence instead of the saved position (a search result). */
+  at?: number,
+): SessionPlan {
+  const ctx = queueContext(db, documentId, settings);
+  const segments = buildQueue({ ...ctx.content, language: ctx.item.language }, ctx.options);
+  const queue = toQueueFile(ctx.meta, ctx.content.chapters, ctx.content.sentences, segments);
+  return { queue: { ...queue, key: ctx.key }, ...startPoint(db, ctx, settings, at) };
+}
+
+/** 64-bit FNV-1a, as hex: cheap, and plenty to tell two sets of queue inputs apart. */
+export function hashKey(text: string): string {
+  let h1 = 0x811c9dc5;
+  let h2 = 0x01000193 ^ text.length;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193);
+    h2 = Math.imul(h2 ^ c, 0x5bd1e995);
+  }
+  return (h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0');
 }
 
 export interface SessionDeps {
@@ -145,26 +216,142 @@ export interface SessionDeps {
       quality: Quality,
     ): Promise<void>;
     play(): Promise<void>;
+    fillSegments?(json: string): Promise<void>;
   };
   /** Writes the queue JSON where the native player can read it; returns the path. */
   writeQueue(docId: string, json: string): Promise<string>;
+  /** The queue JSON written last for this document, if any (a finished one is reused when its key matches). */
+  readQueue?(docId: string): Promise<string | null>;
+  /** Lets the screen draw and touches land between steps of background work. */
+  yieldToUi?(): Promise<void>;
   now?(): number;
 }
 
-/** Opens a document in the player and starts narrating. */
+/** The newest build per document; an older one (the book was reopened, or re-voiced) stops at its next step. */
+const builds = new Map<string, number>();
+const nextBuild = (docId: string) => {
+  const n = (builds.get(docId) ?? 0) + 1;
+  builds.set(docId, n);
+  return n;
+};
+const defaultYield = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+/** A finished queue cached for these exact inputs, or null. */
+async function cachedQueue(
+  deps: Pick<SessionDeps, 'readQueue'>,
+  ctx: QueueContext,
+): Promise<QueueFile | null> {
+  const json = await deps.readQueue?.(ctx.item.id).catch(() => null);
+  if (!json) return null;
+  try {
+    const q = JSON.parse(json) as QueueFile;
+    return q.key === ctx.key && q.segments.length === ctx.content.sentences.length ? q : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Opens a document in the player and starts narrating. A queue cached from an earlier build is used as is;
+ * otherwise only the sentences around the start are built before narration begins, and the rest are built
+ * in steps that yield to the UI (a long book took minutes to build in one go on a phone), then cached.
+ */
 export async function startDocument(
   deps: SessionDeps,
   documentId: string,
   settings: SessionSettings,
   opts: { autoplay?: boolean; at?: number } = {},
 ): Promise<SessionPlan> {
-  const plan = planSession(deps.db, documentId, settings, opts.at);
-  const path = await deps.writeQueue(documentId, JSON.stringify(plan.queue));
-  deps.store.getState().setQueue(plan.queue);
-  await deps.engine.loadQueue(path, plan.startIndex, plan.startMs, plan.speed, plan.quality);
+  const build = nextBuild(documentId);
+  const ctx = queueContext(deps.db, documentId, settings);
+  const start = startPoint(deps.db, ctx, settings, opts.at);
+  const cached = await cachedQueue(deps, ctx);
+  const count = ctx.content.sentences.length;
+  const queue =
+    cached ??
+    partialQueueFile(
+      ctx.meta,
+      ctx.content.chapters,
+      ctx.content.sentences,
+      buildRange(ctx, start.startIndex, start.startIndex + QUEUE_WINDOW),
+      count,
+    );
+  const path = await deps.writeQueue(documentId, forPlayer(queue));
+  deps.store.getState().setQueue(queue);
+  await deps.engine.loadQueue(path, start.startIndex, start.startMs, start.speed, start.quality);
   markOpened(deps.db, documentId, deps.now?.() ?? Date.now());
   if (opts.autoplay ?? true) await deps.engine.play();
-  return plan;
+  const plan = { queue, ...start };
+  if (cached) return plan;
+  const complete = await fillQueue(deps, ctx, queue, start.startIndex + QUEUE_WINDOW, build);
+  return complete ? { ...plan, queue: complete } : plan;
+}
+
+/**
+ * Builds the sentences still pending, from `from` to the end and then from the start, a chunk at a time, and
+ * hands each chunk to the player and the store. Returns the finished queue (also cached), or null when a
+ * newer build of this document took over.
+ */
+async function fillQueue(
+  deps: SessionDeps,
+  ctx: QueueContext,
+  first: QueueFile,
+  from: number,
+  build: number,
+): Promise<QueueFile | null> {
+  const count = ctx.content.sentences.length;
+  const yieldToUi = deps.yieldToUi ?? defaultYield;
+  const ranges: [number, number][] = [];
+  for (let a = Math.max(0, from); a < count; a += QUEUE_CHUNK)
+    ranges.push([a, Math.min(count, a + QUEUE_CHUNK)]);
+  const head = Math.min(count, Math.max(0, from - QUEUE_WINDOW));
+  for (let a = 0; a < head; a += QUEUE_CHUNK) ranges.push([a, Math.min(head, a + QUEUE_CHUNK)]);
+  let queue = first;
+  for (const [a, b] of ranges) {
+    await yieldToUi();
+    if (builds.get(ctx.item.id) !== build) return null;
+    const segments = buildRange(ctx, a, b).filter((s) => queue.segments[s.i]?.pending);
+    if (!segments.length) continue;
+    queue = withSegments(queue, segments);
+    // Only while this book is the one loaded: a closed or replaced player has nothing to fill.
+    if (deps.store.getState().queue?.docId === ctx.item.id) {
+      deps.store.getState().setQueue(queue);
+      await deps.engine.fillSegments?.(forPlayer(queue, segments));
+    }
+  }
+  if (!isComplete(queue)) return null;
+  const done = { ...queue, key: ctx.key };
+  await deps.writeQueue(ctx.item.id, forPlayer(done));
+  return done;
+}
+
+/**
+ * Builds and caches a document's whole queue in the background (after import), so the first open needs no
+ * building at all. Stops quietly when the book is opened meanwhile (opening builds it itself).
+ */
+export async function prepareQueue(
+  deps: Pick<SessionDeps, 'db' | 'writeQueue' | 'readQueue' | 'yieldToUi' | 'store'>,
+  documentId: string,
+  settings: SessionSettings,
+): Promise<boolean> {
+  const build = nextBuild(documentId);
+  const ctx = queueContext(deps.db, documentId, settings);
+  if (await cachedQueue(deps, ctx)) return true;
+  const empty = partialQueueFile(
+    ctx.meta,
+    ctx.content.chapters,
+    ctx.content.sentences,
+    [],
+    ctx.content.sentences.length,
+  );
+  const done = await fillQueue(
+    { ...deps, engine: { loadQueue: async () => undefined, play: async () => undefined } },
+    ctx,
+    empty,
+    0,
+    build,
+  );
+  return done !== null;
 }
 
 /**
@@ -210,6 +397,9 @@ export interface RevoiceDeps {
     updateSegments(json: string): Promise<void>;
     setQuality(quality: Quality): Promise<void>;
   };
+  /** Caches the rebuilt queue so the next open needs no building. */
+  writeQueue?(docId: string, json: string): Promise<string>;
+  yieldToUi?(): Promise<void>;
 }
 
 /**
@@ -238,10 +428,30 @@ export async function requeue(
   settings: SessionSettings,
   current: number,
 ): Promise<void> {
-  const { queue } = planSession(deps.db, documentId, settings);
-  deps.store.getState().setQueue(queue);
-  const next = { ...queue, segments: queue.segments.filter((s) => s.i > current) };
-  if (next.segments.length) await deps.engine.updateSegments(JSON.stringify(next));
+  // Built a chunk at a time from the next sentence on, so the change is heard at once and the screen never
+  // freezes; then the sentences before, so the app's copy (and the cache) match.
+  const build = nextBuild(documentId);
+  const ctx = queueContext(deps.db, documentId, settings);
+  const count = ctx.content.sentences.length;
+  const yieldToUi = deps.yieldToUi ?? defaultYield;
+  const prior = deps.store.getState().queue;
+  let queue =
+    prior?.docId === documentId && prior.segments.length === count
+      ? prior
+      : partialQueueFile(ctx.meta, ctx.content.chapters, ctx.content.sentences, [], count);
+  const ranges: [number, number][] = [];
+  for (let a = current + 1; a < count; a += QUEUE_CHUNK) ranges.push([a, Math.min(count, a + QUEUE_CHUNK)]);
+  for (let a = 0; a <= Math.min(current, count - 1); a += QUEUE_CHUNK)
+    ranges.push([a, Math.min(current + 1, count, a + QUEUE_CHUNK)]);
+  for (const [k, [a, b]] of ranges.entries()) {
+    if (k > 0) await yieldToUi();
+    if (builds.get(documentId) !== build) return;
+    const segments = buildRange(ctx, a, b);
+    queue = withSegments(queue, segments);
+    deps.store.getState().setQueue(queue);
+    if (a > current) await deps.engine.updateSegments(forPlayer(queue, segments));
+  }
+  if (isComplete(queue)) await deps.writeQueue?.(documentId, forPlayer({ ...queue, key: ctx.key }));
 }
 
 /** Gives one character its own voice (null: back to the automatic choice) and applies it from the next sentence. */

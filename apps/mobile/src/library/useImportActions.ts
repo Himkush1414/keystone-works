@@ -5,7 +5,7 @@ import { importBundledSample, pickAndImport } from '@/import/device';
 import type { Sample } from '@/import/samples';
 import { useT } from '@/i18n/useLocale';
 import { useServices } from '@/services/context';
-import { playDocument } from '@/services/device';
+import { playDocument, prepareQueueSoon } from '@/services/device';
 import { importMessage } from './importMessage';
 
 /** The ways into the library (file, paste, sample), with the toasts and player hand-off they share. */
@@ -27,6 +27,7 @@ export function useImportActions() {
       .getState()
       .runImport(() => pickAndImport(services.db))
       .then((summary) => {
+        summary?.added.forEach((id) => prepareQueueSoon(services, id));
         const message = summary
           ? importMessage(summary, t, (id) => {
               if (getItem(services.db, id)?.status === 'ready') playDocument(services, id).catch(voiceFailed);
