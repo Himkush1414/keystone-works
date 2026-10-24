@@ -65,6 +65,13 @@ export default function PlayerRoute() {
       pause: () => run(LamplightEngine.pause()),
       skip: (delta) => run(LamplightEngine.skip(delta)),
       seekTo: (index) => run(LamplightEngine.seekTo(index)),
+      playFrom: (index) =>
+        id &&
+        run(
+          services.player.getState().native.docId === id
+            ? LamplightEngine.playFrom(index)
+            : playDocument(services, id, { autoplay: true, at: index }),
+        ),
       setSpeed: (speed) => run(LamplightEngine.setSpeed(speed)),
       setSleepTimer: (minutes, endOfChapter) => run(LamplightEngine.setSleepTimer(minutes, endOfChapter)),
       setVoice: (voice) =>
