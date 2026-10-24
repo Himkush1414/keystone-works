@@ -11,7 +11,9 @@ import java.io.File
 
 /**
  * The reading-gap test with the real model: every piece is actually rendered on this machine, and its render
- * time is scaled to stand in for slower phones. Prints the numbers; asserts no stall after the first sentence.
+ * time is scaled to stand in for phones of known speed, named by how long an 8-step render takes relative to
+ * the speech (0.3x is a fast phone; 1.5x can't keep up at 8 steps at all). Scaling from this machine's own
+ * measured speed keeps the result the same on a laptop and a CI runner. Prints the numbers; asserts no stall.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ReadingGapModelTest {
@@ -20,6 +22,7 @@ class ReadingGapModelTest {
     private lateinit var engine: Supertonic
     private lateinit var voice: VoiceStyle
     private val measured = HashMap<Pair<Piece, Int>, Pair<Long, Long>>()
+    private var rtf8 = 0.0
 
     @BeforeAll
     fun load() {
@@ -32,6 +35,8 @@ class ReadingGapModelTest {
         engine = Supertonic(env, sessions, EngineConfig.parse(File(d, "tts.json").readText()), Assets.indexer(File(d, "indexer.bin").readBytes()))
         voice = Assets.voices(File(d, "voices.bin").readBytes()).first { it.id == "F1" }
         engine.synthesize("Warm up.", "en", voice, 2)
+        val sample = Piece("It is a truth universally acknowledged, that a single man must be in want of a wife.", "en", 0)
+        rtf8 = (1..2).map { measure(sample.copy(gapMs = it), 8).let { (audio, work) -> work.toDouble() / audio } }.min()
     }
 
     @AfterAll
@@ -49,7 +54,9 @@ class ReadingGapModelTest {
     @Test
     fun `real renders, scaled to slower phones, never stall`() {
         val lines = Passage.lines()
-        for (slowdown in listOf(1.0, 3.0, 6.0, 10.0)) {
+        println("this machine renders 8 steps at ${"%.2f".format(rtf8)}x real time")
+        for (phone in listOf(0.3, 0.6, 1.0, 1.5, 2.5)) {
+            val slowdown = phone / rtf8
             val pacing = Pacing()
             val paced = GapSim(lines) { p, s ->
                 val (audio, work) = measure(p, s)
@@ -61,10 +68,10 @@ class ReadingGapModelTest {
                 val (audio, work) = measure(p, s)
                 GapSim.Rendered(audio, (work * slowdown).toLong())
             }.run(GapSim.fixed(8) { it.text.length * 1000L / 15 })
-            println("reading gap (real model, ${slowdown}x this machine's render time)")
+            println("reading gap (real model, a phone rendering 8 steps at ${phone}x real time)")
             println("  before (fixed 8 steps, whole sentences): $fixed")
             println("  after  (paced, cut at clause breaks):    $paced")
-            assertEquals(0, paced.stallCount, "slowdown $slowdown: $paced")
+            assertEquals(0, paced.stallCount, "phone ${phone}x: $paced")
         }
     }
 }
