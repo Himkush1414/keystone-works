@@ -151,6 +151,7 @@ class LamplightEngineWeb extends NativeModule<LamplightEngineEvents> {
   async getState() {
     return { ...this.state };
   }
+  async setSystemBars() {}
   async getDiagnostics(): Promise<Diagnostics> {
     const web = 'not available on the web';
     return { engine: web, player: { ...this.state }, volume: web, device: web, app: web, log: [] };
