@@ -10,9 +10,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Streams generated speech through one AudioTrack. A writer thread pulls each sentence's PCM in order from
- * [source] (blocking until it's rendered), writes it with the pause that follows it, and records which frames
- * belong to which sentence so the playhead can be mapped back to text precisely. Speed changes use the
+ * Streams generated speech through one AudioTrack. A writer thread pulls each sentence's pieces in order from
+ * [source] (blocking until each is rendered, so a long sentence starts as soon as its first clause is ready),
+ * writes each with the pause that follows it, and records which frames belong to which sentence so the
+ * playhead can be mapped back to text precisely. Speed changes use the
  * platform's pitch-preserving time stretch.
  */
 class StreamPlayer(
@@ -20,15 +21,17 @@ class StreamPlayer(
     private val source: Source,
 ) {
     interface Source {
-        /** Blocks until sentence [index] is ready; returns null when [index] is past the end. */
-        fun awaitPcm(index: Int): Pcm?
+        /** Blocks until piece [part] of sentence [index] is ready; returns null when [index] is past the end. */
+        fun awaitPart(index: Int, part: Int): Pcm?
         fun onUnderrun(index: Int)
         fun onEnded()
     }
 
-    class Pcm(val index: Int, val samples: FloatArray, val pauseMs: Int)
+    /** One piece of a sentence and the silence after it; [last] ends the sentence. */
+    class Pcm(val index: Int, val samples: FloatArray, val pauseMs: Int, val last: Boolean = true)
 
-    private data class Span(val index: Int, val startFrame: Long, val frames: Long, val speechFrames: Long)
+    /** Frames of one piece; [offsetFrames] is where the piece starts within its sentence. */
+    private data class Span(val index: Int, val startFrame: Long, val frames: Long, val speechFrames: Long, val offsetFrames: Long)
 
     private val track: AudioTrack = AudioTrack.Builder()
         .setAudioAttributes(
@@ -58,6 +61,9 @@ class StreamPlayer(
     private val running = AtomicBoolean(false)
     private var writer: Thread? = null
     @Volatile private var nextIndex = 0
+
+    /** The sentence the writer is on: its audio may already be partly in the track. */
+    val writingIndex: Int get() = nextIndex
     @Volatile private var generation = 0
     @Volatile private var volume = 1f
 
@@ -128,7 +134,7 @@ class StreamPlayer(
                 if (spans[mid].startFrame <= played) lo = mid else hi = mid - 1
             }
             val s = spans[lo]
-            val into = (played - s.startFrame).coerceIn(0, s.speechFrames)
+            val into = s.offsetFrames + (played - s.startFrame).coerceIn(0, s.speechFrames)
             return s.index to into * 1000 / sampleRate
         }
     }
@@ -144,19 +150,32 @@ class StreamPlayer(
     private fun writeLoop(gen: Int) {
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
         try {
+            var part = 0
+            var offset = 0L
             while (running.get() && gen == generation) {
                 val index = nextIndex
-                val pcm = source.awaitPcm(index) ?: run {
+                val pcm = source.awaitPart(index, part) ?: run {
                     drainThenEnd(gen)
                     return
                 }
                 if (gen != generation) return
                 val pause = (pcm.pauseMs.toLong() * sampleRate / 1000).toInt()
                 val start = framesWritten.get()
-                synchronized(spans) { spans.add(Span(index, start, pcm.samples.size.toLong() + pause, pcm.samples.size.toLong())) }
+                val frames = pcm.samples.size.toLong()
+                // Within a sentence the clock runs through the gaps between pieces; it stops at the sentence's end.
+                synchronized(spans) {
+                    spans.add(Span(index, start, frames + pause, if (pcm.last) frames else frames + pause, offset))
+                }
                 if (!writeFully(pcm.samples, gen)) return
                 if (pause > 0 && !writeFully(FloatArray(pause), gen)) return
-                nextIndex = index + 1
+                if (pcm.last) {
+                    nextIndex = index + 1
+                    part = 0
+                    offset = 0
+                } else {
+                    part++
+                    offset += frames + pause
+                }
                 trimSpans()
             }
         } catch (_: InterruptedException) {
