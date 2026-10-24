@@ -1,9 +1,11 @@
 import { answer, type AnswerLanguage, type Meaning } from '@lamplight/core';
-import * as Haptics from 'expo-haptics';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Text as RNText, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Text as RNText, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { useStore } from 'zustand';
 import { useT } from '@/i18n/useLocale';
+import { useServices } from '@/services/context';
+import { haptic } from '@/ui/haptics';
 import { useTheme } from '@/theme/theme';
 import { textStyle } from '@/ui/Text';
 import { Button } from '@/ui/Button';
@@ -45,6 +47,7 @@ export function MeaningSheet({
   const [lookup, setLookup] = useState<Lookup>({ state: 'idle' });
   const [lang, setLang] = useState<AnswerLanguage>(initialLanguage);
   const asked = useRef(0);
+  const hapticsOn = useStore(useServices().settings, (s) => s.haptics);
   const tokens = useMemo(() => sentenceTokens(sentence), [sentence]);
 
   // A new sentence starts with nothing chosen.
@@ -57,7 +60,7 @@ export function MeaningSheet({
   const choose = (k: number) => {
     const token = tokens[k];
     if (!token?.word) return;
-    if (Platform.OS !== 'web') void Haptics.selectionAsync().catch(() => undefined);
+    if (hapticsOn) haptic('select');
     setWord(k);
     setLookup({ state: 'loading' });
     const ticket = ++asked.current;
