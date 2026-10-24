@@ -74,7 +74,9 @@ describe('tapping a sentence', () => {
 
   it('never offers the skipped part of a sentence as its own tap target', () => {
     const { db, id } = seed(ENGLISH);
-    const shown = tappable(db, id).map((t) => t.shown).join(' ');
+    const shown = tappable(db, id)
+      .map((t) => t.shown)
+      .join(' ');
     expect(shown).not.toContain('https://');
   });
 
