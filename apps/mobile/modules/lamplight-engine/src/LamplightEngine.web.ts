@@ -177,9 +177,13 @@ class LamplightEngineWeb extends NativeModule<LamplightEngineEvents> {
   async synthesizeToFile(): Promise<number> {
     throw new Error('Audio export is not available on the web');
   }
-  async extractPdf(): Promise<string> {
+  async openPdf(): Promise<string> {
     throw new Error('PDF import is not available on the web');
   }
+  async pdfPages(): Promise<string> {
+    return '[]';
+  }
+  async closePdf() {}
 }
 
 export default registerWebModule(LamplightEngineWeb, 'LamplightEngine');

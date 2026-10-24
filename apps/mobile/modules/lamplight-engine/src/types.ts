@@ -133,13 +133,18 @@ export interface QueueFile {
   }[];
 }
 
-export interface PdfExtraction {
-  pages: {
-    width: number;
-    height: number;
-    lines: { text: string; x: number; y: number; width: number; size: number }[];
-  }[];
+/** An open PDF (openPdf); its pages are read with pdfPages. */
+export interface PdfOpened {
+  handle: number;
+  pageCount: number;
   outline: { title: string; page: number; level: number }[];
   title: string | null;
   author: string | null;
+}
+
+/** One page's text lines (pdfPages), positions in PDF points from the top left. */
+export interface PdfPageLines {
+  width: number;
+  height: number;
+  lines: { text: string; x: number; y: number; width: number; size: number }[];
 }
