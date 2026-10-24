@@ -94,7 +94,10 @@ describe('connectEngine', () => {
     };
     const store = createPlayerStore();
     connectEngine(store, engine, () => 1);
-    const failure = { code: 'runtime-error', message: 'The voice engine stopped with an error while speaking.' };
+    const failure = {
+      code: 'runtime-error',
+      message: 'The voice engine stopped with an error while speaking.',
+    };
     (listeners.get('onError') as LamplightEngineEvents['onError'])(failure);
     expect(store.getState().failure).toEqual(failure);
     // Still waiting for audio: the reason stays on screen.
@@ -105,6 +108,9 @@ describe('connectEngine', () => {
     // A failure the engine reports in its state wins.
     const error = { code: 'model-missing', message: 'The voice files are missing.', detail: 'x', at: 2 };
     (listeners.get('onState') as LamplightEngineEvents['onState'])({ ...playing, error });
-    expect(store.getState().failure).toEqual({ code: 'model-missing', message: 'The voice files are missing.' });
+    expect(store.getState().failure).toEqual({
+      code: 'model-missing',
+      message: 'The voice files are missing.',
+    });
   });
 });

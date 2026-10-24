@@ -32,15 +32,18 @@ export function diagnosticsSections(d: Diagnostics): DiagnosticsSection[] {
       ? [['error', d.engine]]
       : [
           ...rows(d.engine, ['modelFiles', 'error']),
-          ['error', d.engine.error ? `${d.engine.error.code}: ${d.engine.error.message} (${d.engine.error.detail})` : '—'],
-          ...d.engine.modelFiles.map(
-            (f): [string, string] => [
-              f.name,
-              f.present
-                ? `${(f.bytes / MB).toFixed(1)} MB${f.stored ? '' : ' (compressed: loaded into memory)'}`
-                : 'MISSING',
-            ],
-          ),
+          [
+            'error',
+            d.engine.error
+              ? `${d.engine.error.code}: ${d.engine.error.message} (${d.engine.error.detail})`
+              : '—',
+          ],
+          ...d.engine.modelFiles.map((f): [string, string] => [
+            f.name,
+            f.present
+              ? `${(f.bytes / MB).toFixed(1)} MB${f.stored ? '' : ' (compressed: loaded into memory)'}`
+              : 'MISSING',
+          ]),
         ];
   return [
     { key: 'engine', rows: engine },

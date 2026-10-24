@@ -5,7 +5,12 @@ import { diagnosticsReport, diagnosticsSections, isSilenced } from '../src/setti
 const failed: Diagnostics = {
   engine: {
     status: 'failed',
-    error: { code: 'model-missing', message: 'The voice files are missing.', detail: 'FileNotFoundException: engine/vocoder.onnx', at: 1 },
+    error: {
+      code: 'model-missing',
+      message: 'The voice files are missing.',
+      detail: 'FileNotFoundException: engine/vocoder.onnx',
+      at: 1,
+    },
     runtimeVersion: '1.31.0',
     threads: 4,
     loadTimings: { runtime: 3, duration_predictor: 40 },

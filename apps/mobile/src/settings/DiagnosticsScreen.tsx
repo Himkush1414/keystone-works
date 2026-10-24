@@ -63,7 +63,9 @@ export function DiagnosticsScreen({ load, test, onBack }: DiagnosticsProps) {
           {t('diagnostics.title')}
         </Text>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: gutter, paddingBottom: space.x5, gap: space.xl }}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: gutter, paddingBottom: space.x5, gap: space.xl }}
+      >
         <Text variant="callout" tone="soft">
           {t('diagnostics.desc')}
         </Text>
@@ -104,7 +106,11 @@ export function DiagnosticsScreen({ load, test, onBack }: DiagnosticsProps) {
                     <Text variant="meta" tone="soft" style={styles.label}>
                       {label}
                     </Text>
-                    <Text variant="meta" selectable style={[styles.value, { fontFamily: MONO, color: colors.ink }]}>
+                    <Text
+                      variant="meta"
+                      selectable
+                      style={[styles.value, { fontFamily: MONO, color: colors.ink }]}
+                    >
                       {value}
                     </Text>
                   </View>
