@@ -63,7 +63,7 @@ export function rowMeta(item: LibraryItem, locale: Locale, speed = 1, withAuthor
     state === 'importing'
       ? translate(locale, 'library.importing')
       : state === 'failed'
-        ? translate(locale, 'library.failed')
+        ? translate(locale, item.errorCode === 'scanned' ? 'library.scanned' : 'library.failed')
         : state === 'finished'
           ? translate(locale, 'library.finished')
           : state === 'new'
@@ -74,5 +74,10 @@ export function rowMeta(item: LibraryItem, locale: Locale, speed = 1, withAuthor
                   estimatedListeningMs(item.wordCount, speed) * (1 - item.progress),
                 ),
               });
-  return [withAuthor ? item.author : null, status].filter(Boolean).join(' · ');
+  // A long PDF plays from its first pages while the rest is read.
+  const loading =
+    state !== 'failed' && item.loading
+      ? translate(locale, 'library.readingPages', { done: item.loading.pages, total: item.loading.of })
+      : null;
+  return [withAuthor ? item.author : null, status, loading].filter(Boolean).join(' · ');
 }

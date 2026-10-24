@@ -18,15 +18,26 @@ val copyQueueSource by tasks.registering(Copy::class) {
     into(queueSources)
 }
 
+// The PDF line extractor is written against PDFBox-Android; the same source compiles against Apache PDFBox
+// once the package names are swapped (the two share their API).
+val pdfSources = layout.buildDirectory.dir("generated/pdf")
+val copyPdfSources by tasks.registering(Copy::class) {
+    from("../android/src/main/java/app/lamplight/engine/pdf")
+    into(pdfSources)
+    filter { line: String -> line.replace("com.tom_roush.pdfbox", "org.apache.pdfbox") }
+}
+
 sourceSets {
     main {
         kotlin.srcDir("../android/src/main/java/app/lamplight/engine/core")
         kotlin.srcDir(copyQueueSource)
+        kotlin.srcDir(copyPdfSources)
     }
 }
 
 dependencies {
     implementation("com.microsoft.onnxruntime:onnxruntime:1.31.0")
+    implementation("org.apache.pdfbox:pdfbox:2.0.27")
     implementation("org.json:json:20250517")
     testImplementation(platform("org.junit:junit-bom:5.13.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -69,6 +80,7 @@ tasks.test {
         systemProperty("lamplight.engine.dir", assetsDir.get().asFile.absolutePath)
     }
     systemProperty("lamplight.parity", file("src/test/resources/parity.json").absolutePath)
+    project.findProperty("pdfs")?.let { systemProperty("lamplight.pdfs", it.toString()) }
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = true

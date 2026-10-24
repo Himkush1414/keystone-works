@@ -28,6 +28,8 @@ export interface LibraryItem {
   errorCode: string | null;
   wordCount: number;
   sentenceCount: number;
+  /** A PDF still being read: its first pages are ready to play, the rest are coming. */
+  loading: { pages: number; of: number } | null;
   settings: DocumentSettings;
   addedAt: number;
   openedAt: number | null;
@@ -52,6 +54,8 @@ interface DocumentRow {
   error_code: string | null;
   word_count: number;
   sentence_count: number;
+  pages_loaded: number | null;
+  pages_total: number | null;
   settings_json: string;
   added_at: number;
   opened_at: number | null;
@@ -89,6 +93,8 @@ const toItem = (r: DocumentRow): LibraryItem => ({
   errorCode: r.error_code,
   wordCount: r.word_count,
   sentenceCount: r.sentence_count,
+  loading:
+    r.pages_loaded !== null && r.pages_total !== null ? { pages: r.pages_loaded, of: r.pages_total } : null,
   settings: parseSettings(r.settings_json),
   addedAt: r.added_at,
   openedAt: r.opened_at,
@@ -190,7 +196,7 @@ export function saveContent(
   db: Db,
   id: string,
   doc: PreparedDocument,
-  extra: { coverPath?: string } = {},
+  extra: { coverPath?: string; loading?: { pages: number; of: number } } = {},
 ): void {
   const { draft, sentences } = doc;
   db.transaction(() => {
@@ -246,7 +252,8 @@ export function saveContent(
     });
     db.run(
       `UPDATE documents SET kind = ?, title = ?, author = ?, site_name = ?, published_at = ?, language = ?, cover_path = coalesce(?, cover_path),
-         word_count = ?, sentence_count = ?, status = 'ready', error_code = NULL WHERE id = ?`,
+         word_count = ?, sentence_count = ?, status = 'ready', error_code = NULL, pages_loaded = ?, pages_total = ?
+       WHERE id = ?`,
       [
         draft.meta.kind,
         draft.meta.title,
@@ -257,14 +264,24 @@ export function saveContent(
         extra.coverPath ?? null,
         doc.wordCount,
         sentences.length,
+        extra.loading?.pages ?? null,
+        extra.loading?.of ?? null,
         id,
       ],
     );
   });
 }
 
+/** How far a PDF still being read has got (the library shows it). */
+export function setPagesLoaded(db: Db, id: string, pages: number, of: number): void {
+  db.run('UPDATE documents SET pages_loaded = ?, pages_total = ? WHERE id = ?', [pages, of, id]);
+}
+
 export function markFailed(db: Db, id: string, code: string): void {
-  db.run("UPDATE documents SET status = 'failed', error_code = ? WHERE id = ?", [code, id]);
+  db.run(
+    "UPDATE documents SET status = 'failed', error_code = ?, pages_loaded = NULL, pages_total = NULL WHERE id = ?",
+    [code, id],
+  );
 }
 
 export function markOpened(db: Db, id: string, now = Date.now()): void {

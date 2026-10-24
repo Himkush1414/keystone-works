@@ -213,6 +213,21 @@ const CONVERSATION_GAP = 3;
  * non-paragraph blocks should be passed as empty strings so indices line up.
  */
 export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysis {
+  const steps = castSteps(blocks, lang);
+  for (;;) {
+    const r = steps.next();
+    if (r.done) return r.value;
+  }
+}
+
+/** Paragraphs analysed between pauses of [castSteps]. */
+const CAST_STEP = 200;
+
+/**
+ * [analyseCast] in steps: the generator pauses every few hundred paragraphs, so a caller on the UI thread can
+ * let the screen draw in between, and returns the analysis when done.
+ */
+export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<void, CastAnalysis> {
   const base = lang.slice(0, 2);
   const pat = tagPatterns(base);
   const chars = new Map<string, Character>();
@@ -220,10 +235,19 @@ export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysi
   const attributions: Attribution[] = [];
   const recent: string[] = []; // characters mentioned or speaking, most recent last
 
+  // Each name in the text is looked up against every character and alias; on a phone's JavaScript engine
+  // (Hermes, no JIT) recomputing these keys for every lookup made Cast take over ten seconds on a long book.
+  const aliasKeys = new Map<string, string>();
+  const aliasKey = (alias: string) => {
+    let k = aliasKeys.get(alias);
+    if (k === undefined) aliasKeys.set(alias, (k = canonicalKey(alias).key));
+    return k;
+  };
   const findKnown = (raw: string) => {
     const key = canonicalKey(raw).key;
+    const id = slug(key);
     const matches = [...chars.values()].filter(
-      (c) => c.id === slug(key) || c.aliases.some((a) => keysMatch(key, canonicalKey(a).key)),
+      (c) => c.id === id || c.aliases.some((a) => keysMatch(key, aliasKey(a))),
     );
     // Several Bennets: the one mentioned most recently.
     return matches.sort((a, b) => recent.lastIndexOf(b.id) - recent.lastIndexOf(a.id))[0];
@@ -261,11 +285,18 @@ export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysi
     genderVotes.set(id, v);
   };
 
+  // The same paragraph votes for every character it names: count its pronouns once.
+  let counted = { text: '', f: 0, m: 0 };
   const voteFromNarration = (id: string, narration: string) => {
-    for (const w of narration.toLowerCase().match(/\p{L}+/gu) ?? []) {
-      if (FEMALE_PRONOUNS.has(w)) vote(id, 'f');
-      else if (MALE_PRONOUNS.has(w)) vote(id, 'm');
+    if (counted.text !== narration) {
+      counted = { text: narration, f: 0, m: 0 };
+      for (const w of narration.toLowerCase().match(/\p{L}+/gu) ?? []) {
+        if (FEMALE_PRONOUNS.has(w)) counted.f++;
+        else if (MALE_PRONOUNS.has(w)) counted.m++;
+      }
     }
+    if (counted.f) vote(id, 'f', counted.f);
+    if (counted.m) vote(id, 'm', counted.m);
   };
 
   const genderOf = (id: string): Gender | undefined => {
@@ -302,10 +333,11 @@ export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysi
       const id = register(m[1] ?? '');
       if (id) out.add(id);
     }
+    const lower = quote.toLowerCase();
     for (const c of chars.values()) {
       for (const a of c.aliases) {
-        const key = canonicalKey(a).key;
-        if (key && quote.toLowerCase().includes(key)) out.add(c.id);
+        const key = aliasKey(a);
+        if (key && lower.includes(key)) out.add(c.id);
       }
     }
     return out;
@@ -519,17 +551,20 @@ export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysi
   let lastSpeakers: string[] = []; // speakers of recent dialogue paragraphs, most recent last
   let narrationSince = 0;
 
-  blocks.forEach((text, block) => {
+  for (let block = 0; block < blocks.length; block++) {
+    // A phone imports a long book with the screen still responsive: callers can pause here (castSteps).
+    if (block > 0 && block % CAST_STEP === 0) yield;
+    const text = blocks[block] ?? '';
     if (!text) {
       lastSpeakers = [];
       narrationSince = 0;
-      return;
+      continue;
     }
     const spans = findDialogue(text, base);
     if (!spans.length) {
       noticeNames(text);
       if (++narrationSince > CONVERSATION_GAP) lastSpeakers = [];
-      return;
+      continue;
     }
     narrationSince = 0;
 
@@ -601,7 +636,7 @@ export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysi
     }
     const speaker = local.find((l) => l.id)?.id;
     if (speaker) lastSpeakers = [...lastSpeakers, speaker].slice(-4);
-  });
+  }
 
   for (const c of chars.values()) {
     const g = genderOf(c.id);

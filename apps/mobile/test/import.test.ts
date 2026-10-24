@@ -4,13 +4,14 @@ import { makeEpub } from '../../../packages/core/test/fixtures/epub';
 import { loadContent } from '../src/data/content';
 import { getItem, listItems } from '../src/data/library';
 import { importFile, type ImportDeps } from '../src/import/run';
+import { failingPdfReader, fakePdfReader } from './fakePdf';
 import { testDb } from './nodeDb';
 
 const utf8 = (s: string) => new TextEncoder().encode(s);
 
 const deps = (extra: Partial<ImportDeps> = {}): ImportDeps => ({
   sha256: (file) => Promise.resolve(createHash('sha256').update(file.bytes).digest('hex')),
-  extractPdf: () => Promise.reject(Object.assign(new Error('locked'), { code: 'password' })),
+  pdf: failingPdfReader('password'),
   now: () => 1_000,
   ...extra,
 });
@@ -76,12 +77,7 @@ describe('importFile', () => {
       height: 792,
       lines: [{ text: 'Reading aloud helps people follow long texts.', x: 72, y: 140, width: 400, size: 11 }],
     };
-    const unlocked = deps({
-      extractPdf: (_path, password) =>
-        password === 'open'
-          ? Promise.resolve(JSON.stringify({ pages: [page], outline: [], title: null, author: null }))
-          : Promise.reject(Object.assign(new Error('locked'), { code: 'password' })),
-    });
+    const unlocked = deps({ pdf: fakePdfReader({ pages: [page], password: 'open' }) });
     expect(await importFile(db, { ...pdf, password: 'open' }, unlocked)).toEqual({ status: 'ready', id });
     expect(listItems(db)).toHaveLength(1);
   });

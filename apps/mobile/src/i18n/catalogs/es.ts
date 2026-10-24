@@ -47,6 +47,8 @@ export const es: Catalog = {
     sampleHint: 'Un capítulo clásico con voces de reparto',
   },
   library: {
+    readingPages: 'Leyendo páginas: {done} de {total}',
+    scanned: 'Imágenes escaneadas, sin texto que leer',
     title: 'Biblioteca',
     continue: 'Seguir escuchando',
     shelves: {

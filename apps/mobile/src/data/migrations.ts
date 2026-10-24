@@ -181,6 +181,17 @@ export const migrations: Migration[] = [
       `);
     },
   },
+  {
+    id: 3,
+    name: 'pdf pages loading',
+    up(db) {
+      // A long PDF opens on its first pages while the rest is read: how far reading has got (NULL when done).
+      db.exec(`
+        ALTER TABLE documents ADD COLUMN pages_loaded INTEGER;
+        ALTER TABLE documents ADD COLUMN pages_total INTEGER;
+      `);
+    },
+  },
 ];
 
 /** Applies pending migrations in one transaction each. Returns the resulting schema version. */

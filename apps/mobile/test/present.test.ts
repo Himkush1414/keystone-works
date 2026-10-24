@@ -24,6 +24,7 @@ const item = (patch: Partial<LibraryItem> = {}): LibraryItem => ({
   errorCode: null,
   wordCount: 16_200,
   sentenceCount: 900,
+  loading: null,
   settings: {},
   addedAt: 0,
   openedAt: null,
@@ -100,6 +101,15 @@ describe('row state and meta line', () => {
     expect(rowMeta(item({ progress: 0.5 }), 'en')).toBe('Ada Lovelace · 50 min left');
     expect(rowMeta(item({ progress: 0.5 }), 'en', 2)).toBe('Ada Lovelace · 25 min left');
     expect(rowMeta(item({ author: null, status: 'importing' }), 'en')).toBe('Preparing…');
+  });
+
+  it('says how far a long PDF has been read, and that a scanned one has no text', () => {
+    expect(rowMeta(item({ loading: { pages: 12, of: 873 } }), 'en')).toBe(
+      'Ada Lovelace · New · Reading pages 12 of 873',
+    );
+    expect(rowMeta(item({ author: null, status: 'failed', errorCode: 'scanned' }), 'en')).toBe(
+      'Scanned images, no text to read',
+    );
   });
 
   it('is translated', () => {

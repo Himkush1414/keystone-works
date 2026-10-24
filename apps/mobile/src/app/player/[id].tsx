@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useStore } from 'zustand';
 import LamplightEngine from '../../../modules/lamplight-engine';
 import { listCharacters, loadContent } from '@/data/content';
@@ -20,6 +20,7 @@ import { useServices } from '@/services/context';
 import { playDocument, queueCache } from '@/services/device';
 import { failureOf } from '@/player/failure';
 import { lookUpWord } from '@/player/meaning';
+import { relocateSentence } from '@/player/relocate';
 import { DEFAULT_NARRATOR } from '@lamplight/core';
 
 /** The meaning is short and wanted now: a quick render is plenty. */
@@ -31,8 +32,11 @@ export default function PlayerRoute() {
   const t = useT();
   const speakUrls = useStore(services.settings, (s) => s.speakUrls);
   const loadedDoc = useStore(services.player, (s) => s.queue?.docId ?? null);
+  // A long PDF's whole book replaces its first pages while it plays: read it again when that happens.
+  const revision = useStore(services.library, (s) => (id ? (s.revisions[id] ?? 0) : 0));
 
-  const item = useMemo(() => (id ? getItem(services.db, id) : undefined), [services.db, id]);
+  // `revision` is a dependency on purpose: the stored document changed.
+  const item = useMemo(() => (id ? getItem(services.db, id) : undefined), [services.db, id, revision]);
   const content = useMemo(() => (item ? loadContent(services.db, item.id) : null), [services.db, item]);
   const dictionary = useMemo(() => (item ? rulesFor(services.db, item.id) : []), [services.db, item]);
   const clean = useMemo(
@@ -143,6 +147,20 @@ export default function PlayerRoute() {
       services.player.getState().setFailure(failureOf(e, t('errors.voiceUnavailable'))),
     );
   }, [item, loadedDoc, services, t]);
+
+  // The whole book arrived: carry on from the same sentence in it (its number may have changed).
+  const shown = useRef(content);
+  useEffect(() => {
+    const before = shown.current;
+    shown.current = content;
+    if (!before || !content || before === content || !item) return;
+    const player = services.player.getState();
+    if (player.native.docId !== item.id) return;
+    const at = relocateSentence(before, content, player.progress.index);
+    playDocument(services, item.id, { at, autoplay: player.native.playing }).catch((e: unknown) =>
+      services.player.getState().setFailure(failureOf(e, t('errors.voiceUnavailable'))),
+    );
+  }, [content, item, services, t]);
 
   // Unpack the dictionary while the listener settles in, so the first question is answered at once.
   useEffect(() => {

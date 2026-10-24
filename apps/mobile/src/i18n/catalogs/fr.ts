@@ -49,6 +49,8 @@ export const fr: Catalog = {
     sampleHint: 'Un chapitre classique avec une distribution de voix',
   },
   library: {
+    readingPages: 'Lecture des pages : {done} sur {total}',
+    scanned: 'Images numérisées, aucun texte à lire',
     title: 'Bibliothèque',
     continue: 'Reprendre l’écoute',
     shelves: {

@@ -25,9 +25,20 @@ export function useImportActions() {
   const fromFile = useCallback(() => {
     services.library
       .getState()
-      .runImport(() => pickAndImport(services.db))
+      .runImport(() =>
+        pickAndImport(services.db, {
+          onUpdate: (id, replaced) => {
+            services.library.getState().touch(id, replaced);
+            // The whole of a long PDF has arrived: build its queue now, so opening it needs none.
+            if (replaced) prepareQueueSoon(services, id);
+          },
+        }),
+      )
       .then((summary) => {
-        summary?.added.forEach((id) => prepareQueueSoon(services, id));
+        // A long PDF still being read gets its queue when the whole book is in (above).
+        summary?.added
+          .filter((id) => !getItem(services.db, id)?.loading)
+          .forEach((id) => prepareQueueSoon(services, id));
         const message = summary
           ? importMessage(summary, t, (id) => {
               if (getItem(services.db, id)?.status === 'ready') playDocument(services, id).catch(voiceFailed);

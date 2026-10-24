@@ -46,6 +46,8 @@ export const en = {
     sampleHint: 'A classic chapter with Cast voices',
   },
   library: {
+    readingPages: 'Reading pages {done} of {total}',
+    scanned: 'Scanned images, no text to read',
     title: 'Library',
     continue: 'Continue listening',
     shelves: {
