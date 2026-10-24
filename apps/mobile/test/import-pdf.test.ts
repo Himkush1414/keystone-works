@@ -57,7 +57,12 @@ function harness(pdf: FakePdf) {
   return { reader, updates, tasks, deps };
 }
 
-const file = { name: 'long_book.pdf', bytes: new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]), path: '/a.pdf', source: 'file' as const };
+const file = {
+  name: 'long_book.pdf',
+  bytes: new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]),
+  path: '/a.pdf',
+  source: 'file' as const,
+};
 const spokenText = (db: ReturnType<typeof testDb>, id: string) =>
   loadContent(db, id)
     .blocks.filter((b) => b.skips.length === 0)
@@ -124,10 +129,15 @@ describe('importing a long PDF', () => {
     const page: PdfPage = {
       width: W,
       height: H,
-      lines: [line('इ\u0000दगाह', 80, { size: 20, width: 80 }), line('प्र ेमचंद की कहानी। आज ईद आई है।', 120)],
+      lines: [
+        line('इ\u0000दगाह', 80, { size: 20, width: 80 }),
+        line('प्र ेमचंद की कहानी। आज ईद आई है।', 120),
+      ],
     };
     const r = await importFile(db, { ...file, name: 'idgah.pdf' }, harness({ pages: [page] }).deps);
-    const text = loadContent(db, r.status === 'ready' ? r.id : '').blocks.map((b) => b.text).join(' ');
+    const text = loadContent(db, r.status === 'ready' ? r.id : '')
+      .blocks.map((b) => b.text)
+      .join(' ');
     expect(text).not.toContain('\u0000');
     expect(text).toContain('प्रेमचंद की कहानी। आज ईद आई है।');
   });

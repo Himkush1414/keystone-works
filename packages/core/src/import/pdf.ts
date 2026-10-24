@@ -84,10 +84,11 @@ export function classifyEdges(pages: readonly PdfPage[]): Map<string, EdgeKind> 
  * it from (it would otherwise be drawn on a dotted circle, apart from its word).
  */
 export function cleanPdfText(text: string): string {
-  return text
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\ufffe\uffff]/g, '')
-    .replace(/(\p{L}\p{M}*)[ \u00a0]+(?=\p{M})/gu, '$1');
+  return text.replace(CONTROL, '').replace(/(\p{L}\p{M}*)[ \u00a0]+(?=\p{M})/gu, '$1');
 }
+
+// eslint-disable-next-line no-control-regex -- dropping control characters is the point
+const CONTROL = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\ufffe\uffff]/g;
 
 /** Joins two lines, repairing a word broken by a line-end hyphen. */
 export function joinLines(left: string, right: string): string {

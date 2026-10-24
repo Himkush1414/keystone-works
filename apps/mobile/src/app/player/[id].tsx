@@ -35,7 +35,7 @@ export default function PlayerRoute() {
   // A long PDF's whole book replaces its first pages while it plays: read it again when that happens.
   const revision = useStore(services.library, (s) => (id ? (s.revisions[id] ?? 0) : 0));
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- revision: the stored document changed
+  // `revision` is a dependency on purpose: the stored document changed.
   const item = useMemo(() => (id ? getItem(services.db, id) : undefined), [services.db, id, revision]);
   const content = useMemo(() => (item ? loadContent(services.db, item.id) : null), [services.db, item]);
   const dictionary = useMemo(() => (item ? rulesFor(services.db, item.id) : []), [services.db, item]);

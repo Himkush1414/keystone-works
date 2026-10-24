@@ -142,7 +142,11 @@ export function pdfMeta(info: PdfInfo, fallbackTitle: string) {
   };
 }
 
-async function pdfDocument(input: ParseInput, fallbackTitle: string, deps: ParseDeps): Promise<DocumentDraft> {
+async function pdfDocument(
+  input: ParseInput,
+  fallbackTitle: string,
+  deps: ParseDeps,
+): Promise<DocumentDraft> {
   const info = await openPdf(input, deps);
   try {
     const pages: PdfPage[] = [];
