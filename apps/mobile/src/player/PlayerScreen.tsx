@@ -1,11 +1,19 @@
-import { DEFAULT_NARRATOR, wordAt, type CleanSettings, type DictionaryRule } from '@lamplight/core';
+import {
+  DEFAULT_NARRATOR,
+  wordAt,
+  type AnswerLanguage,
+  type CleanSettings,
+  type DictionaryRule,
+  type Meaning,
+} from '@lamplight/core';
 import type { Quality } from '../../modules/lamplight-engine/src/types';
 import { readerThemes } from '@lamplight/tokens';
 import { useEffect, useMemo, useState } from 'react';
 import { CastSheet, CleanReadSheet, ContentsSheet, SleepSheet, VoiceSheet } from './PlayerSheets';
+import { MeaningSheet } from './MeaningSheet';
 import type { CleanReadRow } from './session';
 import { sleepStatus } from './sheets';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useStore } from 'zustand';
 import type { CastCharacter, DocumentContent } from '@/data/content';
 import type { LibraryItem } from '@/data/library';
@@ -13,6 +21,7 @@ import { formatDuration } from '@/i18n/translate';
 import { useLocale, useT } from '@/i18n/useLocale';
 import { useServices } from '@/services/context';
 import { useTheme } from '@/theme/theme';
+import { Icon } from '@/ui/Icon';
 import { IconButton } from '@/ui/IconButton';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { Screen } from '@/ui/Screen';
@@ -37,6 +46,10 @@ export interface PlayerActions {
   mergeCharacters(from: string, into: string): void;
   cleanReadRows(): CleanReadRow[];
   setCleanRead(reason: CleanReadRow['reason'], on: boolean): void;
+  /** What a word means in its paragraph, from the on-device dictionary. */
+  lookUpWord(word: string, context: string): Promise<Meaning | null>;
+  /** Says a short text in the narrator's voice (the meaning, while paused). */
+  speak(text: string, lang: AnswerLanguage): void;
   close(): void;
 }
 
@@ -66,10 +79,15 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
   const mirror = useStore(player);
   const reader = useStore(settings);
   const { name, space } = useTheme();
+  const { width } = useWindowDimensions();
   const locale = useLocale();
   const t = useT();
 
-  const [sheet, setSheet] = useState<'sleep' | 'contents' | 'voice' | 'cast' | 'clean' | null>(null);
+  const [sheet, setSheet] = useState<'sleep' | 'contents' | 'voice' | 'cast' | 'clean' | 'meaning' | null>(
+    null,
+  );
+  // The sentence the listener is asking about (narration pauses while they do).
+  const [asking, setAsking] = useState<number | null>(null);
   const [cleanRows, setCleanRows] = useState<CleanReadRow[]>([]);
   const [characters, setCharacters] = useState<CastCharacter[]>([]);
   // This document's own choices, shown in the voice sheet and updated as the listener changes them.
@@ -108,6 +126,14 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
   const left = mirror.timeline?.remaining(index, positionMs, speed).chapterMs ?? 0;
   const progress = mirror.timeline?.progress(index, positionMs) ?? item.progress;
   const sleep = sleepStatus(mirror.native, Date.now(), locale);
+
+  const ask = (at: number) => {
+    setAsking(at);
+    if (playing) actions.pause();
+    setSheet('meaning');
+  };
+  const asked = asking !== null ? content.sentences[asking] : undefined;
+  const askedBlock = asked ? content.blocks[asked.block] : undefined;
 
   return (
     <Screen background={theme.bg}>
@@ -155,6 +181,7 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
         lineHeight={reader.readerLineHeight}
         showSkipped={reader.showSkipped}
         onSentencePress={actions.seekTo}
+        onSentenceLongPress={ask}
         backToVoiceLabel={t('player.backToVoice')}
       />
 
@@ -169,9 +196,32 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
             value={progress}
             label={t('a11y.progressValue', { percent: Math.round(progress * 100) })}
           />
-          <Text variant="meta" align="right" numeric style={{ color: theme.inkSoft }}>
-            {t('player.remaining', { time: formatDuration(locale, left) })}
-          </Text>
+          <View style={styles.row}>
+            <Tappable
+              onPress={() => ask(index)}
+              accessibilityRole="button"
+              accessibilityLabel={t('meaning.ask')}
+              hitSlop={12}
+              style={[styles.chip, { gap: space.xs }]}
+            >
+              <Icon name="dictionary" size={16} color={theme.inkSoft} />
+              {/* On the narrowest phones the icon alone leaves the time left room for one line. */}
+              {width >= 360 ? (
+                <Text variant="meta" style={{ color: theme.inkSoft }}>
+                  {t('meaning.short')}
+                </Text>
+              ) : null}
+            </Tappable>
+            <Text
+              variant="meta"
+              align="right"
+              numeric
+              numberOfLines={1}
+              style={{ color: theme.inkSoft, flexShrink: 1, marginLeft: space.md }}
+            >
+              {t('player.remaining', { time: formatDuration(locale, left) })}
+            </Text>
+          </View>
         </View>
         <View style={styles.row}>
           <Tappable
@@ -260,6 +310,20 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
           setCharacters(actions.listCharacters());
         }}
       />
+      <MeaningSheet
+        visible={sheet === 'meaning'}
+        sentence={askedBlock && asked ? askedBlock.text.slice(asked.start, asked.end) : ''}
+        context={askedBlock?.text ?? ''}
+        initialLanguage={item.language.startsWith('hi') || locale.startsWith('hi') ? 'hi' : 'en'}
+        lookUp={actions.lookUpWord}
+        speak={actions.speak}
+        onClose={() => setSheet(null)}
+        onResume={() => {
+          setSheet(null);
+          setAsking(null);
+          actions.play();
+        }}
+      />
       <ContentsSheet
         visible={sheet === 'contents'}
         queue={mirror.queue}
@@ -277,4 +341,5 @@ const styles = StyleSheet.create({
   controls: {},
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   speed: { minWidth: 56, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
+  chip: { flexDirection: 'row', alignItems: 'center', minHeight: 24 },
 });
