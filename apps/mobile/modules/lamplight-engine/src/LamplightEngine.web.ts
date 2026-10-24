@@ -154,6 +154,11 @@ class LamplightEngineWeb extends NativeModule<LamplightEngineEvents> {
     return Math.max(400, (text.length / 15) * 1000);
   }
   async stopPreview() {}
+  async lookupWord(): Promise<string> {
+    // The dictionary ships with the Android app only.
+    return JSON.stringify({ en: [], hi: [], enHi: [], hiForms: [] });
+  }
+  async warmDictionary() {}
   async synthesizeToFile(): Promise<number> {
     throw new Error('Audio export is not available on the web');
   }

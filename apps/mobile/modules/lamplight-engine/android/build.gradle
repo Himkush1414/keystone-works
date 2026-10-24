@@ -41,7 +41,34 @@ tasks.register('extractEngineAssets', Copy) {
   into(generatedAssets.map { it.dir('engine') })
 }
 
-preBuild.dependsOn 'extractEngineAssets'
+// The dictionary for "What does this word mean here?" (WordNet 3.1 and Wiktionary; see
+// tooling/scripts/build-dictionary.mjs), published and verified the same way.
+def dictionaryUrl = 'https://github.com/Himkush1414/keystone-works/releases/download/dictionary-v1/lamplight-dictionary-v1.zip'
+def dictionarySha256 = '44ad01484e73f19107bbbc7594ecf706d230d200ab72c71f20b74f9552e92b31'
+def dictionaryZip = layout.buildDirectory.file('engine-assets/lamplight-dictionary-v1.zip')
+
+tasks.register('downloadDictionary') {
+  outputs.file(dictionaryZip)
+  doLast {
+    File target = dictionaryZip.get().asFile
+    if (target.exists() && sha256(target) == dictionarySha256) return
+    target.parentFile.mkdirs()
+    new URL(dictionaryUrl).withInputStream { input -> target.withOutputStream { it << input } }
+    String actual = sha256(target)
+    if (actual != dictionarySha256) {
+      target.delete()
+      throw new GradleException("Dictionary checksum mismatch: ${actual}")
+    }
+  }
+}
+
+tasks.register('extractDictionary', Copy) {
+  dependsOn 'downloadDictionary'
+  from(zipTree(dictionaryZip))
+  into(generatedAssets.map { it.dir('dictionary') })
+}
+
+preBuild.dependsOn 'extractEngineAssets', 'extractDictionary'
 
 android {
   namespace "app.lamplight.engine"

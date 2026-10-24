@@ -21,3 +21,4 @@ export * from './perform/cues';
 export * from './perform/plan';
 export * from './cast/catalog';
 export * from './pipeline';
+export * from './meaning/meaning';

@@ -29,6 +29,10 @@ declare class LamplightEngineModule extends NativeModule<LamplightEngineEvents> 
   clearCache(): Promise<void>;
   previewVoice(text: string, lang: string, voice: string, steps: number): Promise<number>;
   stopPreview(): Promise<void>;
+  /** Dictionary rows for a word (packages/core `lookupRequest` in, `LookupRows` JSON out). */
+  lookupWord(request: string): Promise<string>;
+  /** Unpacks the dictionary ahead of the first question. */
+  warmDictionary(): Promise<void>;
   synthesizeToFile(text: string, lang: string, voice: string, steps: number, path: string): Promise<number>;
   /** Returns JSON (see PdfExtraction). Rejects with code "password" or "corrupt". */
   extractPdf(path: string, password: string | null): Promise<string>;
