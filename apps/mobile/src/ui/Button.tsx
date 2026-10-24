@@ -42,8 +42,9 @@ export function Button({
   const bg = kind === 'primary' ? colors.accent : kind === 'secondary' ? colors.surface : 'transparent';
   return (
     <Tappable
-      onPress={onPress}
-      disabled={disabled || loading}
+      // Busy is not disabled: the button keeps its full colour (with a spinner) but ignores presses.
+      onPress={loading ? noop : onPress}
+      disabled={disabled}
       haptic={kind === 'quiet' ? undefined : 'tap'}
       accessibilityRole="button"
       accessibilityLabel={label}
@@ -69,6 +70,8 @@ export function Button({
     </Tappable>
   );
 }
+
+const noop = () => undefined;
 
 const styles = StyleSheet.create({
   base: { minHeight: touch.minTarget, paddingHorizontal: 20, justifyContent: 'center' },
