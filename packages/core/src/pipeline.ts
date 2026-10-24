@@ -12,6 +12,7 @@ import {
   type CleanSettings,
 } from './clean/detect';
 import type { Block, Chapter, DocumentDraft, Sentence, SentenceKind } from './model';
+import { languageRuns, type LanguageRun } from './text/runs';
 import { detectLanguage, lineLanguage, VOICE_LANGUAGES, type VoiceLanguage } from './text/language';
 import { normalize, type DictionaryRule } from './text/normalize';
 import { segment, type Span } from './text/segment';
@@ -206,6 +207,8 @@ export interface QueueSegment {
   gainDb?: number;
   /** A soft breath before the line. */
   breath?: true;
+  /** The line split by voice language, when it mixes them (an English phrase in a Hindi line). */
+  runs?: LanguageRun[];
 }
 
 export interface QueueOptions {
@@ -277,7 +280,8 @@ export function buildQueue(doc: QueueSource, opts: QueueOptions): QueueSegment[]
     const confidence = doc.confidence?.[i] ?? 1;
     const voice = voiceFor(opts.assignment, opts.castMode, s.kind, s.speaker, confidence);
     const ownVoice = s.speaker !== undefined && voice === opts.assignment.byCharacter[s.speaker];
-    out.push({ i, text, lang, voice, pauseMs: s.pauseMs, kind: s.kind });
+    const runs = text ? languageRuns(text, lang) : undefined;
+    out.push({ i, text, lang, voice, pauseMs: s.pauseMs, kind: s.kind, ...(runs ? { runs } : {}) });
     const delivery =
       text && s.kind !== 'heading'
         ? deliveryOf(block.text, s, s.kind === 'dialogue' ? quotesOf(s.block, block.text, lang) : [])

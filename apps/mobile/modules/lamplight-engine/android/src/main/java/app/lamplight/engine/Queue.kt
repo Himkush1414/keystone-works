@@ -1,5 +1,6 @@
 package app.lamplight.engine
 
+import app.lamplight.engine.core.Run
 import org.json.JSONObject
 
 /** One spoken unit, as built by packages/core `buildQueue` (text is already normalised for speech). */
@@ -16,6 +17,8 @@ data class Segment(
     val gainDb: Float = 0f,
     /** A soft breath before the line. */
     val breath: Boolean = false,
+    /** The line split by voice language (a Hindi phrase in an English line, or the reverse); null for one language. */
+    val runs: List<Run>? = null,
 ) {
     val isSilent: Boolean get() = text.isBlank()
 }
@@ -60,6 +63,9 @@ class QueueSpec(
                     rate = s.optDouble("rate", 1.0).toFloat().coerceIn(0.7f, 1.4f),
                     gainDb = s.optDouble("gainDb", 0.0).toFloat().coerceIn(-12f, 6f),
                     breath = s.optBoolean("breath", false),
+                    runs = s.optJSONArray("runs")?.let { r ->
+                        List(r.length()) { j -> r.getJSONObject(j).let { Run(it.getString("text"), it.getString("lang")) } }
+                    },
                 )
             }
             val starts = o.optJSONArray("chapterStarts")

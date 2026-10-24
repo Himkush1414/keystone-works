@@ -80,6 +80,8 @@ export interface QueueFile {
     gainDb?: number;
     /** A soft breath before the line. */
     breath?: boolean;
+    /** The line split by voice language when it mixes them; each run is rendered in its own language. */
+    runs?: { text: string; lang: string }[];
   }[];
 }
 
