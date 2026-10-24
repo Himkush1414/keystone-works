@@ -40,6 +40,10 @@ class Supertonic(
     private val config: EngineConfig,
     private val indexer: ShortArray,
 ) {
+    /** Milliseconds per stage of the last [synthesize]: duration, encoder, flow steps, vocoder. */
+    @Volatile var lastTimings: Map<String, Long> = emptyMap()
+        private set
+
     /** Token ids for model-ready text; unknown characters are dropped and reported. */
     fun tokenize(prepared: String): Pair<LongArray, List<String>> {
         val ids = ArrayList<Long>(prepared.length)
@@ -63,6 +67,13 @@ class Supertonic(
         val (ids, dropped) = tokenize(prepared)
         val n = ids.size.toLong()
         val opened = ArrayList<AutoCloseable>()
+        val timings = LinkedHashMap<String, Long>()
+        var mark = System.nanoTime()
+        fun lap(label: String) {
+            val now = System.nanoTime()
+            timings[label] = (now - mark) / 1_000_000
+            mark = now
+        }
         fun <T : AutoCloseable> T.tracked(): T = also { opened.add(it) }
         try {
             val textIds = OnnxTensor.createTensor(env, LongBuffer.wrap(ids), longArrayOf(1, n)).tracked()
@@ -74,11 +85,13 @@ class Supertonic(
                 mapOf("text_ids" to textIds, "style_dp" to styleDp, "text_mask" to textMask),
             ).tracked().use { r -> (r.get("duration").get() as OnnxTensor).floatBuffer.get(0) }
             val seconds = max(0.05f, rawSeconds / rate)
+            lap("duration")
 
             val te = sessions.textEncoder.run(
                 mapOf("text_ids" to textIds, "style_ttl" to styleTtl, "text_mask" to textMask),
             ).tracked()
             val textEmb = te.get("text_emb").get() as OnnxTensor
+            lap("encoder")
 
             val chunk = config.baseChunkSize * config.chunkCompressFactor
             val wavLen = (seconds * config.sampleRate).roundToInt()
@@ -108,6 +121,7 @@ class Supertonic(
                     }
                 }
             }
+            lap("steps x$steps")
             val wav = OnnxTensor.createTensor(env, FloatBuffer.wrap(latent), latentShape).use { lat ->
                 sessions.vocoder.run(mapOf("latent" to lat)).use { r ->
                     val buf = (r.get("wav_tts").get() as OnnxTensor).floatBuffer
@@ -115,6 +129,8 @@ class Supertonic(
                     FloatArray(len).also { buf.get(it) }
                 }
             }
+            lap("vocoder")
+            lastTimings = timings
             return Synthesis(wav, config.sampleRate, dropped)
         } finally {
             opened.asReversed().forEach { runCatching { it.close() } }
