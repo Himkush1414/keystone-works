@@ -34,7 +34,9 @@ class ReadAhead(
         target: Int,
         pacing: Pacing,
     ): Plan? {
-        val choices = (STEP_OPTIONS + floor + target).filter { it in floor..target }.distinct()
+        // On a phone too slow to keep up even at the floor, continuous speech beats polish: go lower still.
+        val low = if (floor > EMERGENCY_STEPS && pacing.rtf(floor) * speed > SUSTAINABLE_RTF) EMERGENCY_STEPS else floor
+        val choices = (STEP_OPTIONS + low + target).filter { it in low..target }.distinct()
         // Speech ready ahead of the listener, in real time (faster playback drains it sooner).
         var aheadMs = -offsetMs.toDouble()
         var i = playhead
@@ -43,7 +45,7 @@ class ReadAhead(
             if (!s.ready) {
                 val budget = (aheadMs / speed).toLong() - marginMs
                 // Slower than real time drains the buffer for the sentences after this one: only with plenty in hand.
-                val affordable = choices.filter { it == floor || pacing.rtf(it) * speed <= SUSTAINABLE_RTF || budget > lookaheadMs / 2 }
+                val affordable = choices.filter { it == low || pacing.rtf(it) * speed <= SUSTAINABLE_RTF || budget > lookaheadMs / 2 }
                 return Plan(i, pacing.choose(affordable, s.audioMs, budget), false)
             }
             aheadMs += s.audioMs + s.pauseMs
@@ -66,6 +68,9 @@ class ReadAhead(
 
     companion object {
         val STEP_OPTIONS = listOf(3, 4, 6, 8, 10, 12, 16)
+
+        /** The fewest steps ever used: rougher, but still clear speech. */
+        const val EMERGENCY_STEPS = 2
 
         /** Render work per second of speech that still leaves room to get ahead. */
         const val SUSTAINABLE_RTF = 0.8
