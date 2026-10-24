@@ -1,5 +1,5 @@
 import { palettes } from '@lamplight/tokens';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Image, StyleSheet, useColorScheme, View } from 'react-native';
 import Animated, {
   Easing,
@@ -32,8 +32,12 @@ export function AnimatedSplash({ onDone }: { onDone(): void }) {
   const word = useSharedValue(0);
   const layer = useSharedValue(1);
 
+  // The parent may re-render (and pass a new onDone) mid-animation; that must not restart it.
+  const done = useRef(onDone);
+  done.current = onDone;
+
   useEffect(() => {
-    const finish = () => onDone();
+    const finish = () => done.current();
     if (reduceMotion) {
       layer.value = withDelay(
         120,
@@ -50,7 +54,7 @@ export function AnimatedSplash({ onDone }: { onDone(): void }) {
       withDelay(560, withTiming(1, { duration: 0 })),
       withTiming(0, { duration: 280 }, (ok) => ok && runOnJS(finish)()),
     );
-  }, [flame, word, layer, motion, reduceMotion, onDone]);
+  }, [flame, word, layer, motion, reduceMotion]);
 
   const layerStyle = useAnimatedStyle(() => ({ opacity: layer.value }));
   const flameStyle = useAnimatedStyle(() => ({ transform: [{ scale: flame.value }] }));
