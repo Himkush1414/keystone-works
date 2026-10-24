@@ -21,6 +21,7 @@ export function SwitchRow({
     <Tappable
       onPress={() => onChange(!value)}
       pressScale={0.99}
+      haptic="select"
       accessibilityRole="switch"
       accessibilityState={{ checked: value }}
       accessibilityLabel={description ? `${label}. ${description}` : label}
@@ -65,6 +66,7 @@ export function ChoiceRow({
     <Tappable
       onPress={onPress}
       pressScale={0.99}
+      haptic={selected ? undefined : 'select'}
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
       style={[styles.row, { gap: space.md }]}

@@ -31,6 +31,7 @@ export function Segmented<T extends string>({
           <Tappable
             key={o.value}
             onPress={() => onChange(o.value)}
+            haptic={selected ? undefined : 'select'}
             accessibilityRole="radio"
             accessibilityState={{ checked: selected }}
             pressScale={0.97}
