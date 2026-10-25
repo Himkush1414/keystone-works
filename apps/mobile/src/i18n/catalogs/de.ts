@@ -47,6 +47,8 @@ export const de: Catalog = {
     sampleHint: 'Ein klassisches Kapitel mit Besetzung',
   },
   library: {
+    readingPages: 'Seiten {done} von {total} werden gelesen',
+    scanned: 'Gescannte Bilder, kein Text zum Vorlesen',
     title: 'Bibliothek',
     continue: 'Weiterhören',
     shelves: {

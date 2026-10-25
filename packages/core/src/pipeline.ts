@@ -1,4 +1,4 @@
-import { analyseCast, type Character } from './cast/attribute';
+import { castSteps, type Character } from './cast/attribute';
 import { findDialogue } from './cast/dialogue';
 import { profileCharacters } from './cast/profile';
 import { NEUTRAL } from './perform/cues';
@@ -95,6 +95,21 @@ function splitAtDialogue(
 
 /** Runs Clean Read detection, language detection, segmentation and Cast analysis. */
 export function prepareDocument(input: DocumentDraft, opts: PrepareOptions = {}): PreparedDocument {
+  const steps = prepareSteps(input, opts);
+  for (;;) {
+    const r = steps.next();
+    if (r.done) return r.value;
+  }
+}
+
+/**
+ * [prepareDocument] in steps: it pauses inside Cast analysis (the long part on a phone), so an import can
+ * let the screen draw in between.
+ */
+export function* prepareSteps(
+  input: DocumentDraft,
+  opts: PrepareOptions = {},
+): Generator<void, PreparedDocument> {
   const draft = detectSkips(input, opts.fromPdf ?? false);
   const { blocks } = draft;
 
@@ -122,7 +137,7 @@ export function prepareDocument(input: DocumentDraft, opts: PrepareOptions = {})
 
   const useCast = opts.cast ?? draft.meta.kind === 'book';
   const castBlocks = blocks.map((b) => (b.kind === 'paragraph' || b.kind === 'quote' ? b.text : ''));
-  const cast = useCast ? analyseCast(castBlocks, docLang) : { characters: [], attributions: [] };
+  const cast = useCast ? yield* castSteps(castBlocks, docLang) : { characters: [], attributions: [] };
   if (cast.characters.length) {
     const quotes = new Map<number, ReturnType<typeof findDialogue>>();
     const quotesOf = (bi: number) => {

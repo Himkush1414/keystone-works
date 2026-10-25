@@ -5,11 +5,12 @@ import { getItem, listItems } from '../src/data/library';
 import { SAMPLES } from '../src/import/samples';
 import { importSample, importText, pastedTitle } from '../src/import/text';
 import type { ImportDeps } from '../src/import/run';
+import { failingPdfReader } from './fakePdf';
 import { testDb } from './nodeDb';
 
 const deps: ImportDeps = {
   sha256: (file) => Promise.resolve(createHash('sha256').update(file.bytes).digest('hex')),
-  extractPdf: () => Promise.reject(new Error('not expected')),
+  pdf: failingPdfReader('not expected'),
 };
 
 describe('pastedTitle', () => {

@@ -149,13 +149,21 @@ class LamplightEngineModule : Module() {
             audio.durationMs.toDouble()
         }
 
-        AsyncFunction("extractPdf") { path: String, password: String? ->
+        AsyncFunction("openPdf") { path: String, password: String? ->
             try {
-                PdfText.extract(context, path, password)
+                PdfText.open(context, path, password)
             } catch (e: PdfText.PdfError) {
                 throw CodedException(e.code, e.message ?: e.code, e)
             }
         }
+        AsyncFunction("pdfPages") { handle: Int, from: Int, to: Int ->
+            try {
+                PdfText.pages(handle, from, to)
+            } catch (e: PdfText.PdfError) {
+                throw CodedException(e.code, e.message ?: e.code, e)
+            }
+        }
+        AsyncFunction("closePdf") { handle: Int -> PdfText.close(handle) }
 
         OnDestroy {
             controller.removeListener(listener)

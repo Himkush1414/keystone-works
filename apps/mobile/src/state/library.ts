@@ -38,6 +38,10 @@ export interface LibraryState {
   items: LibraryItem[];
   continueWith: LibraryItem | null;
   importing: boolean;
+  /** Bumped when a document's content is replaced (a long PDF's whole book arriving after its first pages). */
+  revisions: Record<string, number>;
+  /** An import reports progress on `id`; `replaced` when its content was swapped for the whole book. */
+  touch(id: string, replaced: boolean): void;
   setView(view: Partial<Pick<LibraryState, 'shelf' | 'sort' | 'status'>>): void;
   refresh(): void;
   /** Runs an import (picker, share, paste) and refreshes; null when the user cancelled. */
@@ -57,6 +61,11 @@ export function createLibraryStore(db: Db): StoreApi<LibraryState> {
     items: [],
     continueWith: null,
     importing: false,
+    revisions: {},
+    touch(id, replaced) {
+      if (replaced) set((s) => ({ revisions: { ...s.revisions, [id]: (s.revisions[id] ?? 0) + 1 } }));
+      get().refresh();
+    },
     setView(view) {
       set(view);
       get().refresh();

@@ -1,24 +1,23 @@
 import { ImportError } from '@lamplight/core';
 import { describe, expect, it } from 'vitest';
 import { parseImport, titleFromName, usablePdfTitle, type ParseDeps } from '../src/import/parse';
+import { failingPdfReader, fakePdfReader } from './fakePdf';
 
 const utf8 = (s: string) => new TextEncoder().encode(s);
-const noPdf: ParseDeps = { extractPdf: () => Promise.reject(new Error('not expected')) };
+const noPdf: ParseDeps = { pdf: failingPdfReader('not expected') };
 
 const line = (text: string, y: number, size = 11) => ({ text, x: 72, y, width: 400, size });
-const pdfJson = (title: string | null) =>
-  JSON.stringify({
-    pages: [
-      {
-        width: 612,
-        height: 792,
-        lines: [line('Introduction', 100, 18), line('Reading aloud helps people follow long texts.', 140)],
-      },
-    ],
-    outline: [],
-    title,
-    author: '  Ada Lovelace ',
-  });
+const pdfDoc = (title: string | null) => ({
+  pages: [
+    {
+      width: 612,
+      height: 792,
+      lines: [line('Introduction', 100, 18), line('Reading aloud helps people follow long texts.', 140)],
+    },
+  ],
+  title,
+  author: '  Ada Lovelace ',
+});
 
 const codeOf = async (p: Promise<unknown>) => {
   try {
@@ -78,13 +77,8 @@ describe('parseImport', () => {
   });
 
   it('builds a PDF document from the native extraction', async () => {
-    const calls: [string, string | null][] = [];
-    const deps: ParseDeps = {
-      extractPdf: (path, password) => {
-        calls.push([path, password]);
-        return Promise.resolve(pdfJson('Microsoft Word - talk.docx'));
-      },
-    };
+    const pdf = fakePdfReader(pdfDoc('Microsoft Word - talk.docx'));
+    const deps: ParseDeps = { pdf };
     const draft = await parseImport(
       {
         format: 'pdf',
@@ -95,18 +89,17 @@ describe('parseImport', () => {
       },
       deps,
     );
-    expect(calls).toEqual([['/files/a.pdf', 'pw']]);
+    expect(pdf.calls).toEqual(['open /files/a.pdf pw', 'pages 1-40', 'close']);
     expect(draft.meta).toMatchObject({ title: 'talk notes', author: 'Ada Lovelace' });
     expect(draft.blocks.map((b) => b.text).join(' ')).toContain('Reading aloud helps');
   });
 
   it('maps native PDF failures to import errors', async () => {
-    const failing = (code: string): ParseDeps => ({
-      extractPdf: () => Promise.reject(Object.assign(new Error(code), { code })),
-    });
+    const failing = (code: string): ParseDeps => ({ pdf: failingPdfReader(code) });
     const input = { format: 'pdf' as const, name: 'a.pdf', bytes: new Uint8Array(), path: '/a.pdf' };
     expect(await codeOf(parseImport(input, failing('password')))).toBe('password');
     expect(await codeOf(parseImport(input, failing('corrupt')))).toBe('corrupt');
-    expect(await codeOf(parseImport(input, { extractPdf: () => Promise.resolve('{oops') }))).toBe('corrupt');
+    const scanned = fakePdfReader({ pages: [{ width: 612, height: 792, lines: [] }] });
+    expect(await codeOf(parseImport(input, { pdf: scanned }))).toBe('scanned');
   });
 });

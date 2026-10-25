@@ -50,8 +50,11 @@ declare class LamplightEngineModule extends NativeModule<LamplightEngineEvents> 
   /** Unpacks the dictionary ahead of the first question. */
   warmDictionary(): Promise<void>;
   synthesizeToFile(text: string, lang: string, voice: string, steps: number, path: string): Promise<number>;
-  /** Returns JSON (see PdfExtraction). Rejects with code "password" or "corrupt". */
-  extractPdf(path: string, password: string | null): Promise<string>;
+  /** Opens a PDF; returns JSON (PdfOpened). Rejects with code "password" or "corrupt". */
+  openPdf(path: string, password: string | null): Promise<string>;
+  /** Pages `from`..`to` (1-based, inclusive) of an open PDF, as JSON (PdfPageLines[]). */
+  pdfPages(handle: number, from: number, to: number): Promise<string>;
+  closePdf(handle: number): Promise<void>;
 }
 
 export default requireNativeModule<LamplightEngineModule>('LamplightEngine');
