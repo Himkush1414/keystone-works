@@ -3,6 +3,7 @@ import { findDialogue } from '../src/cast/dialogue';
 import { cueIn, cueInLine, type Emotion } from '../src/perform/cues';
 import {
   BEAT,
+  TURN,
   BREATH_MS,
   deliveryOf,
   perform,
@@ -174,14 +175,71 @@ describe('pauses and breaths', () => {
     expect(p[3]?.pauseMs).toBe(140);
   });
 
-  it('leaves a beat between different speakers but not within one speaker', () => {
+  it('hands over between speakers like a conversation, and keeps one speaker together', () => {
     const p = perform([
-      line('“Hello.”', { kind: 'dialogue', speaker: 'anna', block: 0, lastInBlock: true, pauseMs: 450 }),
-      line('“Hi.”', { kind: 'dialogue', speaker: 'tom', block: 1, pauseMs: 140 }),
-      line('“How are you?”', { kind: 'dialogue', speaker: 'tom', block: 1, lastInBlock: true, pauseMs: 450 }),
+      line('“Hello.”', { kind: 'dialogue', speaker: 'anna', block: 0, lastInBlock: true, pauseMs: 760 }),
+      line('“Hi.”', { kind: 'dialogue', speaker: 'tom', block: 1, pauseMs: 370 }),
+      line('“How are you this fine morning?”', {
+        kind: 'dialogue',
+        speaker: 'tom',
+        block: 1,
+        lastInBlock: true,
+        pauseMs: 760,
+      }),
+      line('“Well enough, thank you, though tired.”', {
+        kind: 'dialogue',
+        speaker: 'anna',
+        block: 2,
+        lastInBlock: true,
+        pauseMs: 760,
+      }),
+      line('“I was never going to tell you about the letter, because—”', {
+        kind: 'dialogue',
+        speaker: 'tom',
+        block: 3,
+        lastInBlock: true,
+        pauseMs: 760,
+      }),
+      line('“Stop it, Tom.”', {
+        kind: 'dialogue',
+        speaker: 'anna',
+        block: 4,
+        lastInBlock: true,
+        pauseMs: 760,
+      }),
     ]);
-    expect(p[0]?.pauseMs).toBe(450 + BEAT.speakerChange);
-    expect(p[1]?.pauseMs).toBe(140);
+    expect(p[0]?.pauseMs).toBe(TURN.quick); // "Hi." is a quick reply
+    expect(p[1]?.pauseMs).toBe(370); // same speaker
+    expect(p[2]?.pauseMs).toBe(TURN.quick); // answering a question
+    expect(p[3]?.pauseMs).toBe(TURN.gap);
+    expect(p[4]?.pauseMs).toBe(TURN.interrupt);
+    expect(p[4]?.ending).toBe('cut');
+  });
+
+  it('gives each character their own register, loudness, pauses and endings', () => {
+    const styles = {
+      grandpa: { pitch: -1, gainDb: 0, pause: 1.2, ending: 'trail' as const },
+      kid: { pitch: 1.5, gainDb: 0, pause: 0.9 },
+    };
+    const p = perform(
+      [
+        line('“Long ago, when I was young, there were no roads here.”', {
+          kind: 'dialogue',
+          speaker: 'grandpa',
+          block: 0,
+          lastInBlock: true,
+          pauseMs: 760,
+        }),
+        line('The fire cracked.', { block: 1, lastInBlock: true, pauseMs: 760 }),
+        line('“Really?”', { kind: 'dialogue', speaker: 'kid', block: 2, lastInBlock: true, pauseMs: 760 }),
+      ],
+      { styles },
+    );
+    expect(p[0]?.pitch).toBeLessThan(-0.5);
+    expect(p[0]?.pauseMs).toBe(Math.round(760 * 1.2));
+    expect(p[0]?.ending).toBe('trail');
+    expect(p[2]?.pitch).toBeGreaterThan(1);
+    expect(p[1]?.ending).toBeUndefined();
   });
 
   it('holds a long silence at a scene break', () => {

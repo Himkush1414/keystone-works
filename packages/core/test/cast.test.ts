@@ -115,6 +115,51 @@ describe('assignVoices', () => {
     expect(Object.values(a.byCharacter)).not.toContain('F1');
   });
 
+  it('tells characters on the same or a near-identical voice apart by register, and keeps each one steady', () => {
+    const many = [
+      ...chars,
+      { id: 'lydia', name: 'Lydia', aliases: [], gender: 'f' as const, lines: 4 },
+      { id: 'mary', name: 'Mary', aliases: [], gender: 'f' as const, lines: 3 },
+    ];
+    const a = assignVoices(many, 'F1', catalog);
+    const sound = (id: string) =>
+      `${a.byCharacter[id]}/${a.styleByCharacter?.[id]?.pitch ?? 0}/${a.rateByCharacter?.[id] ?? 1}`;
+    const women = ['elizabeth', 'jane', 'kitty', 'lydia', 'mary'];
+    expect(new Set(women.map(sound)).size).toBe(women.length);
+    expect(assignVoices(many, 'F1', catalog)).toEqual(a);
+  });
+
+  it('styles the old, children, the gentle and the fiery', () => {
+    const cast = [
+      { id: 'grandpa', name: 'Grandpa', aliases: [], gender: 'm' as const, lines: 9, age: 'old' as const },
+      { id: 'tim', name: 'Tim', aliases: [], gender: 'm' as const, lines: 8, age: 'child' as const },
+      {
+        id: 'rose',
+        name: 'Rose',
+        aliases: [],
+        gender: 'f' as const,
+        lines: 7,
+        temperament: 'gentle' as const,
+      },
+      {
+        id: 'kate',
+        name: 'Kate',
+        aliases: [],
+        gender: 'f' as const,
+        lines: 6,
+        temperament: 'fiery' as const,
+      },
+    ];
+    const s = assignVoices(cast, 'F1', catalog).styleByCharacter ?? {};
+    expect(s.grandpa).toMatchObject({ ending: 'trail' });
+    expect(s.grandpa?.pitch).toBeLessThan(0);
+    expect(s.grandpa?.pause).toBeGreaterThan(1);
+    expect(s.tim?.pitch).toBeGreaterThan(1);
+    expect(s.rose?.gainDb).toBeLessThan(0);
+    expect(s.kate).toMatchObject({ ending: 'clip' });
+    expect(s.kate?.gainDb).toBeGreaterThan(0);
+  });
+
   it('applies overrides', () => {
     const a = assignVoices(chars, 'F1', catalog, { darcy: 'M1', __dialogue: 'F3' });
     expect(a.byCharacter.darcy).toBe('M1');

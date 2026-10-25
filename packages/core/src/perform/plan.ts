@@ -4,6 +4,7 @@
  */
 import { cueIn, cueInLine, narrationAround, NEUTRAL, type Delivery, type Emotion } from './cues';
 import type { DialogueSpan } from '../cast/dialogue';
+import type { CharacterStyle } from '../cast/voices';
 
 /**
  * Pace (× the voice's own), loudness (dB) and pitch (semitones) at full intensity. The model has no emotion
@@ -37,8 +38,6 @@ export const BEAT = {
   question: 60,
   ellipsis: 260,
   dash: 160,
-  /** Between two different speakers. */
-  speakerChange: 220,
   /** Between narration and a line of dialogue in the same paragraph. */
   voiceChange: 80,
   /** Before a short sentence that ends a paragraph ("It was empty."). */
@@ -46,6 +45,13 @@ export const BEAT = {
   /** After a sad or frightened line, to let it land. */
   heavy: 120,
 } as const;
+
+/**
+ * The whole silence when one speaker hands over to another: a conversation, not two paragraphs. A quick
+ * reply (a few words, or the answer to a question) comes sooner, and a line cut off with a dash is
+ * interrupted almost at once, its last word clipped.
+ */
+export const TURN = { gap: 520, quick: 300, quickWords: 4, interrupt: 40 } as const;
 
 /** The whole silence at a scene break (`* * *`, `#`, `⁂`, `———`). */
 export const SCENE_BREAK_MS = 1600;
@@ -127,6 +133,8 @@ export interface Performance {
   /** Semitones; 0 = the voice's own pitch. */
   pitch: number;
   breath: boolean;
+  /** How the line ends: trailing off, clipped, or cut off by the next speaker. */
+  ending?: 'trail' | 'clip' | 'cut';
 }
 
 const wordCount = (s: string) => s.split(/\s+/).filter(Boolean).length;
@@ -138,7 +146,7 @@ const wordCount = (s: string) => s.split(/\s+/).filter(Boolean).length;
  */
 export function perform(
   lines: readonly PlannedLine[],
-  opts: { expressive?: boolean; breaths?: boolean } = {},
+  opts: { expressive?: boolean; breaths?: boolean; styles?: Readonly<Record<string, CharacterStyle>> } = {},
 ): Performance[] {
   const expressive = opts.expressive ?? true;
   const breaths = opts.breaths ?? true;
@@ -155,6 +163,20 @@ export function perform(
     return -1;
   };
   const who = (l: PlannedLine) => (l.kind === 'dialogue' ? `d:${l.speaker ?? '?'}` : 'narrator');
+  const quoteBeside = (i: number): PlannedLine | undefined => {
+    const l = lines[i];
+    if (!l || l.kind !== 'narration' || wordCount(l.raw) > SPEAKER_TAG.maxWords) return undefined;
+    const near = [lines[i - 1], lines[i + 1]].find((x) => x?.block === l.block && x.kind === 'dialogue');
+    return near;
+  };
+  /** Whose turn a line belongs to: a speaker tag ("she said.") is part of the quote it tags. */
+  const owner = (i: number): string => {
+    const l = lines[i];
+    if (!l) return 'narrator';
+    const q = l.kind === 'dialogue' ? l : quoteBeside(i);
+    return q ? who(q) : 'narrator';
+  };
+  const unquoted = (raw: string) => raw.trimEnd().replace(/["”’»)\]]+$/u, '');
 
   let sinceBreath = BREATH_MIN_GAP;
   for (let i = 0; i < lines.length; i++) {
@@ -172,11 +194,7 @@ export function perform(
       p.rate = rate;
       p.gainDb = gainDb;
       p.pitch = pitch;
-      const beside = (j: number) => lines[j]?.block === l.block && lines[j]?.kind === 'dialogue';
-      const speakerTag =
-        l.kind === 'narration' &&
-        wordCount(l.raw) <= SPEAKER_TAG.maxWords &&
-        (beside(i - 1) || beside(i + 1));
+      const speakerTag = quoteBeside(i) !== undefined;
       if (speakerTag) {
         p.rate = round(p.rate * SPEAKER_TAG.rate, 0.01);
         p.gainDb += SPEAKER_TAG.gainDb;
@@ -184,6 +202,15 @@ export function perform(
       } else if (l.kind === 'narration') {
         p.rate = round(p.rate * (1 + VARIATION.rate * jitter(l.text, 1)), 0.01);
         p.pitch = round(p.pitch + VARIATION.pitch * jitter(l.text, 2), 0.1);
+      }
+      const style = l.kind === 'dialogue' && l.speaker ? opts.styles?.[l.speaker] : undefined;
+      if (style) {
+        p.pitch = round(p.pitch + style.pitch, 0.1);
+        p.gainDb += style.gainDb;
+        if (p.ending !== 'cut') {
+          p.pauseMs = Math.round(p.pauseMs * style.pause);
+          if (style.ending) p.ending = style.ending;
+        }
       }
       if (l.lastInChapter) {
         p.rate = round(p.rate * CHAPTER_END.rate, 0.01);
@@ -200,14 +227,25 @@ export function perform(
       const j = nextVoiced(i);
       const next = lines[j];
       if (next) {
-        if (next.kind === 'dialogue' && l.kind === 'dialogue' && who(next) !== who(l))
-          p.pauseMs += BEAT.speakerChange;
-        else if (next.block === l.block && who(next) !== who(l)) p.pauseMs += BEAT.voiceChange;
+        const mine = owner(i);
+        const theirs = owner(j);
+        if (mine !== 'narrator' && theirs !== 'narrator' && mine !== theirs) {
+          // The turn's own words: the quote itself, or the one this speaker tag belongs to.
+          const said = unquoted((l.kind === 'dialogue' ? l : quoteBeside(i))?.raw ?? raw);
+          const nextSaid = next.kind === 'dialogue' ? next : quoteBeside(j);
+          if (l.kind === 'dialogue' && /[—–]$/.test(raw)) {
+            p.pauseMs = TURN.interrupt;
+            p.ending = 'cut';
+          } else if (wordCount(nextSaid?.raw ?? next.raw) <= TURN.quickWords || /\?$/.test(said))
+            p.pauseMs = TURN.quick;
+          else p.pauseMs = TURN.gap;
+        } else if (next.block === l.block && who(next) !== who(l)) p.pauseMs += BEAT.voiceChange;
         if (
           !l.lastInBlock &&
           next.block === l.block &&
           next.lastInBlock &&
           next.kind === 'narration' &&
+          quoteBeside(j) === undefined &&
           wordCount(next.raw) <= 4
         )
           p.pauseMs += BEAT.reveal;

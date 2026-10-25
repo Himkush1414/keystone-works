@@ -152,4 +152,49 @@ object Performance {
         }
         return best
     }
+
+    /** How a line can end; see [ending]. */
+    val ENDINGS = setOf("trail", "clip", "cut")
+
+    /**
+     * Shapes the last words of trimmed speech: "trail" draws the last 300 ms out by 15% and lets it fade
+     * 6 dB (the old, the gentle); "clip" says them 10% quicker and stops 15 ms after the last sound (the
+     * fiery); "cut" stops 10 ms after it, as when someone else breaks in.
+     */
+    fun ending(samples: FloatArray, sampleRate: Int, kind: String): FloatArray {
+        val n = sampleRate / 100
+        val frames = samples.size / n
+        if (frames < 10) return samples
+        val floor = dbToGain(-45.0).let { it * it }
+        val lastLoud = (frames - 1 downTo 0).firstOrNull { f ->
+            var e = 0.0
+            for (i in f * n until (f + 1) * n) e += samples[i] * samples[i]
+            e / n > floor
+        } ?: return samples
+        val soundEnd = (lastLoud + 1) * n
+        fun stopAfter(x: FloatArray, end: Int, keepMs: Int): FloatArray {
+            val to = min(x.size, end + sampleRate * keepMs / 1000)
+            val out = x.copyOf(to)
+            val fade = min(to, sampleRate * 5 / 1000)
+            for (i in 0 until fade) out[to - 1 - i] *= i.toFloat() / fade
+            return out
+        }
+        return when (kind) {
+            "cut" -> stopAfter(samples, soundEnd, 10)
+            "clip", "trail" -> {
+                val tailMs = if (kind == "trail") 300 else 200
+                val from = max(0, soundEnd - sampleRate * tailMs / 1000)
+                val tail = stretch(samples.copyOfRange(from, soundEnd), sampleRate, if (kind == "trail") 1.15 else 0.9)
+                if (kind == "trail") for (i in tail.indices) tail[i] *= dbToGain(-6.0 * i / tail.size)
+                val rest = if (kind == "trail") samples.copyOfRange(soundEnd, samples.size) else FloatArray(sampleRate * 15 / 1000)
+                val out = FloatArray(from + tail.size + rest.size)
+                samples.copyInto(out, 0, 0, from)
+                tail.copyInto(out, from)
+                rest.copyInto(out, from + tail.size)
+                if (kind == "clip") stopAfter(out, from + tail.size, 15) else out
+            }
+            else -> samples
+        }
+    }
 }
+

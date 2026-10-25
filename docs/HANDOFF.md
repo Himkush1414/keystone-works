@@ -99,6 +99,9 @@ Each item says what to listen for and which value to change if it's off. All the
 - [ ] An old character (old Mr. Grey, दादी) sounds older: a lower voice and a little slower (`AGE_RATE.old` = 0.93).
 - [ ] A child sounds younger: the highest voice of their gender, a little quicker (`AGE_RATE.child` = 1.05). If it sounds rushed, lower it.
 - [ ] Two characters who share a voice are still easy to tell apart (`SHARED_RATE`). If the pace change is audible as "sped up", narrow it.
+- [ ] Every character keeps the same register all the way through, and characters of one gender sit at least 2 semitones apart (`MIN_APART`, `OFFSETS` in `cast/voices.ts`; the nudge is at most ±3 st). If a nudged voice sounds processed, lower `OFFSETS`' upper end.
+- [ ] Old and gentle characters trail off at the end of a line, and fiery ones stop short (`AGE_STYLE`, `TEMPERAMENT_STYLE`; `Performance.ending`). If a trail sounds like the audio slowing down, shorten it in `Performance.ending`.
+- [ ] **Sample scenes:** `gradle test --tests '*SceneRenderTest*' -PprobeOut=<dir>` in `engine-core-jvm` writes one WAV per scene to `<dir>/scenes`: an English two-person exchange, a three-person argument with an interruption, narrator plus one character, a whisper, a Hindi family scene and a Hinglish one. `npx vitest run test/scenes.test.ts --silent=false` in `packages/core` prints each line's voice, pace, pitch, loudness, ending and pause. Measured hand-overs: 590–620 ms, quick replies 380–390 ms, the interruption 80 ms.
 
 **Delivery (Expressive reading on).**
 
@@ -110,7 +113,7 @@ Each item says what to listen for and which value to change if it's off. All the
 
 **Pauses.**
 
-- [ ] The beat between two speakers feels like a turn in conversation, not a gap (`BEAT.speakerChange` = 220 ms).
+- [ ] One speaker handing over to another feels like a conversation, not two paragraphs (`TURN.gap` = 520 ms). A quick reply or an answer to a question comes sooner (`TURN.quick` = 300 ms). A line cut off with a dash is interrupted almost at once, its end cut short (`TURN.interrupt` = 40 ms).
 - [ ] An ellipsis trails off ("And then…"), and a dash breaks off (`BEAT.ellipsis` 260, `BEAT.dash` 160).
 - [ ] A short closing sentence lands ("It was empty."), with `BEAT.reveal` = 180 ms before it.
 - [ ] A scene break (`* * *`) is a clear change of scene without feeling like a stall (`SCENE_BREAK_MS` = 1.6 s).

@@ -10,12 +10,27 @@ export interface VoiceTraits {
 
 export type CastMode = 'off' | 'dialogue' | 'full';
 
+/** How a character's lines end: trailing off (the old, the gentle) or clipped short (the fiery). */
+export type Ending = 'trail' | 'clip';
+
+/** How a character speaks, the same in every line: register, loudness, how long they leave after a line, how lines end. */
+export interface CharacterStyle {
+  /** Semitones from the voice's own pitch. */
+  pitch: number;
+  gainDb: number;
+  /** × the pause after their lines. */
+  pause: number;
+  ending?: Ending;
+}
+
 export interface CastAssignment {
   narrator: string;
   dialogue: string;
   byCharacter: Record<string, string>;
   /** Pace for a character's voice relative to normal, when it isn't 1 (an old man unhurried, a child quick). */
   rateByCharacter?: Record<string, number>;
+  /** Register, loudness, pauses and endings per character, when not plain. */
+  styleByCharacter?: Record<string, CharacterStyle>;
 }
 
 /** Minimum attribution confidence before a line uses a character's own voice. */
@@ -25,6 +40,28 @@ const AGE_RATE: Record<Age, number> = { old: 0.93, adult: 1, young: 1.02, child:
 const TEMPERAMENT_RATE: Record<Temperament, number> = { calm: 0.97, gentle: 0.95, bright: 1.03, fiery: 1.04 };
 /** Characters who have to share a voice are told apart by pace: slower, faster, slower… */
 const SHARED_RATE = [1, 0.94, 1.06, 0.9, 1.1];
+
+type StylePart = Partial<CharacterStyle>;
+const AGE_STYLE: Record<Age, StylePart> = {
+  old: { pitch: -1, pause: 1.2, ending: 'trail' },
+  adult: {},
+  young: { pitch: 0.5 },
+  child: { pitch: 1.5, pause: 0.9 },
+};
+const TEMPERAMENT_STYLE: Record<Temperament, StylePart> = {
+  calm: { gainDb: -0.5, pause: 1.1 },
+  gentle: { pitch: -0.3, gainDb: -1.5, pause: 1.1, ending: 'trail' },
+  bright: { pitch: 0.6, gainDb: 0.5, pause: 0.9 },
+  fiery: { gainDb: 1.5, pause: 0.85, ending: 'clip' },
+};
+/** The catalog's 0–1 pitch scale (80–220 Hz, logarithmic) in semitones. */
+const SEMITONES_PER_UNIT = 12 * Math.log2(220 / 80);
+/** Characters of one gender are kept at least this far apart in register, as far as the offsets allow. */
+const MIN_APART = 2;
+/** Register offsets tried, smallest first; a character's total offset stays within ±3 semitones. */
+const OFFSETS = [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2, -2.5, 2.5, -3, 3];
+
+const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 
 /**
  * Chooses voices: the dialogue voice contrasts with the narrator; characters (most lines first) get distinct
@@ -87,7 +124,10 @@ export function assignVoices(
   }
 
   const rateByCharacter: Record<string, number> = {};
+  const styleByCharacter: Record<string, CharacterStyle> = {};
   const sharing = new Map<string, number>();
+  // Where each placed character sits, in semitones, so the next one can keep clear of them.
+  const placed: { gender?: Gender; at: number }[] = [];
   for (const c of characters) {
     const voice = byCharacter[c.id];
     if (!voice) continue;
@@ -99,8 +139,47 @@ export function assignVoices(
       (SHARED_RATE[k % SHARED_RATE.length] ?? 1);
     const clamped = Math.round(Math.min(1.12, Math.max(0.86, rate)) * 100) / 100;
     if (clamped !== 1) rateByCharacter[c.id] = clamped;
+
+    const v = byId.get(voice);
+    const parts = [c.age ? AGE_STYLE[c.age] : {}, c.temperament ? TEMPERAMENT_STYLE[c.temperament] : {}];
+    const own = parts.reduce((s, p) => s + (p.pitch ?? 0), 0);
+    let pitch = clamp(own, -3, 3);
+    if (v) {
+      // The smallest nudge that keeps this character clear of everyone of their gender placed before them.
+      const gender = c.gender ?? v.gender;
+      const rivals = placed.filter((o) => !o.gender || o.gender === gender).map((o) => o.at);
+      const base = v.pitch * SEMITONES_PER_UNIT;
+      const clearance = (o: number) =>
+        Math.min(Infinity, ...rivals.map((r) => Math.abs(base + clamp(own + o, -3, 3) - r)));
+      const nudge =
+        OFFSETS.find((o) => clearance(o) >= MIN_APART) ??
+        [...OFFSETS].sort((a, b) => clearance(b) - clearance(a))[0] ??
+        0;
+      pitch = clamp(own + nudge, -3, 3);
+      placed.push({ gender, at: base + pitch });
+    }
+    const style: CharacterStyle = {
+      pitch: Math.round(pitch * 10) / 10,
+      gainDb: clamp(
+        parts.reduce((s, p) => s + (p.gainDb ?? 0), 0),
+        -3,
+        3,
+      ),
+      pause:
+        Math.round(
+          clamp(
+            parts.reduce((s, p) => s * (p.pause ?? 1), 1),
+            0.8,
+            1.3,
+          ) * 100,
+        ) / 100,
+    };
+    const ending = parts[1]?.ending ?? parts[0]?.ending;
+    if (ending) style.ending = ending;
+    if (style.pitch !== 0 || style.gainDb !== 0 || style.pause !== 1 || style.ending)
+      styleByCharacter[c.id] = style;
   }
-  return { narrator: n.id, dialogue, byCharacter, rateByCharacter };
+  return { narrator: n.id, dialogue, byCharacter, rateByCharacter, styleByCharacter };
 }
 
 /** The voice for a sentence given the cast mode and its attribution. */
