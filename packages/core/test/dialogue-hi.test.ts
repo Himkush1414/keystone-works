@@ -55,3 +55,17 @@ describe('Hindi dialogue without quotation marks', () => {
     expect(attributions.map((a) => name(a.speaker))).toEqual(['खाला', 'सम्मी']);
   });
 });
+
+describe('quotations left open', () => {
+  it('runs a paragraph that opens a quotation and never closes it to its end', () => {
+    const en = '“It was a long time ago, and nobody remembers it now. But I do.';
+    expect(findDialogue(en, 'en').map((s) => en.slice(s.start, s.end))).toEqual([en]);
+    const hi = '‘कहाँ पचास, कहाँ एक सौ। पचास एक थैली-भर होता है।';
+    expect(findDialogue(hi, 'hi').map((s) => hi.slice(s.start, s.end))).toEqual([hi]);
+  });
+
+  it('leaves an apostrophe-led word in narration alone', () => {
+    const t = "'Twas the night before the fair, and all was quiet.";
+    expect(findDialogue(t, 'en')).toEqual([]);
+  });
+});

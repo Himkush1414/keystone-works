@@ -68,6 +68,14 @@ function pairedSpans(text: string): DialogueSpan[] {
     spans.push({ start: i, end: j + 1 });
     i = j;
   }
+  // A paragraph that opens a quotation and never closes it goes on speaking to its end: books leave the
+  // closing mark off every paragraph of a speech but the last.
+  const lead = /^\s*([“"‘'«„])/u.exec(text);
+  if (lead && !spans.some((s) => s.start === lead.index + lead[0].length - 1)) {
+    const at = lead.index + lead[0].length - 1;
+    const straightSingle = lead[1] === "'" && !/['’]\s*$/u.test(text);
+    if (!straightSingle) spans.push({ start: at, end: text.trimEnd().length });
+  }
   return spans;
 }
 
