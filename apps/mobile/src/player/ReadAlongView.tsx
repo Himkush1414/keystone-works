@@ -1,11 +1,11 @@
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import type { ReaderTheme } from '@lamplight/tokens';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text as RNText, View, type TextStyle } from 'react-native';
 import { READER_FONTS, FONT, type ReaderFont } from '@/theme/fonts';
 import { useTheme } from '@/theme/theme';
 import { Button } from '@/ui/Button';
-import type { ReadBlock, Run } from './readAlong';
+import type { ReadBlock, Run, SpeakerLabel } from './readAlong';
 
 export interface ReadAlongProps {
   blocks: ReadBlock[];
@@ -24,6 +24,9 @@ export interface ReadAlongProps {
   onSentencePress(index: number): void;
   /** Long press on a sentence: ask what one of its words means. */
   onSentenceLongPress?(index: number): void;
+  /** Who says each turn of dialogue, by its first sentence; tapping a name asks to correct it. */
+  labels?: ReadonlyMap<number, SpeakerLabel> | null;
+  onLabelPress?(index: number): void;
   backToVoiceLabel: string;
 }
 
@@ -57,6 +60,8 @@ export function ReadAlong(props: ReadAlongProps) {
         showSkipped={props.showSkipped}
         onSentencePress={props.onSentencePress}
         onSentenceLongPress={props.onSentenceLongPress}
+        labels={props.labels}
+        onLabelPress={props.onLabelPress}
       />
     ),
     [
@@ -70,6 +75,8 @@ export function ReadAlong(props: ReadAlongProps) {
       props.showSkipped,
       props.onSentencePress,
       props.onSentenceLongPress,
+      props.labels,
+      props.onLabelPress,
     ],
   );
 
@@ -106,6 +113,8 @@ const BlockText = memo(function BlockText({
   showSkipped,
   onSentencePress,
   onSentenceLongPress,
+  labels,
+  onLabelPress,
 }: Omit<ReadAlongProps, 'blocks' | 'currentBlock' | 'backToVoiceLabel'> & { block: ReadBlock }) {
   const { space } = useTheme();
   if (!block.text.trim()) return <View style={{ height: space.lg }} />;
@@ -123,19 +132,49 @@ const BlockText = memo(function BlockText({
       style={[styles.block, { paddingHorizontal: space.lg, marginBottom: heading ? space.md : space.lg }]}
     >
       <RNText style={base} accessibilityRole={heading ? 'header' : 'text'}>
-        {block.runs.map((run) => (
-          <RunText
-            key={run.start}
-            text={block.text}
-            run={run}
-            current={run.sentence !== null && run.sentence === current}
-            word={word}
-            theme={theme}
-            showSkipped={showSkipped}
-            onSentencePress={onSentencePress}
-            onSentenceLongPress={onSentenceLongPress}
-          />
-        ))}
+        {block.runs.map((run, k) => {
+          // A turn's label goes before the first run of its first sentence.
+          const label =
+            run.sentence !== null && block.runs.findIndex((r) => r.sentence === run.sentence) === k
+              ? labels?.get(run.sentence)
+              : undefined;
+          return (
+            <Fragment key={run.start}>
+              {label ? (
+                <RNText
+                  onPress={
+                    onLabelPress && run.sentence !== null
+                      ? () => onLabelPress(run.sentence as number)
+                      : undefined
+                  }
+                  accessibilityRole="button"
+                  accessibilityHint={label.name}
+                  suppressHighlighting
+                  style={{
+                    color: label.color,
+                    fontFamily: base.fontFamily,
+                    fontSize: Math.round(fontSize * 0.62),
+                    fontWeight: '700',
+                    fontStyle: 'normal',
+                    letterSpacing: 0.6,
+                  }}
+                >
+                  {`${label.name.toLocaleUpperCase()}  `}
+                </RNText>
+              ) : null}
+              <RunText
+                text={block.text}
+                run={run}
+                current={run.sentence !== null && run.sentence === current}
+                word={word}
+                theme={theme}
+                showSkipped={showSkipped}
+                onSentencePress={onSentencePress}
+                onSentenceLongPress={onSentenceLongPress}
+              />
+            </Fragment>
+          );
+        })}
       </RNText>
     </View>
   );
