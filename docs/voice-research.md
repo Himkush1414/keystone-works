@@ -49,7 +49,6 @@ On top of the emotions:
 
 - Speaker tags ("she said.") are said quicker, quieter and lower.
 - A chapter's last lines slow down and settle.
-- Narration varies slightly from line to line, the same way every time.
 - Pauses follow punctuation, speaker changes and emotion (`perform/plan.ts`).
 
 ## Limits

@@ -30,9 +30,6 @@ export const SPEAKER_TAG = { rate: 1.06, gainDb: -1.5, pitch: -0.7, maxWords: 8 
 /** The last lines of a chapter slow down and settle. */
 export const CHAPTER_END = { rate: 0.92, pitch: -0.5, beforeRate: 0.96 } as const;
 
-/** Narration varies a little from line to line, as a reader's does (seeded by the text: the same line always sounds the same). */
-export const VARIATION = { rate: 0.015, pitch: 0.3 } as const;
-
 /** Extra silence, in ms, added to the pause the importer planned. */
 export const BEAT = {
   question: 60,
@@ -76,13 +73,6 @@ export function prosodyFor(d: Delivery): { rate: number; gainDb: number; pitch: 
     gainDb: round(p.gainDb * k, 0.5),
     pitch: round(p.pitch * k, 0.1),
   };
-}
-
-/** A repeatable number in [-1, 1] from the text (FNV-1a). */
-function jitter(text: string, salt: number): number {
-  let h = 0x811c9dc5 ^ salt;
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
-  return ((h >>> 0) / 0xffffffff) * 2 - 1;
 }
 
 /** How one sentence is said: the narration around its quotation, and its own words. */
@@ -199,9 +189,6 @@ export function perform(
         p.rate = round(p.rate * SPEAKER_TAG.rate, 0.01);
         p.gainDb += SPEAKER_TAG.gainDb;
         p.pitch = round(p.pitch + SPEAKER_TAG.pitch, 0.1);
-      } else if (l.kind === 'narration') {
-        p.rate = round(p.rate * (1 + VARIATION.rate * jitter(l.text, 1)), 0.01);
-        p.pitch = round(p.pitch + VARIATION.pitch * jitter(l.text, 2), 0.1);
       }
       const style = l.kind === 'dialogue' && l.speaker ? opts.styles?.[l.speaker] : undefined;
       if (style) {

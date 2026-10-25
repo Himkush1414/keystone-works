@@ -180,8 +180,7 @@
    "lang": "en",
    "voice": "F1",
    "pauseMs": 370,
-   "kind": "narration",
-   "pitch": 0.3
+   "kind": "narration"
   },
   {
    "i": 1,
@@ -189,8 +188,7 @@
    "lang": "en",
    "voice": "F1",
    "pauseMs": 760,
-   "kind": "narration",
-   "pitch": 0.3
+   "kind": "narration"
   },
   {
    "i": 2,
@@ -260,9 +258,7 @@
    "lang": "en",
    "voice": "F1",
    "pauseMs": 760,
-   "kind": "narration",
-   "rate": 0.99,
-   "pitch": -0.2
+   "kind": "narration"
   }
  ],
  "hi-family": [

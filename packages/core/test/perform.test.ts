@@ -351,18 +351,10 @@ describe('delivery', () => {
     expect(p[0]?.rate).toBeLessThan(1);
   });
 
-  it('varies narration a little, the same way every time', () => {
+  it('leaves plain narration untouched: no pitch or pace change on ordinary lines', () => {
     const lines = ['It rained all day.', 'The roads were empty.', 'Nobody came.', 'The lamp burned low.'].map(
       (t) => line(t, { block: 0 }),
     );
-    const a = perform(lines);
-    const b = perform(lines);
-    expect(a).toEqual(b);
-    expect(new Set(a.map((x) => `${x.rate}/${x.pitch}`)).size).toBeGreaterThan(1);
-    for (const x of a) {
-      expect(Math.abs(x.rate - 1)).toBeLessThanOrEqual(0.02);
-      expect(Math.abs(x.pitch)).toBeLessThanOrEqual(0.3);
-    }
-    expect(perform(lines, { expressive: false }).every((x) => x.rate === 1 && x.pitch === 0)).toBe(true);
+    expect(perform(lines).every((x) => x.rate === 1 && x.pitch === 0)).toBe(true);
   });
 });
