@@ -556,7 +556,7 @@ class PlaybackController private constructor(private val context: Context) : Str
             if (job.gen != generation) return
             val t0 = System.nanoTime()
             val last = k == pieces.lastIndex
-            val raw = engineLock.withLock { host.engine().synthesize(piece.text, piece.lang, voice, job.steps, BASE_RATE * seg.rate, continues = !last) }
+            val raw = engineLock.withLock { host.engine().synthesize(piece.text, piece.lang, voice, job.steps, BASE_RATE, continues = !last) }
             val workMs = (System.nanoTime() - t0) / 1_000_000
             if (raw.dropped.isNotEmpty()) EngineLog.i(TAG, "dropped characters ${raw.dropped}")
             lastRender = mapOf("sentence" to i.toLong(), "piece" to k.toLong(), "steps" to job.steps.toLong(), "workMs" to workMs, "audioMs" to raw.durationMs) +
@@ -571,7 +571,7 @@ class PlaybackController private constructor(private val context: Context) : Str
             val speech = Chunks.trim(raw.samples, raw.sampleRate)
             pacing.record(job.steps, workMs, speech.size * 1000L / raw.sampleRate, piece.text.length)
             val seed = Seed.forSentence(piece.text, voice.id, job.steps)
-            val performed = Performance.apply(speech, raw.sampleRate, seg.gainDb, seg.breath && k == 0, seed)
+            val performed = Performance.apply(speech, raw.sampleRate, seg.gainDb, seg.breath && k == 0, seed, seg.pitch, seg.rate)
             val part = Part(joiner.push(performed, piece.gapMs, last), piece.gapMs)
             if (forPlayer) lock.withLock {
                 if (job.gen != generation) return

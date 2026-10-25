@@ -23,6 +23,7 @@ class AudioCache(context: Context, private val modelVersion: String) {
         val performance = buildString {
             if (segment.rate != 1f) append("|r${segment.rate}")
             if (segment.gainDb != 0f) append("|g${segment.gainDb}")
+            if (segment.pitch != 0f) append("|p${segment.pitch}")
             if (segment.breath) append("|b")
             segment.runs?.forEach { append("|${it.lang}:${it.text}") }
         }

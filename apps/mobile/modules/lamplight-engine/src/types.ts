@@ -124,6 +124,8 @@ export interface QueueFile {
     rate?: number;
     /** Loudness change in dB (a whisper is quieter); 0 when absent. */
     gainDb?: number;
+    /** Pitch change in semitones (the line's emotion, a speaker tag); 0 when absent. */
+    pitch?: number;
     /** A soft breath before the line. */
     breath?: boolean;
     /** The line split by voice language when it mixes them; each run is rendered in its own language. */

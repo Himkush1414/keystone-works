@@ -85,6 +85,15 @@ Each item says what to listen for and which value to change if it's off. All the
 - [ ] Voices stay the same all the way through. Merge two characters in the Cast sheet, and check nobody else's voice changes.
 - [ ] Measured accuracy is 94% on text the rules were never tuned on (`packages/core/test/cast-fresh.test.ts`). Note any book where it's clearly worse.
 
+**Delivery from the tags.** What the research found and why it's done this way: `docs/voice-research.md`. The values are in `PROSODY`, `SPEAKER_TAG`, `CHAPTER_END` and `VARIATION` (`packages/core/src/perform/plan.ts`).
+
+- [ ] A sad line sounds lower and slower, not just quieter. An excited line sounds brighter and quicker. If a shift sounds artificial (a "processed" or slightly hollow voice), lower that emotion's `pitch`.
+- [ ] Speaker tags ("she said.", "उसने कहा।") sound lighter and quicker than the quote, without being swallowed.
+- [ ] The last line of a chapter settles: slower and a touch lower.
+- [ ] Narration doesn't sound like a loop of the same line: small changes in pace and pitch from line to line, never wobbly.
+- [ ] Hindi gets the same treatment: try the दादी and बाज़ार samples.
+- [ ] Optional: the clips from `TagProbeTest` (laugh, sigh, breath…). Is any tag a real laugh or sigh, rather than the word half-read? If one is, it could become a setting.
+
 **Character voices.**
 
 - [ ] An old character (old Mr. Grey, दादी) sounds older: a lower voice and a little slower (`AGE_RATE.old` = 0.93).

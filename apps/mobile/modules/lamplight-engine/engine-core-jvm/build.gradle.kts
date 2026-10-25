@@ -81,6 +81,8 @@ tasks.test {
     }
     systemProperty("lamplight.parity", file("src/test/resources/parity.json").absolutePath)
     project.findProperty("pdfs")?.let { systemProperty("lamplight.pdfs", it.toString()) }
+    project.findProperty("probe")?.let { systemProperty("lamplight.probe", it.toString()) }
+    project.findProperty("probeOut")?.let { systemProperty("lamplight.probe.out", it.toString()) }
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = true
