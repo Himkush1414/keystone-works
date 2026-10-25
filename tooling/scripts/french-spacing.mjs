@@ -15,12 +15,19 @@ const NNBSP = '\\u202f';
 const NBSP = '\\u00a0';
 
 /** Fixes the spacing inside one single-quoted string literal's content. */
+// A space already there may be written as an escape or as the character itself; both count.
+const SP = String.raw`(?:\\u00a0|\\u202f|[ \u00a0\u202f])`;
+const BEFORE_MARK = new RegExp(`${SP}*([;!?])`, 'g');
+const BEFORE_COLON = new RegExp(`${SP}+:(?!//)`, 'g');
+const AFTER_OPEN = new RegExp(`«${SP}*`, 'g');
+const BEFORE_CLOSE = new RegExp(`${SP}*»`, 'g');
+
 export function frenchSpacing(s) {
   return s
-    .replace(/(?:\\u00a0|\\u202f| )*([;!?])/g, (m, p, offset) => (offset === 0 ? m : `${NNBSP}${p}`))
-    .replace(/(?:\\u00a0|\\u202f| )+:(?!\/\/)/g, `${NBSP}:`)
-    .replace(/«(?:\\u00a0| )*/g, `«${NBSP}`)
-    .replace(/(?:\\u00a0| )*»/g, `${NBSP}»`);
+    .replace(BEFORE_MARK, (m, p, offset) => (offset === 0 ? m : `${NNBSP}${p}`))
+    .replace(BEFORE_COLON, `${NBSP}:`)
+    .replace(AFTER_OPEN, `«${NBSP}`)
+    .replace(BEFORE_CLOSE, `${NBSP}»`);
 }
 
 const src = readFileSync(file, 'utf8');
