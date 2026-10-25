@@ -41,4 +41,17 @@ describe('Hindi dialogue without quotation marks', () => {
     const name = (id?: string) => characters.find((c) => c.id === id)?.name;
     expect(attributions.map((a) => name(a.speaker))).toEqual(['महमूद', 'मोहसिन', 'मोहसिन', 'हामिद', 'खाला']);
   });
+
+  it('takes the speaker past adverbs and participles, and the agent of कहा', () => {
+    const { characters, attributions } = analyseCast(
+      [
+        'सम्मी मेले में था।',
+        'अन्तमें एक दिन खालाने जुम्मनसे कहा, बेटा! तुम्हारे साथ मेरा निर्वाह न होगा।',
+        'सम्मी ने खेजरी ली थी। प्रभावित होकर बोला---मेरी खेजरी से बदलोगे?',
+      ],
+      'hi',
+    );
+    const name = (id?: string) => characters.find((c) => c.id === id)?.name;
+    expect(attributions.map((a) => name(a.speaker))).toEqual(['खाला', 'सम्मी']);
+  });
 });

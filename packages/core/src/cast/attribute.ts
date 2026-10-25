@@ -79,6 +79,13 @@ const HI_AGREE_M = new Set('गया आया था लगा रहा स�
 // prettier-ignore
 const NOT_NAMES = new Set('the a an and but or then there this that these those it its he she they we you i his her their our your my when while if as so yet still now here what who why how where which oh ah well yes no not one all some every no-one nobody somebody everyone old young with without after before for from once since upon at in on to into by of though although because perhaps indeed suddenly finally later meanwhile again never always only even just however therefore besides beyond moreover otherwise presently sometimes outside inside january february march april may june july august september october november december monday tuesday wednesday thursday friday saturday sunday english french german spanish italian latin greek hindi urdu chinese japanese russian american british indian european el la los las un una y pero entonces ella él ellos der die das ein eine und aber dann sie er es le la les un une et mais puis elle il ils il lo gli una e ma poi lei lui o a os as um uma mas então ela ele'.split(' '));
 
+/** Words that open a Hindi clause without being its speaker: adverbs, conjunctions, postpositions, time words. */
+// prettier-ignore
+const HI_NOT_SUBJECT = new Set('अन्तमें अंतमें अन्त अंत में फिर तब अब इतने इतनेमें उसके बाद सहसा अचानक आखिर अंततः परन्तु लेकिन किन्तु मगर और तो भी ही यह वह इस उस एक दिन रात सुबह शाम आज कल को से पर का की के ने जो जब जैसे अपने सामने उनसे उससे उन्हें उसे'.split(' '));
+/** A word before these starts a participle phrase ("प्रभावित होकर", "मुस्कुराते हुए"), not the speaker. */
+// prettier-ignore
+const HI_PARTICIPLE_NEXT = new Set('होकर हुए होते करके कर'.split(' '));
+
 // prettier-ignore
 const CALENDAR = new Set('january february march april may june july august september october november december monday tuesday wednesday thursday friday saturday sunday'.split(' '));
 
@@ -592,13 +599,73 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
       };
     };
     const say = pat.hiSayClause.exec(before);
-    if (say?.[1]) return asTag(say[1], say[2], 0.9);
+    if (say?.[2]) {
+      const who = hiSubject(clauseOf(before), say[2]);
+      if (who) return asTag(who, say[2], 0.9);
+      // The person named just before: a known character, or the agent of the previous sentence ("सम्मी ने
+      // खेजरी ली थी। प्रभावित होकर बोला---…").
+      const named = lastNamedIn(before) ?? lastAgentIn(before);
+      if (named) return asTag(named, say[2], 0.8);
+      const gender = verbGender(say[2]);
+      return { tag: { kind: 'pronoun', text: 'वह', ...(gender ? { gender } : {}) }, confidence: 0.7 };
+    }
     const label = pat.hiLabel.exec(before);
     if (label?.[1] && label[1].split(/\s+/).length <= 2)
       return asTag(label[1].split(/\s+/)[0] ?? label[1], undefined, 0.9);
     const clause = pat.hiClause.exec(before);
-    if (clause?.[1]) return asTag(clause[1], undefined, 0.8);
+    if (clause?.[1]) {
+      const who = hiSubject(clauseOf(before)) ?? lastNamedIn(before);
+      if (who) return asTag(who, undefined, 0.8);
+    }
     return undefined;
+  };
+
+  /** The clause that introduces speech: from the last sentence end before it. */
+  const clauseOf = (before: string) =>
+    before.slice(Math.max(...['।', '?', '!', '॥'].map((c) => before.lastIndexOf(c))) + 1);
+  /**
+   * Who speaks in a Hindi clause introducing speech: with कहा, पूछा or जवाब दिया, the one marked by ने
+   * ("…खालाने जुम्मनसे कहा,"); otherwise the first word that can be a person, skipping adverbs, postpositions
+   * and the start of a participle phrase ("अन्तमें एक दिन…", "प्रभावित होकर बोला"). Undefined when none is.
+   */
+  const hiSubject = (clause: string, verb?: string): string | undefined => {
+    const words = clause
+      .replace(/[\u200b\u2060]/gu, '')
+      .split(/[\s,]+/)
+      .filter(Boolean);
+    if (verb && !verbGender(verb)) {
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i] ?? '';
+        if (words[i + 1] === 'ने' && !HI_PRONOUNS.has(w)) return w;
+        if (/ने$/u.test(w) && w.length > 4 && !HI_PRONOUNS.has(w) && !HI_NOT_SUBJECT.has(w))
+          return w.slice(0, -2);
+      }
+    }
+    for (let i = 0; i < words.length; i++) {
+      const w = words[i] ?? '';
+      const next = words[i + 1] ?? '';
+      if (HI_NOT_SUBJECT.has(w) || /कर$/u.test(w) || HI_PARTICIPLE_NEXT.has(next)) continue;
+      if (/[—―–-]/u.test(w) || /\p{Nd}/u.test(w)) return undefined;
+      return w;
+    }
+    return undefined;
+  };
+  /** The last person marked by ने in `text` ("सम्मी ने …"), not a pronoun. */
+  const lastAgentIn = (text: string): string | undefined => {
+    const agents = [...text.matchAll(/([\p{L}\p{M}]+)\s+ने\s/gu)].map((m) => m[1] ?? '');
+    return agents.reverse().find((w) => w && !HI_PRONOUNS.has(w) && !HI_NOT_SUBJECT.has(w));
+  };
+  /** The last known character named in `text`. */
+  const lastNamedIn = (text: string): string | undefined => {
+    let best: { at: number; name: string } | undefined;
+    for (const c of chars.values()) {
+      if (c.id === 'narrator-i') continue;
+      for (const a of c.aliases) {
+        const at = text.lastIndexOf(a);
+        if (at >= 0 && (!best || at > best.at)) best = { at, name: a };
+      }
+    }
+    return best?.name;
   };
 
   const findTag = (after: string, before: string): { tag: Tag; confidence: number } | undefined => {
