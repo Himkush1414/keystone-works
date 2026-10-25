@@ -25,6 +25,7 @@ const SETTINGS: SessionSettings = {
   rewindOnResume: true,
   expressive: true,
   breaths: true,
+  voiceProcessing: false,
 };
 
 /** A book long enough for several chunks, with dialogue so pauses, breaths and voices vary. */

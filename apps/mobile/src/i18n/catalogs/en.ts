@@ -338,6 +338,9 @@ export const en = {
     expressiveDesc: 'Whispers, shouts and pauses follow the story',
     breaths: 'Natural breaths',
     breathsDesc: 'A soft breath before long sentences and emotional moments',
+    voiceProcessing: 'Emotion processing',
+    voiceProcessingDesc:
+      "Shifts the voice's pitch to act out emotions and characters. Off keeps the voice natural, exactly as it speaks.",
     reduceMotion: 'Reduce motion',
     reduceMotionDesc: 'Uses fades instead of movement. Follows your system setting by default.',
     haptics: 'Haptic feedback',

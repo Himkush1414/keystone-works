@@ -344,6 +344,9 @@ export const fr: Catalog = {
     expressiveDesc: 'Chuchotements, cris et pauses suivent l’histoire',
     breaths: 'Respirations naturelles',
     breathsDesc: 'Une légère respiration avant les longues phrases et les moments forts',
+    voiceProcessing: 'Traitement des émotions',
+    voiceProcessingDesc:
+      'Modifie la hauteur de la voix pour jouer les émotions et les personnages. Désactivé, la voix reste naturelle, telle qu’elle parle.',
     reduceMotion: 'Réduire les animations',
     reduceMotionDesc: 'Utilise des fondus plutôt que des mouvements. Suit le réglage du système par défaut.',
     haptics: 'Retour haptique',

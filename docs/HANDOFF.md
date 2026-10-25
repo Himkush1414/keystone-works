@@ -58,7 +58,7 @@ The interface ships in English (source), Spanish, German, French and Brazilian P
 - **French typography:** narrow no-break spaces before `; ! ?` and no-break spaces before `:` and inside « ». `tooling/scripts/french-spacing.mjs` applies them; a reviewer only needs to check the words.
 - **Agreement:** adjectives after "voz"/"voix" (feminine) in the voice descriptions (`voices.traits`).
 
-Keys added most recently, which no reviewer has seen yet: `import.added`, `player.expand`, `item.titleField`, `item.authorField`, `voices.traits.*`, `voicePick.choose`, `settings.expressive*`, `settings.breaths*`, `tiers.*`.
+Keys added most recently, which no reviewer has seen yet: `import.added`, `player.expand`, `item.titleField`, `item.authorField`, `voices.traits.*`, `voicePick.choose`, `settings.expressive*`, `settings.breaths*`, `tiers.*`, `settings.voiceProcessing*`, `quality.*Desc` (rewritten 25 Oct).
 
 ## 4. Checks that need a real phone
 

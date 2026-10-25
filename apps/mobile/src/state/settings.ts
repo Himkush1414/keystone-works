@@ -31,6 +31,8 @@ export interface Settings {
   speakUrls: boolean;
   /** Whispers, shouts, reveal beats and pauses between speakers. */
   expressive: boolean;
+  /** Emotion processing: pitch shifts after the voice speaks. Off is Natural, the voice exactly as the model speaks it. */
+  voiceProcessing: boolean;
   /** A soft breath before long sentences and emotional moments. */
   breaths: boolean;
 }
@@ -57,6 +59,7 @@ export const DEFAULT_SETTINGS: Settings = {
   speakUrls: true,
   expressive: true,
   breaths: true,
+  voiceProcessing: false,
 };
 
 /** Where settings are kept: SQLite on devices, localStorage on the web, memory in tests. */

@@ -23,6 +23,7 @@ const SETTINGS: SessionSettings = {
   rewindOnResume: true,
   expressive: true,
   breaths: true,
+  voiceProcessing: false,
 };
 
 const TEXT = [

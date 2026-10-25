@@ -148,6 +148,12 @@ export function SettingsScreen({
             value={s.breaths}
             onChange={(breaths) => update({ breaths })}
           />
+          <SwitchRow
+            label={t('settings.voiceProcessing')}
+            description={t('settings.voiceProcessingDesc')}
+            value={s.voiceProcessing}
+            onChange={(voiceProcessing) => update({ voiceProcessing })}
+          />
         </Section>
 
         <Section title={t('settings.pronunciation')}>
