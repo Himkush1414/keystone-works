@@ -10,6 +10,16 @@ export interface CleanSettings {
   header: boolean;
   footer: boolean;
   pageNumber: boolean;
+  /** Text stamped across pages, such as "Downloaded from …" or "CONFIDENTIAL". */
+  watermark: boolean;
+  /** Copyright notices, ISBNs and the publishing page. */
+  copyright: boolean;
+  /** Footnote text at the foot of a PDF page (the markers in the text are `footnoteMarker`). */
+  footnote: boolean;
+  /** Lines of symbols or scan debris with no words in them. */
+  scanNoise: boolean;
+  /** Numbers standing alone on a line of the body, such as margin line numbers. */
+  strayNumber: boolean;
   citation: boolean;
   footnoteMarker: boolean;
   /** Skip links entirely; when false they're spoken as the word "link". */
@@ -26,6 +36,11 @@ export const defaultCleanSettings = (
   header: true,
   footer: true,
   pageNumber: true,
+  watermark: true,
+  copyright: true,
+  footnote: true,
+  scanNoise: true,
+  strayNumber: true,
   citation: fromPdf || kind === 'article' || kind === 'document',
   footnoteMarker: true,
   url: false,
@@ -34,10 +49,15 @@ export const defaultCleanSettings = (
   code: true,
 });
 
+/** A copyright notice: the sign, "all rights reserved", an ISBN, or "Copyright 2024". */
+export const COPYRIGHT =
+  /©|\(c\)\s*\p{Nd}{4}|all rights reserved|\bISBN(?:-1[03])?\b|सर्वाधिकार सुरक्षित|copyright\s*(?:©|\(c\))?\s*\p{Nd}{4}/iu;
 const NUMERIC_CITATION = /\[\d{1,4}(?:\s*[,–-]\s*\d{1,4})*\]/gu;
 const AUTHOR_YEAR =
   /\((?:see\s+|cf\.\s+)?(?:\p{Lu}[\p{L}'’-]+(?:\s+et al\.)?(?:,?\s+(?:and|&)\s+\p{Lu}[\p{L}'’-]+)?,?\s+(?:\d{4}[a-z]?|n\.d\.)(?:,\s*(?:p|pp)\.\s*\d+(?:[–-]\d+)?)?(?:;\s*)?)+\)/gu;
 const SUPERSCRIPT_MARKER = /(?<=[\p{L}.,;:!?”’"')\]])[⁰¹²³⁴⁵⁶⁷⁸⁹]+/gu;
+/** "end of a sentence.* Next" — an asterisk, dagger or section sign glued to the word or stop it annotates. */
+const SYMBOL_MARKER = /(?<=[\p{L}\p{M}.,;:!?।”’"')\]])[*†‡§]{1,3}(?=\s|$)/gu;
 /** "end of a sentence.12 Next" — footnote numbers glued to punctuation, typical of PDF text layers. */
 const GLUED_MARKER = /(?<=\p{Ll}[.,;:])\d{1,3}(?=\s|$)/gu;
 const URL = /\b(?:https?:\/\/|www\.)[^\s<>"]+[^\s<>".,;:!?)\]]|\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b/giu;
@@ -57,10 +77,15 @@ export function detectInBlock(block: Block, fromPdf: boolean): Skip[] {
     return [{ start: 0, end: block.text.length, reason: 'caption' }];
   }
   const t = block.text;
+  // A short block that is a copyright notice ("© 2024 The Paper. All rights reserved.") in any format.
+  if (block.kind !== 'heading' && t.length < 160 && COPYRIGHT.test(t)) {
+    return [{ start: 0, end: t.length, reason: 'copyright' }];
+  }
   return [
     ...spans(t, NUMERIC_CITATION, 'citation'),
     ...spans(t, AUTHOR_YEAR, 'citation'),
     ...spans(t, SUPERSCRIPT_MARKER, 'footnoteMarker'),
+    ...spans(t, SYMBOL_MARKER, 'footnoteMarker'),
     ...(fromPdf ? spans(t, GLUED_MARKER, 'footnoteMarker') : []),
     ...spans(t, URL, 'url'),
   ];
