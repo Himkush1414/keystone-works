@@ -124,8 +124,10 @@ export interface QueueFile {
     rate?: number;
     /** Loudness change in dB (a whisper is quieter); 0 when absent. */
     gainDb?: number;
-    /** Pitch change in semitones (the line's emotion, a speaker tag); 0 when absent. */
+    /** Pitch change in semitones (the line's emotion, a character's register, a speaker tag); 0 when absent. */
     pitch?: number;
+    /** How the line ends: trailing off, clipped, or cut off by the next speaker. */
+    ending?: 'trail' | 'clip' | 'cut';
     /** A soft breath before the line. */
     breath?: boolean;
     /** The line split by voice language when it mixes them; each run is rendered in its own language. */

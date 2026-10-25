@@ -119,5 +119,19 @@ class PerformanceTest {
             assertTrue(kotlin.math.abs(medianF0(y) / 150.0 - 1) < 0.03, "rate $rate: ${medianF0(y)} Hz")
         }
     }
+
+    @Test
+    fun `a line can trail off, end clipped, or be cut off`() {
+        val sr = 44_100
+        val x = voiced(150.0, 800) + FloatArray(sr * 60 / 1000)
+        val trail = Performance.ending(x, sr, "trail")
+        val clip = Performance.ending(x, sr, "clip")
+        val cut = Performance.ending(x, sr, "cut")
+        assertTrue(trail.size > x.size, "trail ${trail.size} vs ${x.size}")
+        assertTrue(clip.size < x.size - sr * 40 / 1000, "clip ${clip.size} vs ${x.size}")
+        assertTrue(cut.size <= sr * 820 / 1000, "cut ${cut.size}")
+        assertTrue(kotlin.math.abs(trail.last()) < 1e-3f)
+        assertTrue(Performance.ending(x, sr, "other") === x)
+    }
 }
 
