@@ -142,7 +142,7 @@
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -1.5,
-   "pitch": -3.3,
+   "pitch": -2,
    "ending": "trail"
   },
   {
@@ -165,7 +165,7 @@
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -1.5,
-   "pitch": -3.3,
+   "pitch": -2,
    "ending": "trail"
   }
  ],
