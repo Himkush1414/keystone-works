@@ -226,8 +226,10 @@ export interface QueueSegment {
   rate?: number;
   /** Loudness change in dB, when not 0 (a whisper is quieter, a shout louder). */
   gainDb?: number;
-  /** Pitch change in semitones, when not 0 (the line's emotion, a speaker tag, a chapter's end). */
+  /** Pitch change in semitones, when not 0 (the line's emotion, a character's register, a speaker tag, a chapter's end). */
   pitch?: number;
+  /** How the line ends, when not plainly: trailing off, clipped, or cut off by the next speaker. */
+  ending?: 'trail' | 'clip' | 'cut';
   /** A soft breath before the line. */
   breath?: true;
   /** The line split by voice language, when it mixes them (an English phrase in a Hindi line). */
@@ -322,7 +324,11 @@ export function buildQueue(doc: QueueSource, opts: QueueOptions): QueueSegment[]
       delivery,
     });
   }
-  const plan = perform(lines, { expressive: opts.expressive ?? true, breaths: opts.breaths ?? true });
+  const plan = perform(lines, {
+    expressive: opts.expressive ?? true,
+    breaths: opts.breaths ?? true,
+    ...(opts.assignment.styleByCharacter ? { styles: opts.assignment.styleByCharacter } : {}),
+  });
   out.forEach((seg, k) => {
     const p = plan[k];
     if (!p) return;
@@ -332,7 +338,8 @@ export function buildQueue(doc: QueueSource, opts: QueueOptions): QueueSegment[]
     seg.pauseMs = p.pauseMs;
     if (rate !== 1) seg.rate = rate;
     if (p.gainDb !== 0) seg.gainDb = p.gainDb;
-    if (p.pitch !== 0) seg.pitch = p.pitch;
+    if (p.pitch !== 0) seg.pitch = Math.round(Math.min(4, Math.max(-4, p.pitch)) * 10) / 10;
+    if (p.ending) seg.ending = p.ending;
     if (p.breath) seg.breath = true;
   });
   return out;
