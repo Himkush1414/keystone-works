@@ -13,3 +13,4 @@ package-lock.json
 **/build/
 **/.gradle/
 .claude
+packages/core/test/fixtures/pdf/*.json
