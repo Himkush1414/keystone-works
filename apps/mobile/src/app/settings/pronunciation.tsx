@@ -41,7 +41,7 @@ export default function PronunciationRoute() {
   const test = useCallback(
     (sayAs: string) => {
       const voice = services.settings.getState().voices[locale] ?? DEFAULT_NARRATOR;
-      LamplightEngine.previewVoice(sayAs, locale, voice, 4).catch(() =>
+      LamplightEngine.previewVoice(sayAs, locale, voice, 8).catch(() =>
         services.toast.getState().show({ message: t('errors.voiceUnavailable'), tone: 'danger' }),
       );
     },

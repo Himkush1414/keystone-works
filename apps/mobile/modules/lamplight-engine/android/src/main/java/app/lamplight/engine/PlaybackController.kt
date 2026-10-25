@@ -123,7 +123,8 @@ class PlaybackController private constructor(private val context: Context) : Str
 
     // ── calibration and quality ──
 
-    val liveSteps: Int get() = prefs.getInt("liveSteps", 4)
+    /** The lightest quality, never below [ReadAhead.FLOOR_STEPS] (earlier versions stored 3 or 4). */
+    val liveSteps: Int get() = prefs.getInt("liveSteps", ReadAhead.FLOOR_STEPS).coerceAtLeast(ReadAhead.FLOOR_STEPS)
     val studioSteps: Int get() = prefs.getInt("studioSteps", 8)
 
     /**
@@ -152,7 +153,7 @@ class PlaybackController private constructor(private val context: Context) : Str
         val perStep = max(0.0, (r8 - r4) / 4)
         val fixed = max(0.0, r4 - perStep * 4)
         fun projected(steps: Int) = fixed + perStep * steps
-        val live = if (r4 > 0.8) 3 else 4
+        val live = ReadAhead.FLOOR_STEPS
         val studio = listOf(12, 10, 8).firstOrNull { projected(it) <= 0.65 } ?: 8
         prefs.edit()
             .putInt("liveSteps", live)
@@ -165,14 +166,15 @@ class PlaybackController private constructor(private val context: Context) : Str
         return mapOf("rtf4" to r4, "rtf8" to r8, "liveSteps" to live, "studioSteps" to studio, "threads" to host.threads)
     }
 
-    /** Steps the render-ahead aims for; [Pacing] goes lower (down to [FLOOR_STEPS]) when it must to keep up. */
+    /** Steps the render-ahead aims for; [Pacing] goes lower (down to [ReadAhead.FLOOR_STEPS]) when it must to keep up. */
     private fun targetSteps(): Int = when (quality) {
         Quality.LIVE -> liveSteps
         Quality.STUDIO, Quality.AUTO -> studioSteps
         Quality.STUDIO_PLUS -> STUDIO_PLUS_STEPS
     }
 
-    private fun cachedSteps(): List<Int> = listOf(STUDIO_PLUS_STEPS, 12, 10, 8, liveSteps, 3).distinct()
+    /** Audio cached at fewer steps than the floor (by earlier versions) is never played again. */
+    private fun cachedSteps(): List<Int> = listOf(STUDIO_PLUS_STEPS, 12, 10, 8, ReadAhead.FLOOR_STEPS).distinct()
 
     // ── queue control (called from the module, any thread) ──
 
@@ -511,7 +513,7 @@ class PlaybackController private constructor(private val context: Context) : Str
                 playhead = max(currentIndex, playhead),
                 offsetMs = if (playhead > currentIndex) 0 else currentOffsetMs,
                 speed = speed,
-                floor = FLOOR_STEPS,
+                floor = ReadAhead.FLOOR_STEPS,
                 target = targetSteps(),
                 pacing = pacing,
             )
@@ -808,7 +810,6 @@ class PlaybackController private constructor(private val context: Context) : Str
         const val SAMPLE_RATE = 44_100
         const val STUDIO_PLUS_STEPS = 16
         /** The fewest steps narration drops to when the phone is falling behind. */
-        private const val FLOOR_STEPS = 3
         private const val CALIBRATION_SAMPLES = 6
         private const val PACING_SAVE_EVERY = 10
         private const val LOOKAHEAD_MS = 30_000L

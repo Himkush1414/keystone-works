@@ -19,6 +19,7 @@ import androidx.core.view.WindowCompat
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import app.lamplight.engine.core.ReadAhead
 import com.google.common.util.concurrent.ListenableFuture
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.exception.CodedException
@@ -154,7 +155,7 @@ class LamplightEngineModule : Module() {
         AsyncFunction("clearCache") { controller.clearCache() }
 
         AsyncFunction("previewVoice") { text: String, lang: String, voice: String, steps: Int ->
-            val audio = controller.host.engine().synthesize(text, lang, controller.host.voice(voice), steps)
+            val audio = controller.host.engine().synthesize(text, lang, controller.host.voice(voice), steps.coerceAtLeast(ReadAhead.FLOOR_STEPS))
             runOnMain {
                 if (controller.playing) controller.pause()
                 playPreview(audio.samples, audio.sampleRate)
@@ -166,7 +167,7 @@ class LamplightEngineModule : Module() {
         AsyncFunction("warmDictionary") { lexicon.warm() }
 
         AsyncFunction("synthesizeToFile") { text: String, lang: String, voice: String, steps: Int, path: String ->
-            val audio = controller.host.engine().synthesize(text, lang, controller.host.voice(voice), steps)
+            val audio = controller.host.engine().synthesize(text, lang, controller.host.voice(voice), steps.coerceAtLeast(ReadAhead.FLOOR_STEPS))
             writeWav(File(path), audio.samples, audio.sampleRate)
             audio.durationMs.toDouble()
         }
@@ -261,7 +262,7 @@ class LamplightEngineModule : Module() {
             val engine = controller.host.engine()
             val loadMs = (System.nanoTime() - t0) / 1_000_000
             val t1 = System.nanoTime()
-            val audio = engine.synthesize("This is Lamplight, reading to you.", "en", controller.host.voice("F1"), 4)
+            val audio = engine.synthesize("This is Lamplight, reading to you.", "en", controller.host.voice("F1"), 8)
             val renderMs = (System.nanoTime() - t1) / 1_000_000
             runOnMain {
                 if (controller.playing) controller.pause()

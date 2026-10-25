@@ -144,7 +144,7 @@ class GapSim(
         }
 
         /** This change: [ReadAhead] with [Pacing] learning from every render, sentences cut by [Chunks]. */
-        fun paced(pacing: Pacing, target: Int, floor: Int = 3, readAhead: ReadAhead = ReadAhead()) = Policy { v ->
+        fun paced(pacing: Pacing, target: Int, floor: Int = ReadAhead.FLOOR_STEPS, readAhead: ReadAhead = ReadAhead()) = Policy { v ->
             readAhead.next(
                 count = v.count,
                 slot = { i ->

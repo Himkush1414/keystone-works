@@ -3,6 +3,7 @@ package app.lamplight.engine.core
 import ai.onnxruntime.OrtEnvironment
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -52,7 +53,7 @@ class ReadingGapModelTest {
     }
 
     @Test
-    fun `real renders, scaled to slower phones, never stall`() {
+    fun `real renders, scaled to slower phones, never stall while the floor fits`() {
         val lines = Passage.lines()
         println("this machine renders 8 steps at ${"%.2f".format(rtf8)}x real time")
         for (phone in listOf(0.3, 0.6, 1.0, 1.5, 2.5)) {
@@ -71,7 +72,9 @@ class ReadingGapModelTest {
             println("reading gap (real model, a phone rendering 8 steps at ${phone}x real time)")
             println("  before (fixed 8 steps, whole sentences): $fixed")
             println("  after  (paced, cut at clause breaks):    $paced")
-            assertEquals(0, paced.stallCount, "phone ${phone}x: $paced")
+            assertTrue(paced.stepsUsed.all { it >= ReadAhead.FLOOR_STEPS }, "phone ${phone}x: steps ${paced.stepsUsed}")
+            // A phone slower than real time at the floor waits between sentences rather than break the voice.
+            if (phone <= 1.0) assertEquals(0, paced.stallCount, "phone ${phone}x: $paced")
         }
     }
 }
