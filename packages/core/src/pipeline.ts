@@ -226,6 +226,8 @@ export interface QueueSegment {
   rate?: number;
   /** Loudness change in dB, when not 0 (a whisper is quieter, a shout louder). */
   gainDb?: number;
+  /** Pitch change in semitones, when not 0 (the line's emotion, a speaker tag, a chapter's end). */
+  pitch?: number;
   /** A soft breath before the line. */
   breath?: true;
   /** The line split by voice language, when it mixes them (an English phrase in a Hindi line). */
@@ -315,6 +317,7 @@ export function buildQueue(doc: QueueSource, opts: QueueOptions): QueueSegment[]
       pauseMs: s.pauseMs,
       block: s.block,
       lastInBlock: doc.sentences[i + 1]?.block !== s.block,
+      lastInChapter: s.pauseMs === PAUSE.chapter,
       blockText: block.text,
       delivery,
     });
@@ -329,6 +332,7 @@ export function buildQueue(doc: QueueSource, opts: QueueOptions): QueueSegment[]
     seg.pauseMs = p.pauseMs;
     if (rate !== 1) seg.rate = rate;
     if (p.gainDb !== 0) seg.gainDb = p.gainDb;
+    if (p.pitch !== 0) seg.pitch = p.pitch;
     if (p.breath) seg.breath = true;
   });
   return out;

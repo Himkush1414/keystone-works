@@ -127,7 +127,7 @@ describe('prosody', () => {
     expect(whisper.gainDb).toBeLessThan(-4);
     expect(whisper.rate).toBeLessThan(1);
     expect(shout.gainDb).toBeGreaterThan(1);
-    expect(prosodyFor({ emotion: 'neutral', intensity: 0 })).toEqual({ rate: 1, gainDb: 0 });
+    expect(prosodyFor({ emotion: 'neutral', intensity: 0 })).toEqual({ rate: 1, gainDb: 0, pitch: 0 });
   });
 
   it('stays in a natural range at full intensity', () => {
@@ -137,7 +137,14 @@ describe('prosody', () => {
       expect(p.rate).toBeLessThanOrEqual(1.1);
       expect(p.gainDb).toBeGreaterThanOrEqual(-8);
       expect(p.gainDb).toBeLessThanOrEqual(3);
+      expect(Math.abs(p.pitch)).toBeLessThanOrEqual(2);
     }
+  });
+
+  it('lowers the pitch for sadness and raises it for excitement and fear', () => {
+    expect(prosodyFor({ emotion: 'sad', intensity: 1 }).pitch).toBeLessThan(-1);
+    expect(prosodyFor({ emotion: 'excited', intensity: 1 }).pitch).toBeGreaterThan(1);
+    expect(prosodyFor({ emotion: 'fear', intensity: 0.5 }).pitch).toBeGreaterThan(0);
   });
 });
 
@@ -263,5 +270,41 @@ describe('buildQueue performs the text', () => {
     expect(q.find((s) => s.text === '')?.pauseMs).toBe(SCENE_BREAK_MS);
     const plain = build({ expressive: false, breaths: false });
     expect(plain.some((s) => s.gainDb !== undefined || s.breath)).toBe(false);
+  });
+});
+
+describe('delivery', () => {
+  it('says a speaker tag lighter, quicker and lower than the line it belongs to', () => {
+    const [quote, tag] = perform([
+      line('“We have to go now,”', { kind: 'dialogue', speaker: 'anna', pauseMs: 170 }),
+      line('she said.', { lastInBlock: true, pauseMs: 760 }),
+    ]);
+    expect(tag?.rate).toBeGreaterThan(quote?.rate ?? 1);
+    expect(tag?.gainDb).toBeLessThan(0);
+    expect(tag?.pitch).toBeLessThan(0);
+  });
+
+  it('slows down at the end of a chapter', () => {
+    const p = perform([
+      line('The house was quiet again.', { pauseMs: 370 }),
+      line('She slept.', { lastInBlock: true, lastInChapter: true, pauseMs: 1500 }),
+    ]);
+    expect(p[1]?.rate).toBeLessThan(0.95);
+    expect(p[0]?.rate).toBeLessThan(1);
+  });
+
+  it('varies narration a little, the same way every time', () => {
+    const lines = ['It rained all day.', 'The roads were empty.', 'Nobody came.', 'The lamp burned low.'].map(
+      (t) => line(t, { block: 0 }),
+    );
+    const a = perform(lines);
+    const b = perform(lines);
+    expect(a).toEqual(b);
+    expect(new Set(a.map((x) => `${x.rate}/${x.pitch}`)).size).toBeGreaterThan(1);
+    for (const x of a) {
+      expect(Math.abs(x.rate - 1)).toBeLessThanOrEqual(0.02);
+      expect(Math.abs(x.pitch)).toBeLessThanOrEqual(0.3);
+    }
+    expect(perform(lines, { expressive: false }).every((x) => x.rate === 1 && x.pitch === 0)).toBe(true);
   });
 });
