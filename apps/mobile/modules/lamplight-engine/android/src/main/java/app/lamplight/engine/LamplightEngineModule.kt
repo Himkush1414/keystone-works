@@ -6,6 +6,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.media.AudioManager
 import android.os.Build
 import android.media.AudioAttributes
@@ -13,6 +15,7 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Handler
 import android.os.Looper
+import androidx.core.view.WindowCompat
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -108,6 +111,25 @@ class LamplightEngineModule : Module() {
                     EngineFailure.of(e)
                 }
                 if (failure == null) promise.resolve(null) else promise.reject(CodedException(failure.code, failure.message, null))
+            }
+        }
+
+        // The screen's own background behind the app, and system bar icons that read on it (the reader's
+        // sepia or night theme can differ from the app's). The system's translucent scrim behind the
+        // navigation buttons is off, so the bar is the screen's own colour.
+        AsyncFunction("setSystemBars") { dark: Boolean, background: String? ->
+            runOnMain {
+                val activity = appContext.currentActivity ?: return@runOnMain
+                val window = activity.window
+                WindowCompat.getInsetsController(window, window.decorView).run {
+                    isAppearanceLightStatusBars = !dark
+                    isAppearanceLightNavigationBars = !dark
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
+                background?.let { runCatching { Color.parseColor(it) }.getOrNull() }?.let { color ->
+                    window.setBackgroundDrawable(ColorDrawable(color))
+                    window.decorView.setBackgroundColor(color)
+                }
             }
         }
 
