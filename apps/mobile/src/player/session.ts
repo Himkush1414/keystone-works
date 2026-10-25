@@ -17,6 +17,7 @@ import type { QueueSegment } from '@lamplight/core';
 import {
   correctSpeaker,
   loadContent,
+  refreshCast,
   mergeCharacters,
   saveAutoVoices,
   setCharacterVoice,
@@ -80,6 +81,8 @@ const QUEUE_FORMAT = 1;
 
 /** Reads the document and the listener's choices, and settles Cast's voices (saved the first time). */
 export function queueContext(db: Db, documentId: string, settings: SessionSettings): QueueContext {
+  // A book analysed by an older Cast is analysed again before it plays (corrections held fixed).
+  refreshCast(db, documentId);
   const item = getItem(db, documentId);
   if (!item || item.status !== 'ready') throw new Error(`document ${documentId} is not ready to play`);
   const content = loadContent(db, documentId);

@@ -1,4 +1,4 @@
-import { recastSpeakers, speakerSpanOf } from '@lamplight/core';
+import { CAST_VERSION, recastSpeakers, speakerSpanOf } from '@lamplight/core';
 import type {
   Age,
   Block,
@@ -11,7 +11,7 @@ import type {
   Temperament,
 } from '@lamplight/core';
 import type { Db } from './db';
-import { getItem, updateSettings } from './library';
+import { getItem, updateSettings, type DocumentSettings } from './library';
 
 /** Everything the reader and the queue builder need for one document. */
 export interface DocumentContent {
@@ -217,7 +217,23 @@ export function correctSpeaker(db: Db, documentId: string, ord: number, characte
     (f) => f.block !== pin.block || f.start !== pin.start,
   );
   fixes.push({ ...pin, speaker: name });
-  const recast = recastSpeakers(content.blocks, content.sentences, item.language, fixes);
+  applyRecast(db, documentId, item.language, content, fixes);
+  return true;
+}
+
+/**
+ * Runs Cast again over a stored document with `fixes` held fixed and saves the result: each sentence's
+ * speaker and confidence, and the characters (each keeps the voice chosen for it; one who no longer speaks
+ * keeps its row with no lines). Records the fixes and the Cast version that made the result.
+ */
+function applyRecast(
+  db: Db,
+  documentId: string,
+  language: string,
+  content: DocumentContent,
+  fixes: NonNullable<DocumentSettings['speakerFixes']>,
+): void {
+  const recast = recastSpeakers(content.blocks, content.sentences, language, fixes);
   db.transaction(() => {
     recast.speakers.forEach((speaker, i) => {
       const s = content.sentences[i];
@@ -267,8 +283,19 @@ export function correctSpeaker(db: Db, documentId: string, ord: number, characte
       if (!speaking.has(id))
         db.run('UPDATE characters SET line_count = 0 WHERE document_id = ? AND id = ?', [documentId, id]);
     }
-    updateSettings(db, documentId, { speakerFixes: fixes });
+    updateSettings(db, documentId, { speakerFixes: fixes, castVersion: CAST_VERSION });
   });
+}
+
+/**
+ * A book Cast analysed with an older version is analysed again, the listener's corrections held fixed.
+ * Returns true when it was.
+ */
+export function refreshCast(db: Db, documentId: string): boolean {
+  const item = getItem(db, documentId);
+  if (!item || item.kind !== 'book' || item.status !== 'ready') return false;
+  if ((item.settings.castVersion ?? 0) >= CAST_VERSION) return false;
+  applyRecast(db, documentId, item.language, loadContent(db, documentId), item.settings.speakerFixes ?? []);
   return true;
 }
 

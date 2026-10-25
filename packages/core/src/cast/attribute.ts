@@ -274,6 +274,13 @@ const CONVERSATION_GAP = 3;
  * Detects dialogue across paragraphs and attributes speakers. `blocks` are paragraph texts in reading order;
  * non-paragraph blocks should be passed as empty strings so indices line up.
  */
+/**
+ * Cast's version: raise it when attribution improves, so books analysed before are analysed again the next
+ * time they play (the listener's corrections held fixed). 2: dialogue measured on real books (Premchand's
+ * unquoted Hindi, "said the Hatter", turns by name and by the first-person narrator).
+ */
+export const CAST_VERSION = 2;
+
 /** A line whose speaker the listener has set: the quotation starting at `start` in paragraph `block`. */
 export interface FixedSpeaker {
   block: number;

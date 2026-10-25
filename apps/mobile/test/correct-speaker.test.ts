@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { CAST_BOOKS } from '../../../packages/core/test/fixtures/castBooks';
-import { parsePlainText, prepareDocument } from '@lamplight/core';
-import { correctSpeaker, listCharacters, loadContent, setCharacterVoice } from '../src/data/content';
-import { createDocument, getItem, saveContent } from '../src/data/library';
+import { CAST_VERSION, parsePlainText, prepareDocument } from '@lamplight/core';
+import {
+  correctSpeaker,
+  listCharacters,
+  loadContent,
+  refreshCast,
+  setCharacterVoice,
+} from '../src/data/content';
+import { createDocument, getItem, saveContent, updateSettings } from '../src/data/library';
 import { testDb } from './nodeDb';
 
 describe('correctSpeaker', () => {
@@ -45,5 +51,28 @@ describe('correctSpeaker', () => {
     const narration = loadContent(db, id).sentences.findIndex((s) => s.kind === 'narration');
     expect(correctSpeaker(db, id, narration, amyOf(db, id))).toBe(false);
     expect(correctSpeaker(db, id, ord, 'nobody-by-that-id')).toBe(false);
+  });
+});
+
+describe('refreshCast', () => {
+  it('analyses a book from an older Cast once more, keeping the listener’s fixes', () => {
+    const db = testDb();
+    const id = createDocument(db, { kind: 'book', title: 'Little Women', source: 'file' });
+    const text = CAST_BOOKS.find((b) => b.id === 'en-little-women-1')?.text ?? '';
+    saveContent(db, id, prepareDocument(parsePlainText(text, 'Little Women', 'book')));
+    expect(refreshCast(db, id)).toBe(false); // just analysed by this Cast
+    const content = loadContent(db, id);
+    const ord = content.sentences.findIndex((x) =>
+      content.blocks[x.block]?.text.slice(x.start, x.end).includes('so boyish'),
+    );
+    const amy = listCharacters(db, id).find((c) => c.name === 'Amy')?.id ?? '';
+    correctSpeaker(db, id, ord, amy);
+    // As if analysed by an older Cast, with that line since mis-stored.
+    updateSettings(db, id, { castVersion: 1 });
+    db.run('UPDATE sentences SET speaker_id = NULL WHERE document_id = ? AND ord = ?', [id, ord]);
+    expect(refreshCast(db, id)).toBe(true);
+    expect(getItem(db, id)?.settings.castVersion).toBe(CAST_VERSION);
+    expect(loadContent(db, id).sentences[ord]?.speaker).toBe(amy);
+    expect(refreshCast(db, id)).toBe(false);
   });
 });

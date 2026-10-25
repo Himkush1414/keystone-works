@@ -1,3 +1,4 @@
+import { CAST_VERSION } from '@lamplight/core';
 import type { Block, Chapter, Character, DocumentKind, PreparedDocument, Sentence } from '@lamplight/core';
 import type { Db } from './db';
 import { newId } from './ids';
@@ -14,6 +15,8 @@ export interface DocumentSettings {
   speed?: number;
   /** Speakers the listener has set: the quotation (paragraph, start) and who says it (null: no one). */
   speakerFixes?: { block: number; start: number; speaker: string | null }[];
+  /** The Cast version that attributed this document's dialogue (CAST_VERSION; absent: older). */
+  castVersion?: number;
 }
 
 /**
@@ -283,6 +286,8 @@ export function saveContent(
         id,
       ],
     );
+    // This text's dialogue was just attributed by the current Cast.
+    updateSettings(db, id, { castVersion: CAST_VERSION });
   });
 }
 
