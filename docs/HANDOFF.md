@@ -24,7 +24,17 @@ Every change goes through a pull request with CI: the JS checks, the Kotlin engi
 
 `gh` reads the token from `GITHUB_TOKEN` (loaded from `.env.local`). `gh auth login` refuses this token because it lacks the `read:org` scope, which the repository work doesn't need.
 
-**Waiting for you:** nothing.
+**Waiting for you (25 Oct):** four PRs. #68 → #69 → #70 are stacked (each is based on the one before), and #71 stands alone. Merge once CI is green, in this order. Each stacked child is moved to `main` before its base branch is deleted:
+
+```bash
+set -a; . ./.env.local; set +a; export GH_TOKEN=$GITHUB_TOKEN
+gh pr merge 71 --merge --delete-branch                                   # library tabs
+gh api -X PATCH repos/Himkush1414/keystone-works/pulls/69 -f base=main
+gh pr merge 68 --merge --delete-branch                                   # no stops inside a sentence
+gh api -X PATCH repos/Himkush1414/keystone-works/pulls/70 -f base=main
+gh pr merge 69 --merge --delete-branch                                   # emotion and delivery
+gh pr merge 70 --merge --delete-branch                                   # turn-taking and characters
+```
 
 _If a merge is ever blocked, the exact commands are listed here, in order._
 
