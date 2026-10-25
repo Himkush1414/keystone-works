@@ -78,6 +78,7 @@ const config: ExpoConfig = {
     'expo-sharing',
     './modules/lamplight-engine/plugin/withLamplightEngine.js',
     ['./plugins/withNightBackground.js', { color: NIGHT }],
+    './plugins/withConfigChanges.js',
     ['expo-font', { fonts }],
     [
       'expo-splash-screen',
