@@ -187,6 +187,18 @@ function tagPatterns(lang: string) {
     ),
     // Hindi action beat right after a quote: "अनु ने नाक सिकोड़ी", "Arjun ne cup uthaya"
     hiBeat: new RegExp(String.raw`^[\s,।—–-]*(${W})\s+(?:ने|ne)\s+`, 'iu'),
+    // Hindi speech without quotation marks (cast/dialogue.ts hindiSpans), named just before it:
+    // "मोहसिन—", "महमूद ने कहा—", "खालाने नम्रतासे कहा, ", "हामिद को यकीन न आया—".
+    hiOpening: /(?:[—―]|--|–{2}|,)\s*$/u,
+    hiLabel: new RegExp(String.raw`(?:^|[।?!॥]\s*)[\s\u200b\u2060]*(${W}(?:\s${W})?)\s*[—―–-]+\s*$`, 'u'),
+    hiSayClause: new RegExp(
+      String.raw`(?:^|[।?!॥]\s*)[\s\u200b\u2060]*(${W})[^।?!]*?\s(${alt([...HI_VERBS_M, ...HI_VERBS_F, ...HI_VERBS_N, ...HG_VERBS_M, ...HG_VERBS_F, ...HG_VERBS_N, 'कहता', 'कहती', 'कहते', 'कहेगी', 'कहेगा', 'जवाब दिया', 'उत्तर दिया', 'सुनाया', 'वोले'])})(?:\s+(?:है|हैं|था|थी|थे))?\s*,?\s*[—―–-]*\s*$`,
+      'iu',
+    ),
+    hiClause: new RegExp(
+      String.raw`(?:^|[।?!॥]\s*)[\s\u200b\u2060]*(${W})\s[^।?!]*?(?:[—―]+|-{2,})[-–]*\s*$`,
+      'u',
+    ),
     // A known name opening the narration before a quote: "पिताजी मुस्कुराए।", "Maria laughed."
     leadingWord: new RegExp(String.raw`(?:^|[.!?।]\s+)(${W})\s+${W}[^.!?।]*[.!?।]?\s*$`, 'u'),
   };
@@ -519,7 +531,43 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
   };
 
   /** Finds a tag in the narration right after (or, failing that, right before) a quotation. */
+  /** The speaker named before Hindi speech that has no quotation marks (a dash or a speech verb's comma). */
+  const hindiOpening = (before: string): { tag: Tag; confidence: number } | undefined => {
+    if (base !== 'hi' || !pat.hiOpening.test(before)) return undefined;
+    // The transcription often glues ने to the name ("खालाने", "जुम्मनने"): the name is the word without it.
+    const subject = (word: string) => {
+      const w = word.replace(/[\u200b\u2060]/gu, '');
+      return /ने$/u.test(w) && w.length > 4 && !HI_PRONOUNS.has(w) ? w.slice(0, -2) : w;
+    };
+    const asTag = (raw: string, verb: string | undefined, confidence: number) => {
+      const word = subject(raw);
+      const lower = word.toLowerCase();
+      const gender = verb ? verbGender(verb) : undefined;
+      if (HI_FIRST_PERSON.has(lower)) return { tag: { kind: 'first-person' } as Tag, confidence };
+      if (HI_PRONOUNS.has(lower) || ['वे', 'उन्होंने', 've'].includes(lower))
+        return {
+          tag: { kind: 'pronoun', text: word, ...(gender ? { gender } : {}) } as Tag,
+          confidence: confidence - 0.1,
+        };
+      if (NOT_NAMES.has(lower)) return undefined;
+      return {
+        tag: { kind: 'name', text: word, ...(gender ? { gender } : {}), confidence } as Tag,
+        confidence,
+      };
+    };
+    const say = pat.hiSayClause.exec(before);
+    if (say?.[1]) return asTag(say[1], say[2], 0.9);
+    const label = pat.hiLabel.exec(before);
+    if (label?.[1] && label[1].split(/\s+/).length <= 2)
+      return asTag(label[1].split(/\s+/)[0] ?? label[1], undefined, 0.9);
+    const clause = pat.hiClause.exec(before);
+    if (clause?.[1]) return asTag(clause[1], undefined, 0.8);
+    return undefined;
+  };
+
   const findTag = (after: string, before: string): { tag: Tag; confidence: number } | undefined => {
+    const opening = hindiOpening(before);
+    if (opening) return opening;
     const name = pat.verbName.exec(after) ?? pat.nameVerb.exec(after);
     if (name?.[1]) return { tag: { kind: 'name', text: name[1], confidence: 0.95 }, confidence: 0.95 };
     const hi = pat.hiAfter.exec(after) ?? pat.hgAfter.exec(after);

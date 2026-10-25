@@ -97,10 +97,68 @@ function dashSpans(text: string): DialogueSpan[] {
   return spans.filter((s) => /\p{L}/u.test(text.slice(s.start, s.end)));
 }
 
+/**
+ * Hindi dialogue without quotation marks, as Premchand and much printed Hindi write it. Speech follows
+ * - a speaker's name and a dash at the start of a sentence: "मोहसिन—हाँ…", "महमूद ---और…";
+ * - a speech verb and a dash or a comma: "महमूद ने कहा—…", "मोहसिन बोला—…", "खालाने नम्रतासे कहा, …";
+ * - a clause ending in a verb and a long dash: "हामिद को यकीन न आया—…", "…निन्दा करता है---…"
+ * and runs to the next such opening or the end of the paragraph. A single en dash (–) is left to narration.
+ */
+const HI_SAY =
+  '(?:कहा|कही|कहे|कहता|कहती|कहते|कहेगा|कहेगी|कहेंगे|कहने\\s+लग[ाीे]|बोला|बोली|बोले|बोलीं|वोले|पूछा|पूछी|पूछे|जवाब\\s+दिया|उत्तर\\s+दिया|चिल्लाया|चिल्लाई|चिल्लाकर\\s+कहा|चीखा|चीखी|सुनाया|फुसफुसाया|फुसफुसाई|बड़बड़ाया|kaha|bola|boli|bole|poocha|pucha)(?:\\s+(?:है|हैं|था|थी|थे))?';
+const DASH = '(?:\\s*(?:[—―]+[-–]*|-{2,}[–—]*|–{2,})\\s*)';
+const SENTENCE_START = '(?:^|[।?!॥]\\s*)[\\s\\u200b\\u2060]*';
+const HI_OPENERS = [
+  // a name (one or two words) and a dash, opening a sentence
+  new RegExp(`${SENTENCE_START}([\\p{L}\\p{M}]+(?:\\s[\\p{L}\\p{M}]+)?)${DASH}`, 'gu'),
+  // a speech verb and a dash, or a comma
+  new RegExp(`${HI_SAY}\\s*,?${DASH}|${HI_SAY}\\s*,\\s+`, 'gu'),
+  // a clause ending in a verb, then a long dash
+  new RegExp(`(?:[ाीेैंई]|या|ये|है|हैं|था|थी|थे)${DASH}`, 'gu'),
+];
+
+function hindiSpans(text: string): DialogueSpan[] {
+  const openings: { at: number; end: number }[] = [];
+  for (const re of HI_OPENERS) {
+    for (const m of text.matchAll(re)) {
+      const at = m.index;
+      const end = at + m[0].length;
+      // Only a long dash or a speech verb's comma opens speech, never a hyphen ("दस-बारह").
+      if (!/[—―]|--|–{2}/u.test(m[0]) && !/,\s+$/u.test(m[0])) continue;
+      openings.push({ at, end });
+    }
+  }
+  openings.sort((a, b) => a.end - b.end);
+  const spans: DialogueSpan[] = [];
+  openings.forEach((o, k) => {
+    const next = openings.slice(k + 1).find((n) => n.end > o.end + 1);
+    const stop = next ? sentenceStartBefore(text, next.at, o.end) : text.trimEnd().length;
+    if (stop - o.end > 1 && /\p{L}/u.test(text.slice(o.end, stop))) spans.push({ start: o.end, end: stop });
+  });
+  // Later openings cut the earlier speech short; keep spans in order without overlap.
+  const out: DialogueSpan[] = [];
+  for (const s of spans.sort((a, b) => a.start - b.start)) {
+    const last = out[out.length - 1];
+    if (last && s.start < last.end) last.end = Math.max(last.start + 1, s.start);
+    out.push({ ...s });
+  }
+  return out.filter((s) => /\p{L}/u.test(text.slice(s.start, s.end)));
+}
+
+/** Where the sentence holding position `at` begins (not before `floor`): the narration before an opening. */
+function sentenceStartBefore(text: string, at: number, floor: number): number {
+  for (let i = at - 1; i > floor; i--) if ('।?!॥'.includes(text[i] ?? '')) return i + 1;
+  return at;
+}
+
 /** Dialogue spans in `text` for language `lang`, sorted and non-overlapping. */
 export function findDialogue(text: string, lang = 'en'): DialogueSpan[] {
   const base = lang.slice(0, 2);
-  const raw = [...pairedSpans(text), ...(DASH_LANGS.has(base) ? dashSpans(text) : [])]
+  const raw = [
+    ...pairedSpans(text),
+    ...(DASH_LANGS.has(base) ? dashSpans(text) : []),
+    ...(base === 'hi' ? hindiSpans(text) : []),
+  ]
     .filter((s) => s.end - s.start > 2)
     .sort((a, b) => a.start - b.start || b.end - a.end);
   const out: DialogueSpan[] = [];
