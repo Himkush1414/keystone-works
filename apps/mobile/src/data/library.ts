@@ -12,6 +12,8 @@ export interface DocumentSettings {
   clean?: Partial<Record<string, boolean>>;
   customSkips?: string[];
   speed?: number;
+  /** Speakers the listener has set: the quotation (paragraph, start) and who says it (null: no one). */
+  speakerFixes?: { block: number; start: number; speaker: string | null }[];
 }
 
 /**
