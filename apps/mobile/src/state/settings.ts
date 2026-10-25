@@ -42,7 +42,7 @@ export const DEFAULT_SETTINGS: Settings = {
   locale: 'system',
   defaultSpeed: 1,
   voices: {},
-  quality: 'auto',
+  quality: 'studioPlus', // highest by default; lighter levels are opt-in
   castMode: 'full',
   haptics: true,
   sounds: false,

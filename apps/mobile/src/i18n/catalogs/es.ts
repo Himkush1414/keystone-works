@@ -212,13 +212,13 @@ export const es: Catalog = {
   },
   quality: {
     auto: 'Automática',
-    autoDesc: 'La mejor calidad que tu teléfono puede mantener.',
+    autoDesc: 'La mejor calidad que tu teléfono puede mantener, nunca por debajo de una voz clara.',
     live: 'Al instante',
-    liveDesc: 'Empieza al instante. Gasta menos batería.',
+    liveDesc: 'La más ligera: empieza antes y ahorra batería. Sigue siendo clara.',
     studio: 'Estudio',
-    studioDesc: 'Narración más rica y natural.',
+    studioDesc: 'Alta calidad, empieza antes.',
     studioPlus: 'Estudio+',
-    studioPlusDesc: 'Nuestra mejor calidad, preparada con antelación.',
+    studioPlusDesc: 'La máxima calidad, recomendada. Las primeras palabras pueden tardar unos segundos más.',
   },
   cast: {
     title: 'Reparto',

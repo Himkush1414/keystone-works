@@ -212,13 +212,13 @@ export const en = {
   },
   quality: {
     auto: 'Automatic',
-    autoDesc: 'The best quality your phone can keep up with.',
+    autoDesc: 'Picks the best quality your phone keeps up with, never below a clear voice.',
     live: 'Live',
-    liveDesc: 'Starts instantly. Lighter on battery.',
+    liveDesc: 'Lightest: starts soonest and saves battery. Still clear.',
     studio: 'Studio',
-    studioDesc: 'Richer, more natural narration.',
+    studioDesc: 'High quality, quicker to start.',
     studioPlus: 'Studio+',
-    studioPlusDesc: 'Our finest quality, prepared ahead of time.',
+    studioPlusDesc: 'Highest quality, recommended. The first words can take a few seconds longer.',
   },
   cast: {
     title: 'Cast',

@@ -59,7 +59,7 @@ export function SettingsScreen({
   const locale = useLocale();
   const { space } = useTheme();
   const gutter = useGutter();
-  const qualities: QualityPreference[] = ['auto', 'live', 'studio', 'studioPlus'];
+  const qualities: QualityPreference[] = ['studioPlus', 'studio', 'auto', 'live'];
   const qualityDesc = {
     auto: 'quality.autoDesc',
     live: 'quality.liveDesc',

@@ -213,13 +213,14 @@ export const pt: Catalog = {
   },
   quality: {
     auto: 'Automática',
-    autoDesc: 'A melhor qualidade que seu celular consegue acompanhar.',
+    autoDesc: 'A melhor qualidade que seu celular consegue acompanhar, sem nunca prejudicar a voz.',
     live: 'Instantâneo',
-    liveDesc: 'Começa na hora. Gasta menos bateria.',
+    liveDesc: 'A mais leve: começa antes e gasta menos bateria. Continua clara.',
     studio: 'Estúdio',
-    studioDesc: 'Narração mais rica e natural.',
+    studioDesc: 'Alta qualidade, começa mais rápido.',
     studioPlus: 'Estúdio+',
-    studioPlusDesc: 'Nossa melhor qualidade, preparada com antecedência.',
+    studioPlusDesc:
+      'A mais alta qualidade, recomendada. As primeiras palavras podem levar alguns segundos a mais.',
   },
   cast: {
     title: 'Elenco',
