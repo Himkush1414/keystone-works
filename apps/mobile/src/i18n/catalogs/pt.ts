@@ -145,6 +145,15 @@ export const pt: Catalog = {
     share: 'Compartilhar relatório',
     testOk: 'Falou {audio} de voz, gerada em {render}.',
     testFailed: 'O teste de voz falhou: {reason}',
+    abTitle: 'Voz A/B (modo de teste)',
+    abDesc: 'A mesma frase direto do modelo de voz, ou pelo reprodutor, para comparar de ouvido.',
+    ab: {
+      raw: 'Original',
+      natural: 'Natural',
+      processed: 'Processada (triste)',
+      old: 'Antiga (3 passos)',
+    },
+    abResult: '{kind}: {steps} passos, {seconds} s, {clipped} amostras saturadas. Salvo em {path}',
     volumeMuted: 'O volume de mídia está desligado, então a narração fica muda. Aumente o volume.',
   },
   errors: {

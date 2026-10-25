@@ -143,6 +143,15 @@ export const en = {
     share: 'Share report',
     testOk: 'Spoke {audio} of speech, made in {render}.',
     testFailed: 'The voice test failed: {reason}',
+    abTitle: 'Voice A/B (test mode)',
+    abDesc: 'The same sentence straight from the voice model, or through the player, to compare by ear.',
+    ab: {
+      raw: 'Raw',
+      natural: 'Natural',
+      processed: 'Processed (sad)',
+      old: 'Old (3 steps)',
+    },
+    abResult: '{kind}: {steps} steps, {seconds} s, {clipped} clipped samples. Saved to {path}',
     volumeMuted: 'Media volume is off, so narration is silent. Turn the volume up.',
   },
   errors: {

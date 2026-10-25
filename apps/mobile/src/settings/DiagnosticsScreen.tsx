@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, ScrollView, Share, StyleSheet, View } from 'react-native';
-import type { Diagnostics, VoiceTest } from '../../modules/lamplight-engine/src/types';
+import type { AbKind, AbSample, Diagnostics, VoiceTest } from '../../modules/lamplight-engine/src/types';
 import { useLocale, useT } from '@/i18n/useLocale';
 import { useTheme } from '@/theme/theme';
 import { Button } from '@/ui/Button';
@@ -13,13 +13,19 @@ import { Section } from './SettingsScreen';
 export interface DiagnosticsProps {
   load(): Promise<Diagnostics>;
   test(): Promise<VoiceTest>;
+  /** Voice A/B test mode, opened by tapping the title five times. */
+  ab?(kind: AbKind, lang: 'en' | 'hi'): Promise<AbSample>;
   onBack(): void;
 }
+
+const AB_KINDS: readonly AbKind[] = ['raw', 'natural', 'processed', 'old'];
+/** Taps on the title that open the A/B test mode. */
+const AB_TAPS = 5;
 
 const MONO = Platform.select({ android: 'monospace', ios: 'Menlo', default: 'monospace' });
 
 /** Settings › Advanced › Diagnostics: what the voice engine is doing, and a report to send when it fails. */
-export function DiagnosticsScreen({ load, test, onBack }: DiagnosticsProps) {
+export function DiagnosticsScreen({ load, test, ab, onBack }: DiagnosticsProps) {
   const t = useT();
   const locale = useLocale();
   const { colors, space } = useTheme();
@@ -28,6 +34,20 @@ export function DiagnosticsScreen({ load, test, onBack }: DiagnosticsProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<VoiceTest | null>(null);
+  const [titleTaps, setTitleTaps] = useState(0);
+  const [abLang, setAbLang] = useState<'en' | 'hi'>('en');
+  const [abBusy, setAbBusy] = useState<AbKind | null>(null);
+  const [abResult, setAbResult] = useState<AbSample | string | null>(null);
+  const abOpen = !!ab && titleTaps >= AB_TAPS;
+
+  const playAb = (kind: AbKind) => {
+    if (!ab) return;
+    setAbBusy(kind);
+    ab(kind, abLang)
+      .then(setAbResult)
+      .catch((e: unknown) => setAbResult(String((e as Error | null)?.message ?? e)))
+      .finally(() => setAbBusy(null));
+  };
 
   const refresh = useCallback(() => {
     load()
@@ -59,7 +79,7 @@ export function DiagnosticsScreen({ load, test, onBack }: DiagnosticsProps) {
     <Screen>
       <View style={[styles.bar, { paddingHorizontal: space.xs }]}>
         <IconButton icon="back" label={t('common.back')} onPress={onBack} />
-        <Text variant="title1" accessibilityRole="header">
+        <Text variant="title1" accessibilityRole="header" onPress={() => setTitleTaps((n) => n + 1)}>
           {t('diagnostics.title')}
         </Text>
       </View>
@@ -97,6 +117,48 @@ export function DiagnosticsScreen({ load, test, onBack }: DiagnosticsProps) {
               ? t('diagnostics.testOk', { audio: ms(result.audioMs), render: ms(result.renderMs) })
               : t('diagnostics.testFailed', { reason: result.error?.message ?? '' })}
           </Text>
+        ) : null}
+        {abOpen ? (
+          <Section title={t('diagnostics.abTitle')}>
+            <Text variant="callout" tone="soft">
+              {t('diagnostics.abDesc')}
+            </Text>
+            <View style={[styles.actions, { gap: space.sm }]}>
+              {(['en', 'hi'] as const).map((l) => (
+                <Button
+                  key={l}
+                  label={l === 'en' ? 'English' : 'हिन्दी'}
+                  kind={abLang === l ? 'primary' : 'secondary'}
+                  onPress={() => setAbLang(l)}
+                />
+              ))}
+            </View>
+            <View style={[styles.actions, { gap: space.sm }]}>
+              {AB_KINDS.map((k) => (
+                <Button
+                  key={k}
+                  label={t(`diagnostics.ab.${k}`)}
+                  icon="play"
+                  kind="secondary"
+                  loading={abBusy === k}
+                  disabled={abBusy !== null && abBusy !== k}
+                  onPress={() => playAb(k)}
+                />
+              ))}
+            </View>
+            {typeof abResult === 'string' ? <Text tone="danger">{abResult}</Text> : null}
+            {abResult && typeof abResult !== 'string' ? (
+              <Text variant="meta" selectable style={{ fontFamily: MONO, color: colors.ink }}>
+                {t('diagnostics.abResult', {
+                  kind: t(`diagnostics.ab.${abResult.kind}`),
+                  steps: String(abResult.steps),
+                  seconds: (abResult.durationMs / 1000).toFixed(1),
+                  clipped: String(abResult.clipped),
+                  path: abResult.path,
+                })}
+              </Text>
+            ) : null}
+          </Section>
         ) : null}
         {data
           ? diagnosticsSections(data).map((section) => (
