@@ -24,17 +24,7 @@ Every change goes through a pull request with CI: the JS checks, the Kotlin engi
 
 `gh` reads the token from `GITHUB_TOKEN` (loaded from `.env.local`). `gh auth login` refuses this token because it lacks the `read:org` scope, which the repository work doesn't need.
 
-**Waiting for you (25 Oct):** four PRs. #68 → #69 → #70 are stacked (each is based on the one before), and #71 stands alone. Merge once CI is green, in this order. Each stacked child is moved to `main` before its base branch is deleted:
-
-```bash
-set -a; . ./.env.local; set +a; export GH_TOKEN=$GITHUB_TOKEN
-gh pr merge 71 --merge --delete-branch                                   # library tabs
-gh api -X PATCH repos/Himkush1414/keystone-works/pulls/69 -f base=main
-gh pr merge 68 --merge --delete-branch                                   # no stops inside a sentence
-gh api -X PATCH repos/Himkush1414/keystone-works/pulls/70 -f base=main
-gh pr merge 69 --merge --delete-branch                                   # emotion and delivery
-gh pr merge 70 --merge --delete-branch                                   # turn-taking and characters
-```
+**Waiting for you:** nothing. Merging works again from here (`gh pr merge <n> --merge --delete-branch` once CI is green).
 
 _If a merge is ever blocked, the exact commands are listed here, in order._
 
@@ -61,6 +51,14 @@ The interface ships in English (source), Spanish, German, French and Brazilian P
 Keys added most recently, which no reviewer has seen yet: `import.added`, `player.expand`, `item.titleField`, `item.authorField`, `voices.traits.*`, `voicePick.choose`, `settings.expressive*`, `settings.breaths*`, `tiers.*`, `settings.voiceProcessing*`, `quality.*Desc` (rewritten 25 Oct).
 
 ## 4. Checks that need a real phone
+
+**Added 25 Oct (voice, Hindi PDFs, speakers):**
+
+- **Voice clarity (Settings › Advanced › Diagnostics, tap the title five times).** Play the same sentence as _Raw_, _Natural_, _Processed (sad)_ and _Old (3 steps)_. _Old_ is what the broken voice was: the model below 6 flow steps. _Natural_ should sound like _Raw_. If _Natural_ still sounds rough on your phone, note the steps it shows (it's the quality your phone renders at) and share the Diagnostics report.
+- **First words.** New listeners start on Studio+ (highest quality). The first words may take a few seconds longer than before; after that, no waits between sentences on a phone that renders 6 steps in real time. A slower phone now waits between sentences rather than breaking the voice: if you hear waits, try Settings › Voices › Live.
+- **Emotion processing (Settings › Voices).** Off by default: the voice is exactly as the model speaks it. Turn it on to hear pitch shifts for emotions and characters, and judge whether it's worth it.
+- **Hindi PDFs added before.** A PDF that shows a stack of single words was imported by an older version; it now shows a notice. Open the same file again (Add › Open a file) and it refreshes in place.
+- **Speaker names.** Dialogue shows who says it, in colour. Tap a wrong name, pick the right person, and check that the lines after it follow and the voice changes from the next sentence.
 
 There's no emulator on the build machine (section 2.2), so these are verified on a device before release:
 
