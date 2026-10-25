@@ -9,7 +9,14 @@ import {
 import type { Quality } from '../../modules/lamplight-engine/src/types';
 import { readerThemes } from '@lamplight/tokens';
 import { useEffect, useMemo, useState } from 'react';
-import { CastSheet, CleanReadSheet, ContentsSheet, SleepSheet, VoiceSheet } from './PlayerSheets';
+import {
+  CastSheet,
+  CleanReadSheet,
+  ContentsSheet,
+  SleepSheet,
+  VoiceSheet,
+  SpeakerSheet,
+} from './PlayerSheets';
 import { MeaningSheet } from './MeaningSheet';
 import type { CleanReadRow } from './session';
 import { sleepStatus } from './sheets';
@@ -21,6 +28,7 @@ import { formatDuration } from '@/i18n/translate';
 import { useLocale, useT } from '@/i18n/useLocale';
 import { needsReimport } from '@/library/present';
 import { useServices } from '@/services/context';
+import { isDarkColor } from '@/theme/color';
 import { useTheme } from '@/theme/theme';
 import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
@@ -30,7 +38,7 @@ import { Screen } from '@/ui/Screen';
 import { Tappable } from '@/ui/Tappable';
 import { Text } from '@/ui/Text';
 import { ReadAlong } from './ReadAlongView';
-import { blockOfSentence, readAlongBlocks, wordTimesFor } from './readAlong';
+import { blockOfSentence, readAlongBlocks, speakerLabels, wordTimesFor } from './readAlong';
 import { formatSpeed, nextSpeed } from './speed';
 import { livePosition } from './store';
 
@@ -46,6 +54,10 @@ export interface PlayerActions {
   listCharacters(): CastCharacter[];
   setCharacterVoice(characterId: string, voice: string | null): void;
   mergeCharacters(from: string, into: string): void;
+  /** Who speaks each sentence now (it changes when the listener corrects one). */
+  speakers(): (string | undefined)[];
+  /** The listener says who speaks sentence `index` (null: no one in particular). */
+  setSpeaker(index: number, characterId: string | null): Promise<void>;
   cleanReadRows(): CleanReadRow[];
   setCleanRead(reason: CleanReadRow['reason'], on: boolean): void;
   /** What a word means in its paragraph, from the on-device dictionary. */
@@ -139,6 +151,29 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
     setSheet('meaning');
   };
   const stale = useMemo(() => needsReimport(item, content.blocks), [item, content.blocks]);
+  // Who says each line, shown as a coloured name; read again after the listener corrects one.
+  const [castRev, setCastRev] = useState(0);
+  const [correcting, setCorrecting] = useState<number | null>(null);
+  // `castRev` is a dependency on purpose: the stored speakers changed.
+  const speakers = useMemo(() => actions.speakers(), [actions, castRev]);
+  const cast = useMemo(() => actions.listCharacters(), [actions, castRev]);
+  const labels = useMemo(
+    () =>
+      reader.speakerLabels
+        ? speakerLabels(
+            content.sentences,
+            speakers,
+            new Map(cast.map((c) => [c.id, c.name])),
+            t('player.speakerUnknown'),
+            isDarkColor(theme.bg),
+          )
+        : null,
+    [reader.speakerLabels, content.sentences, speakers, cast, t, theme.bg],
+  );
+  const labelColors = useMemo(
+    () => new Map([...(labels?.values() ?? [])].flatMap((l) => (l.id ? [[l.id, l.color] as const] : []))),
+    [labels],
+  );
   const asked = asking !== null ? content.sentences[asking] : undefined;
   const askedBlock = asked ? content.blocks[asked.block] : undefined;
 
@@ -202,6 +237,8 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
         showSkipped={reader.showSkipped}
         onSentencePress={actions.playFrom}
         onSentenceLongPress={ask}
+        labels={labels}
+        onLabelPress={setCorrecting}
         backToVoiceLabel={t('player.backToVoice')}
       />
 
@@ -339,6 +376,18 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
         onMerge={(from, into) => {
           actions.mergeCharacters(from, into);
           setCharacters(actions.listCharacters());
+        }}
+      />
+      <SpeakerSheet
+        visible={correcting !== null}
+        characters={cast}
+        current={correcting !== null ? (speakers[correcting] ?? null) : null}
+        colors={labelColors}
+        onClose={() => setCorrecting(null)}
+        onChoose={(id) => {
+          const at = correcting;
+          setCorrecting(null);
+          if (at !== null) void actions.setSpeaker(at, id).then(() => setCastRev((r) => r + 1));
         }}
       />
       <MeaningSheet
