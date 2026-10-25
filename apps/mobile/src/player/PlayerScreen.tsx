@@ -19,6 +19,7 @@ import type { CastCharacter, DocumentContent } from '@/data/content';
 import type { LibraryItem } from '@/data/library';
 import { formatDuration } from '@/i18n/translate';
 import { useLocale, useT } from '@/i18n/useLocale';
+import { needsReimport } from '@/library/present';
 import { useServices } from '@/services/context';
 import { useTheme } from '@/theme/theme';
 import { Button } from '@/ui/Button';
@@ -137,6 +138,7 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
     if (playing) actions.pause();
     setSheet('meaning');
   };
+  const stale = useMemo(() => needsReimport(item, content.blocks), [item, content.blocks]);
   const asked = asking !== null ? content.sentences[asking] : undefined;
   const askedBlock = asked ? content.blocks[asked.block] : undefined;
 
@@ -174,6 +176,19 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
           color={theme.ink}
         />
       </View>
+
+      {stale ? (
+        <View
+          style={[
+            styles.notice,
+            { marginHorizontal: space.lg, padding: space.md, backgroundColor: theme.glow },
+          ]}
+        >
+          <Text variant="callout" style={{ color: theme.ink }}>
+            {t('player.reimport')}
+          </Text>
+        </View>
+      ) : null}
 
       <ReadAlong
         blocks={blocks}
@@ -352,6 +367,7 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
 }
 
 const styles = StyleSheet.create({
+  notice: { borderRadius: 12, marginBottom: 8 },
   bar: { flexDirection: 'row', alignItems: 'center', minHeight: 56 },
   titles: { flex: 1 },
   controls: {},

@@ -163,6 +163,8 @@ export const es: Catalog = {
     voiceUnavailable: 'La voz no pudo iniciarse. Reinstalar Lamplight puede ayudar.',
   },
   player: {
+    reimport:
+      'Este PDF se añadió con una versión anterior de Lamplight y algunas líneas quedaron cortadas. Vuelve a abrir el mismo archivo (Añadir › Abrir un archivo) para obtener el texto completo; se conserva tu posición.',
     play: 'Reproducir',
     pause: 'Pausa',
     prevSentence: 'Frase anterior',
