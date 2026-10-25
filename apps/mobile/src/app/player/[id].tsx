@@ -24,7 +24,7 @@ import { relocateSentence } from '@/player/relocate';
 import { DEFAULT_NARRATOR } from '@lamplight/core';
 
 /** The meaning is short and wanted now: a quick render is plenty. */
-const MEANING_STEPS = 4;
+const MEANING_STEPS = 8; // below 6 steps the voice breaks (ReadAhead.FLOOR_STEPS)
 
 export default function PlayerRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();

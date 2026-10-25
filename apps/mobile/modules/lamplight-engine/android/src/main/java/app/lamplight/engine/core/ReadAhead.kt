@@ -34,8 +34,8 @@ class ReadAhead(
         target: Int,
         pacing: Pacing,
     ): Plan? {
-        // On a phone too slow to keep up even at the floor, continuous speech beats polish: go lower still.
-        val low = if (floor > EMERGENCY_STEPS && pacing.rtf(floor) * speed > SUSTAINABLE_RTF) EMERGENCY_STEPS else floor
+        // Never below the floor, even on a phone that can't keep up: a wait between sentences beats a broken voice.
+        val low = maxOf(floor, FLOOR_STEPS)
         val choices = (STEP_OPTIONS + low + target).filter { it in low..target }.distinct()
         // Speech ready ahead of the listener, in real time (faster playback drains it sooner).
         var aheadMs = -offsetMs.toDouble()
@@ -67,10 +67,15 @@ class ReadAhead(
     }
 
     companion object {
-        val STEP_OPTIONS = listOf(3, 4, 6, 8, 10, 12, 16)
+        val STEP_OPTIONS = listOf(6, 8, 10, 12, 16)
 
-        /** The fewest steps ever used: rougher, but still clear speech. */
-        const val EMERGENCY_STEPS = 2
+        /**
+         * The fewest steps ever used. Below this the model's output breaks (AbProbeTest, en and hi, F1 and M2):
+         * at 2, 3 and 4 steps it clips (104, 6.5 and 2.2 samples a sentence) and carries 10 dB more energy
+         * above 7 kHz (-14 to -17 dB against -26 to -27 dB), heard as a buzzing, broken voice. From 6 steps
+         * up the measures are flat.
+         */
+        const val FLOOR_STEPS = 6
 
         /** Render work per second of speech that still leaves room to get ahead. */
         const val SUSTAINABLE_RTF = 0.8

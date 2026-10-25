@@ -10,7 +10,7 @@ class PacingTest {
 
     @Test
     fun `with nothing in hand it picks the fastest render`() {
-        assertEquals(3, Pacing().choose(options, 5_000, -1_200))
+        assertEquals(ReadAhead.FLOOR_STEPS, Pacing().choose(options, 5_000, -1_200))
     }
 
     @Test

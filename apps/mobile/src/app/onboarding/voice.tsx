@@ -5,7 +5,7 @@ import { useLocale } from '@/i18n/useLocale';
 import { VoicePickScreen } from '@/onboarding/VoicePickScreen';
 import { useServices } from '@/services/context';
 
-const PREVIEW_STEPS = 4;
+const PREVIEW_STEPS = 8; // below 6 steps the voice breaks (ReadAhead.FLOOR_STEPS)
 
 export default function VoicePick() {
   const { settings } = useServices();

@@ -7,7 +7,7 @@ import { IntroScreen } from '@/onboarding/IntroScreen';
 import { useServices } from '@/services/context';
 
 /** Live quality for the intro: it has to start speaking within a moment of the page appearing. */
-const INTRO_STEPS = 4;
+const INTRO_STEPS = 8; // below 6 steps the voice breaks (ReadAhead.FLOOR_STEPS)
 
 export default function Intro() {
   const { settings } = useServices();
