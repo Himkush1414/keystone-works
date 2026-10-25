@@ -172,6 +172,7 @@ export const en = {
     voiceUnavailable: 'The voice couldn’t start. Reinstalling Lamplight may help.',
   },
   player: {
+    speakerUnknown: 'Who?',
     reimport:
       'This PDF was added with an older version of Lamplight, and some lines were cut short. Open the same file again (Add › Open a file) to get its full text; your place is kept.',
     play: 'Play',
@@ -230,6 +231,11 @@ export const en = {
     studioDesc: 'High quality, quicker to start.',
     studioPlus: 'Studio+',
     studioPlusDesc: 'Highest quality, recommended. The first words can take a few seconds longer.',
+  },
+  speaker: {
+    title: 'Who says this?',
+    nobody: 'No one in particular',
+    hint: 'Your choice is kept for this book, and the lines after it follow.',
   },
   cast: {
     title: 'Cast',
@@ -352,6 +358,8 @@ export const en = {
     voiceProcessing: 'Emotion processing',
     voiceProcessingDesc:
       "Shifts the voice's pitch to act out emotions and characters. Off keeps the voice natural, exactly as it speaks.",
+    speakerLabels: 'Speaker names',
+    speakerLabelsDesc: 'Show who says each line of dialogue; tap a name to correct it',
     reduceMotion: 'Reduce motion',
     reduceMotionDesc: 'Uses fades instead of movement. Follows your system setting by default.',
     haptics: 'Haptic feedback',

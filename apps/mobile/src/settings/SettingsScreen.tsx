@@ -149,6 +149,12 @@ export function SettingsScreen({
             onChange={(breaths) => update({ breaths })}
           />
           <SwitchRow
+            label={t('settings.speakerLabels')}
+            description={t('settings.speakerLabelsDesc')}
+            value={s.speakerLabels}
+            onChange={(speakerLabels) => update({ speakerLabels })}
+          />
+          <SwitchRow
             label={t('settings.voiceProcessing')}
             description={t('settings.voiceProcessingDesc')}
             value={s.voiceProcessing}

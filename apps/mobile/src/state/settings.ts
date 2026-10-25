@@ -33,6 +33,8 @@ export interface Settings {
   expressive: boolean;
   /** Emotion processing: pitch shifts after the voice speaks. Off is Natural, the voice exactly as the model speaks it. */
   voiceProcessing: boolean;
+  /** A coloured name before each turn of dialogue, tap to correct. */
+  speakerLabels: boolean;
   /** A soft breath before long sentences and emotional moments. */
   breaths: boolean;
 }
@@ -60,6 +62,7 @@ export const DEFAULT_SETTINGS: Settings = {
   expressive: true,
   breaths: true,
   voiceProcessing: false,
+  speakerLabels: true,
 };
 
 /** Where settings are kept: SQLite on devices, localStorage on the web, memory in tests. */

@@ -54,11 +54,14 @@ export function ChoiceRow({
   label,
   description,
   selected,
+  accent,
   onPress,
 }: {
   label: string;
   description?: string;
   selected: boolean;
+  /** A colour dot before the label (a character's colour in the reader). */
+  accent?: string;
   onPress(): void;
 }) {
   const { colors, space } = useTheme();
@@ -71,6 +74,7 @@ export function ChoiceRow({
       accessibilityState={{ checked: selected }}
       style={[styles.row, { gap: space.md }]}
     >
+      {accent ? <View style={[styles.dot, { backgroundColor: accent }]} /> : null}
       <View style={styles.text}>
         <Text variant={selected ? 'bodyStrong' : 'body'}>{label}</Text>
         {description ? (
@@ -90,4 +94,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', minHeight: 56, paddingVertical: 8 },
   text: { flex: 1, gap: 2 },
   check: { width: 24, alignItems: 'center' },
+  dot: { width: 10, height: 10, borderRadius: 5 },
 });

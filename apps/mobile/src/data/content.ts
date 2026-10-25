@@ -271,3 +271,13 @@ export function correctSpeaker(db: Db, documentId: string, ord: number, characte
   });
   return true;
 }
+
+/** Who speaks each sentence, in order (undefined for narration and dialogue nobody was given). */
+export function loadSpeakers(db: Db, documentId: string): (string | undefined)[] {
+  return db
+    .all<{ speaker_id: string | null }>(
+      'SELECT speaker_id FROM sentences WHERE document_id = ? ORDER BY ord',
+      [documentId],
+    )
+    .map((r) => r.speaker_id ?? undefined);
+}
