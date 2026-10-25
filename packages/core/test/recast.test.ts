@@ -28,3 +28,19 @@ describe('recastSpeakers', () => {
     });
   });
 });
+
+describe('Cast for stories that are not books', () => {
+  it('finds speakers in a short document that is mostly dialogue, and leaves plain documents alone', () => {
+    const story = CAST_BOOKS.find((b) => b.id === 'hi-idgah')?.text ?? '';
+    const doc = prepareDocument({
+      ...parsePlainText(story, 'ईदगाह', 'document'),
+      meta: { title: 'ईदगाह', kind: 'document', language: 'hi' },
+    });
+    expect(doc.characters.length).toBeGreaterThan(3);
+    expect(doc.sentences.some((s) => s.kind === 'dialogue' && s.speaker)).toBe(true);
+    const memo = prepareDocument(
+      parsePlainText('The meeting is at nine.\n\nBring the report.\n\nThanks.', 'Memo', 'document'),
+    );
+    expect(memo.sentences.every((s) => s.kind === 'narration')).toBe(true);
+  });
+});

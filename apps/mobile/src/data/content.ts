@@ -288,12 +288,12 @@ function applyRecast(
 }
 
 /**
- * A book Cast analysed with an older version is analysed again, the listener's corrections held fixed.
+ * A document Cast analysed with an older version is analysed again, the listener's corrections held fixed.
  * Returns true when it was.
  */
 export function refreshCast(db: Db, documentId: string): boolean {
   const item = getItem(db, documentId);
-  if (!item || item.kind !== 'book' || item.status !== 'ready') return false;
+  if (!item || item.status !== 'ready') return false;
   if ((item.settings.castVersion ?? 0) >= CAST_VERSION) return false;
   applyRecast(db, documentId, item.language, loadContent(db, documentId), item.settings.speakerFixes ?? []);
   return true;

@@ -141,8 +141,9 @@ export function* prepareSteps(
   };
   const chapterStarts = new Set(chapters.map((c) => c.blockStart));
 
-  const useCast = opts.cast ?? draft.meta.kind === 'book';
   const castBlocks = blocks.map((b) => (b.kind === 'paragraph' || b.kind === 'quote' ? b.text : ''));
+  // Books, and any other text that tells a story in dialogue (a short story saved as a PDF).
+  const useCast = opts.cast ?? (draft.meta.kind === 'book' || hasDialogue(castBlocks, docLang));
   const cast = useCast ? yield* castSteps(castBlocks, docLang) : { characters: [], attributions: [] };
   if (cast.characters.length) {
     const quotes = new Map<number, ReturnType<typeof findDialogue>>();
@@ -404,4 +405,12 @@ export function recastSpeakers(
     confidence.push(a?.confidence ?? 0);
   }
   return { speakers, confidence, characters: cast.characters.map((c) => ({ ...c, ...profiles[c.id] })) };
+}
+
+/** Text with real dialogue: at least 5 paragraphs with speech in them, and at least a tenth of all. */
+export function hasDialogue(paragraphs: readonly string[], lang: string): boolean {
+  const text = paragraphs.filter((p) => p.trim());
+  let speaking = 0;
+  for (const p of text) if (findDialogue(p, lang.slice(0, 2)).length) speaking++;
+  return speaking >= 5 && speaking * 10 >= text.length;
 }
