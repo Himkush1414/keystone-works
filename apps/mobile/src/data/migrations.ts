@@ -192,6 +192,15 @@ export const migrations: Migration[] = [
       `);
     },
   },
+  {
+    id: 4,
+    name: 'import version',
+    up(db) {
+      // Which importer made the stored text (0: before this was recorded), so a file opened again after an
+      // importer fix refreshes its text instead of being refused as a duplicate.
+      db.exec('ALTER TABLE documents ADD COLUMN import_version INTEGER NOT NULL DEFAULT 0;');
+    },
+  },
 ];
 
 /** Applies pending migrations in one transaction each. Returns the resulting schema version. */

@@ -7,6 +7,7 @@ import {
   generatedCover,
   itemState,
   monogram,
+  needsReimport,
   rowMeta,
 } from '../src/library/present';
 
@@ -25,6 +26,7 @@ const item = (patch: Partial<LibraryItem> = {}): LibraryItem => ({
   wordCount: 16_200,
   sentenceCount: 900,
   loading: null,
+  importVersion: 1,
   settings: {},
   addedAt: 0,
   openedAt: null,
@@ -115,5 +117,35 @@ describe('row state and meta line', () => {
   it('is translated', () => {
     expect(rowMeta(item({ progress: 0.5 }), 'de')).toMatch(/50/);
     expect(rowMeta(item({ progress: 0.5 }), 'de')).not.toBe(rowMeta(item({ progress: 0.5 }), 'en'));
+  });
+});
+
+describe('needsReimport', () => {
+  const cut = [
+    'इ',
+    'प्र मचंद रमज़ान के पूरे तीस रोज़ के बाद आज',
+    'मोह',
+    'मोह',
+    'हा',
+    'सम्मी--- तीन ही पैसे',
+    'महमूद--हम',
+    'दूकानदार ने',
+    'नूरे',
+  ];
+  const blocks = (texts: string[]) => texts.map((text) => ({ kind: 'paragraph', text }));
+  const whole = Array.from(
+    { length: 10 },
+    () => 'रमज़ान के पूरे तीस रोज़ के बाद आज ईद आई है। कितना मनोहर, कितना सुहावना प्रभात है।',
+  );
+
+  it('flags text an older importer cut short', () => {
+    expect(needsReimport(item({ importVersion: 0 }), blocks(cut))).toBe(true);
+  });
+
+  it('leaves whole text, current imports, pasted text and short documents alone', () => {
+    expect(needsReimport(item({ importVersion: 0 }), blocks(whole))).toBe(false);
+    expect(needsReimport(item({ importVersion: 1 }), blocks(cut))).toBe(false);
+    expect(needsReimport(item({ importVersion: 0, source: 'paste' }), blocks(cut))).toBe(false);
+    expect(needsReimport(item({ importVersion: 0 }), blocks(cut.slice(0, 5)))).toBe(false);
   });
 });

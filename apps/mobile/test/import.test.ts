@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { makeEpub } from '../../../packages/core/test/fixtures/epub';
 import { loadContent } from '../src/data/content';
-import { getItem, listItems } from '../src/data/library';
+import { getItem, IMPORT_VERSION, listItems } from '../src/data/library';
 import { importFile, type ImportDeps } from '../src/import/run';
 import { failingPdfReader, fakePdfReader } from './fakePdf';
 import { testDb } from './nodeDb';
@@ -47,6 +47,25 @@ describe('importFile', () => {
     );
     expect(again).toEqual({ status: 'duplicate', id: first.status === 'ready' ? first.id : '' });
     expect(listItems(db)).toHaveLength(1);
+  });
+
+  it('refreshes text made by an older importer in place when the file is opened again', async () => {
+    const db = testDb();
+    const first = await importFile(db, { name: 'a.txt', bytes: utf8(story), source: 'file' }, deps());
+    const id = first.status === 'ready' ? first.id : '';
+    expect(getItem(db, id)?.importVersion).toBe(IMPORT_VERSION);
+    // As if imported before the version was recorded, with the text cut short.
+    db.run('UPDATE documents SET import_version = 0 WHERE id = ?', [id]);
+    db.run("UPDATE blocks SET text = 'इ' WHERE document_id = ?", [id]);
+    const again = await importFile(db, { name: 'a.txt', bytes: utf8(story), source: 'file' }, deps());
+    expect(again).toEqual({ status: 'ready', id });
+    expect(listItems(db)).toHaveLength(1);
+    expect(getItem(db, id)?.importVersion).toBe(IMPORT_VERSION);
+    expect(
+      loadContent(db, id)
+        .blocks.map((b) => b.text)
+        .join(' '),
+    ).toContain(story.split(' ')[0]);
   });
 
   it('refuses unreadable files without adding anything', async () => {

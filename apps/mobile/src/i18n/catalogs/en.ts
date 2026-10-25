@@ -172,6 +172,8 @@ export const en = {
     voiceUnavailable: 'The voice couldn’t start. Reinstalling Lamplight may help.',
   },
   player: {
+    reimport:
+      'This PDF was added with an older version of Lamplight, and some lines were cut short. Open the same file again (Add › Open a file) to get its full text; your place is kept.',
     play: 'Play',
     pause: 'Pause',
     prevSentence: 'Previous sentence',

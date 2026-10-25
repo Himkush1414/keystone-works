@@ -11,6 +11,7 @@ import type { Db } from '../data/db';
 import {
   createDocument,
   findBySha,
+  IMPORT_VERSION,
   markFailed,
   saveContent,
   setPagesLoaded,
@@ -86,7 +87,9 @@ export async function importFile(db: Db, file: ImportFile, deps: ImportDeps): Pr
 
   const sha256 = await deps.sha256(file);
   const existing = findBySha(db, sha256);
-  if (existing && existing.status !== 'failed') return { status: 'duplicate', id: existing.id };
+  // Text made by an older importer is refreshed in place (same item, its place and settings kept).
+  const stale = existing !== undefined && existing.importVersion < IMPORT_VERSION;
+  if (existing && existing.status !== 'failed' && !stale) return { status: 'duplicate', id: existing.id };
   const id =
     existing?.id ??
     createDocument(

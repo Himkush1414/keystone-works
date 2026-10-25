@@ -1,6 +1,6 @@
 import { fnv1a } from '@lamplight/engine-web';
 import { coverPalettes } from '@lamplight/tokens';
-import type { LibraryItem } from '../data/library';
+import { IMPORT_VERSION, type LibraryItem } from '../data/library';
 import { formatDuration, translate, type Locale } from '../i18n/translate';
 
 export interface GeneratedCover {
@@ -80,4 +80,18 @@ export function rowMeta(item: LibraryItem, locale: Locale, speed = 1, withAuthor
       ? translate(locale, 'library.readingPages', { done: item.loading.pages, total: item.loading.of })
       : null;
   return [withAuthor ? item.author : null, status, loading].filter(Boolean).join(' · ');
+}
+
+/**
+ * Text an older importer stored cut short: before #64 a Hindi PDF's lines stopped at the first glyph PDFBox
+ * couldn't map, leaving paragraphs of a word or two ("इ", "मोह", "हा"). True when the item predates the
+ * current importer, came from a file, and at least a quarter of 8 or more paragraphs are one or two words.
+ */
+export function needsReimport(item: LibraryItem, blocks: readonly { kind: string; text: string }[]): boolean {
+  if (item.importVersion >= IMPORT_VERSION || (item.source !== 'file' && item.source !== 'share'))
+    return false;
+  const paragraphs = blocks.filter((b) => b.kind === 'paragraph' && b.text.trim());
+  if (paragraphs.length < 8) return false;
+  const short = paragraphs.filter((b) => b.text.trim().split(/\s+/).length <= 2).length;
+  return short * 4 >= paragraphs.length;
 }
