@@ -279,7 +279,7 @@ describe('annotations, collections and settings', () => {
         id: 'elizabeth',
         name: 'Elizabeth',
         aliases: ['Elizabeth', 'Lizzy'],
-        gender: null,
+        gender: 'f', // from her given name
         lineCount: 2,
         voiceId: 'F2',
         age: null,

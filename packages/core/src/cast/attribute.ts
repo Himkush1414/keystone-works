@@ -1,5 +1,6 @@
 import type { Age, Temperament } from './profile';
 import { findDialogue, type DialogueSpan } from './dialogue';
+import { givenNameGender } from './names';
 
 /** Speech verbs per language, used to find dialogue tags ("said Elizabeth", "Elizabeth asked"). */
 // prettier-ignore
@@ -39,16 +40,47 @@ const HONORIFIC =
 
 /** Family words used as names in Hindi stories ("दादी ने कहा", "Dadi bola"), with their gender. */
 // prettier-ignore
-const KIN_F = new Set('दादी नानी माँ मां मम्मी अम्मा दीदी बहन चाची मौसी बुआ भाभी dadi nani maa ma mummy amma didi behen behan chachi mausi bua bhabhi'.split(' '));
+const KIN_F = new Set('दादी नानी माँ मां मम्मी अम्मा दीदी बहन चाची मौसी बुआ भाभी dadi nani maa ma mummy amma didi behen behan chachi mausi bua bhabhi grandmother grandma granny mother mom mum mommy auntie'.split(' '));
 // prettier-ignore
-const KIN_M = new Set('दादा नाना पापा पिताजी बाबा भैया भाई चाचा मामा dada nana papa pitaji baba bhaiya bhai chacha mama'.split(' '));
+const KIN_M = new Set('दादा नाना पापा पिताजी बाबा भैया भाई चाचा मामा dada nana papa pitaji baba bhaiya bhai chacha mama grandfather grandpa father dad daddy'.split(' '));
+
+/** Relations that tell a named person's gender: "his sister Maya", "Tom, her brother", "बहन मीरा", "bhai Rohan". */
+const REL_F =
+  'sister|daughter|wife|mother|aunt|niece|grandmother|granddaughter|girlfriend|fiancée|widow|girl|woman|lady';
+const REL_M =
+  'brother|son|husband|father|uncle|nephew|grandfather|grandson|boyfriend|fiancé|widower|boy|man|gentleman';
+const REL_ADJ = String.raw`(?:(?:little|younger|elder|older|big|baby|twin|eldest|youngest|young|old)\s+)?`;
+const KIN_BEFORE = new RegExp(
+  String.raw`\b(?:his|her|their|my|our|your)\s+${REL_ADJ}(${REL_F}|${REL_M})\s*,?\s+(\p{Lu}[\p{L}'’-]+)`,
+  'giu',
+);
+const KIN_AFTER = new RegExp(
+  String.raw`(\p{Lu}[\p{L}'’-]+),\s+(?:his|her|their|my|our|your|a|an|the)\s+${REL_ADJ}(${REL_F}|${REL_M})\b`,
+  'gu',
+);
+// prettier-ignore
+const HI_REL_F = 'बहन बेटी पत्नी दीदी भाभी सहेली behen behan beti patni didi bhabhi saheli'.split(' ');
+// prettier-ignore
+const HI_REL_M = 'भाई बेटा पति भैया bhai beta pati bhaiya'.split(' ');
+const HI_KIN_BEFORE = new RegExp(
+  String.raw`(?:^|\s)(${[...HI_REL_F, ...HI_REL_M].join('|')})\s+([\p{L}\p{M}]+)`,
+  'giu',
+);
+/**
+ * Verbs in narration agree with their subject in Hindi ("रोहन बाज़ार गया।", "Neha school gayi."), unless the
+ * subject takes ने, when they agree with the object.
+ */
+// prettier-ignore
+const HI_AGREE_F = new Set('गई गयी आई आयी थी लगी रही सकी चुकी बैठी उठी पहुँची पहुंची चली दौड़ी gayi gai aayi aai thi lagi rahi saki chuki baithi uthi pahunchi chali daudi'.split(' '));
+// prettier-ignore
+const HI_AGREE_M = new Set('गया आया था लगा रहा सका चुका बैठा उठा पहुँचा पहुंचा चला दौड़ा gaya aaya tha laga raha saka chuka baitha utha pahuncha chala dauda'.split(' '));
 
 /** Capitalised words that start sentences but aren't names. */
 // prettier-ignore
 const NOT_NAMES = new Set('the a an and but or then there this that these those it its he she they we you i his her their our your my when while if as so yet still now here what who why how where which oh ah well yes no not one all some every no-one nobody somebody everyone old young with without after before for from once since upon at in on to into by of though although because perhaps indeed suddenly finally later meanwhile again never always only even just however therefore besides beyond moreover otherwise presently sometimes outside inside january february march april may june july august september october november december monday tuesday wednesday thursday friday saturday sunday el la los las un una y pero entonces ella él ellos der die das ein eine und aber dann sie er es le la les un une et mais puis elle il ils il lo gli una e ma poi lei lui o a os as um uma mas então ela ele'.split(' '));
 
-const FEMALE_PRONOUNS = new Set(['she', 'her', 'ella', 'sie', 'elle', 'lei', 'ela']);
-const MALE_PRONOUNS = new Set(['he', 'him', 'his', 'él', 'er', 'il', 'lui', 'ele']);
+const FEMALE_PRONOUNS = new Set(['she', 'her', 'hers', 'herself', 'ella', 'sie', 'elle', 'lei', 'ela']);
+const MALE_PRONOUNS = new Set(['he', 'him', 'his', 'himself', 'él', 'er', 'il', 'lui', 'ele']);
 /** Hindi and Hinglish third-person pronouns carry no gender; the verb does. */
 // prettier-ignore
 const HI_PRONOUNS = new Set('वह वो उसने उन्होंने यह ये woh wo vo usne unhone yeh ye'.split(' '));
@@ -275,8 +307,60 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
     }
     if (KIN_F.has(lower)) existing.gender = 'f';
     else if (KIN_M.has(lower)) existing.gender = 'm';
+    // A common given name is a prior worth one tag; pronouns and verbs in the text can still outvote it.
+    if (!primed.has(existing.id)) {
+      primed.add(existing.id);
+      const byName = givenNameGender(display);
+      if (byName) vote(existing.id, byName, 2);
+    }
     if (gender) vote(existing.id, gender, 2);
     return existing.id;
+  };
+  const primed = new Set<string>();
+
+  /** Votes from relations ("his sister Maya") and Hindi verb agreement ("रोहन गया") in a stretch of narration. */
+  const idFor = (raw: string) => findKnown(raw)?.id ?? slug(canonicalKey(raw).key);
+  let contextSeen = '';
+  const voteFromContext = (narration: string) => {
+    if (contextSeen === narration) return;
+    contextSeen = narration;
+    const relation = (word: string): Gender | undefined => {
+      const w = word.toLowerCase();
+      if (new RegExp(`^(?:${REL_F})$`).test(w) || HI_REL_F.includes(w)) return 'f';
+      if (new RegExp(`^(?:${REL_M})$`).test(w) || HI_REL_M.includes(w)) return 'm';
+      return undefined;
+    };
+    const named = (raw: string) => !NOT_NAMES.has(raw.toLowerCase()) && !HI_PRONOUNS.has(raw.toLowerCase());
+    for (const m of narration.matchAll(KIN_BEFORE)) {
+      const g = relation(m[1] ?? '');
+      if (g && m[2] && named(m[2])) vote(idFor(m[2]), g, 2);
+    }
+    for (const m of narration.matchAll(KIN_AFTER)) {
+      const g = relation(m[2] ?? '');
+      if (g && m[1] && named(m[1])) vote(idFor(m[1]), g, 2);
+    }
+    for (const m of narration.matchAll(HI_KIN_BEFORE)) {
+      const g = relation(m[1] ?? '');
+      if (g && m[2] && named(m[2]) && !HI_FIRST_PERSON.has(m[2].toLowerCase())) vote(idFor(m[2]), g, 2);
+    }
+    for (const sentence of narration.split(/[।.!?]+/u)) {
+      const words = sentence.match(/[\p{L}\p{M}]+/gu) ?? [];
+      const subject = words[0];
+      if (!subject || words.length < 2 || words.some((w) => w === 'ने' || w.toLowerCase() === 'ne')) continue;
+      const lower = subject.toLowerCase();
+      if (
+        NOT_NAMES.has(lower) ||
+        HI_PRONOUNS.has(lower) ||
+        HI_FIRST_PERSON.has(lower) ||
+        KIN_F.has(lower) ||
+        KIN_M.has(lower)
+      )
+        continue;
+      if (/\p{Ll}/u.test(subject[0] ?? '')) continue; // Latin names are capitalised
+      const f = words.some((w) => HI_AGREE_F.has(w.toLowerCase()));
+      const m = words.some((w) => HI_AGREE_M.has(w.toLowerCase()));
+      if (f !== m) vote(idFor(subject), f ? 'f' : 'm', 2);
+    }
   };
 
   const vote = (id: string, g: Gender, weight = 1) => {
@@ -504,6 +588,7 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
 
   /** Names in narration become likely speakers of what follows (known names, and any with an honorific). */
   const noticeNames = (narration: string): Set<string> => {
+    voteFromContext(narration);
     const seen = new Set<string>();
     const see = (id: string) => {
       voteFromNarration(id, narration);
