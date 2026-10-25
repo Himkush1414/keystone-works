@@ -56,6 +56,20 @@ describe('Hindi dialogue without quotation marks', () => {
   });
 });
 
+describe('Hindi pronouns that introduce speech', () => {
+  it('refer to the person just named in the paragraph', () => {
+    const { characters, attributions } = analyseCast(
+      [
+        'खालाने कहा, बेटा! यह क्या हुआ?',
+        'चौधराइन ने भी जुम्मन पर ही दोषारोपण किया। उसने कहा, जुम्मन ने कुछ कर दिया है।',
+      ],
+      'hi',
+    );
+    const name = (id?: string) => characters.find((c) => c.id === id)?.name;
+    expect(attributions.map((a) => name(a.speaker))).toEqual(['खाला', 'चौधराइन']);
+  });
+});
+
 describe('quotations left open', () => {
   it('runs a paragraph that opens a quotation and never closes it to its end', () => {
     const en = '“It was a long time ago, and nobody remembers it now. But I do.';

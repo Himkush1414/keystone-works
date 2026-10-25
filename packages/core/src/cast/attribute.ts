@@ -587,6 +587,19 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
       const lower = word.toLowerCase();
       const gender = verb ? verbGender(verb) : undefined;
       if (HI_FIRST_PERSON.has(lower)) return { tag: { kind: 'first-person' } as Tag, confidence };
+      if (HI_PRONOUNS.has(lower) || ['वे', 'उन्होंने', 've'].includes(lower)) {
+        // "चौधराइन ने … दोषारोपण किया। उसने कहा, …": the pronoun is whoever was just named, if the verb allows.
+        const ref = lastAgentIn(before) ?? lastNamedIn(before);
+        if (ref) {
+          const known = findKnown(ref);
+          const refGender = (known ? genderOf(known.id) : undefined) ?? givenNameGender(ref);
+          if (!gender || !refGender || refGender === gender)
+            return {
+              tag: { kind: 'name', text: ref, ...(gender ? { gender } : {}), confidence: 0.75 } as Tag,
+              confidence: 0.75,
+            };
+        }
+      }
       if (HI_PRONOUNS.has(lower) || ['वे', 'उन्होंने', 've'].includes(lower))
         return {
           tag: { kind: 'pronoun', text: word, ...(gender ? { gender } : {}) } as Tag,
