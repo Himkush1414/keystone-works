@@ -7,7 +7,7 @@
    "voice": "M5",
    "pauseMs": 510,
    "kind": "dialogue",
-   "pitch": 0.5
+   "pitch": 1
   },
   {
    "i": 1,
@@ -54,7 +54,7 @@
    "voice": "M5",
    "pauseMs": 300,
    "kind": "dialogue",
-   "pitch": 0.5
+   "pitch": 1
   },
   {
    "i": 6,
@@ -92,7 +92,7 @@
    "voice": "M5",
    "pauseMs": 250,
    "kind": "dialogue",
-   "pitch": 0.5
+   "pitch": 1
   },
   {
    "i": 3,
@@ -112,7 +112,7 @@
    "voice": "M5",
    "pauseMs": 40,
    "kind": "dialogue",
-   "pitch": 0.5,
+   "pitch": 1,
    "ending": "cut"
   },
   {
@@ -146,7 +146,7 @@
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -1.5,
-   "pitch": 0.2,
+   "pitch": 1.2,
    "ending": "trail"
   },
   {
@@ -169,7 +169,7 @@
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -1.5,
-   "pitch": 0.2,
+   "pitch": 1.2,
    "ending": "trail"
   }
  ],
@@ -321,7 +321,7 @@
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -2,
-   "pitch": -2.9,
+   "pitch": -3.4,
    "ending": "trail"
   },
   {

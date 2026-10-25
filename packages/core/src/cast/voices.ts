@@ -57,7 +57,7 @@ const TEMPERAMENT_STYLE: Record<Temperament, StylePart> = {
 /** The catalog's 0–1 pitch scale (80–220 Hz, logarithmic) in semitones. */
 const SEMITONES_PER_UNIT = 12 * Math.log2(220 / 80);
 /** Characters of one gender are kept at least this far apart in register, as far as the offsets allow. */
-const MIN_APART = 1.5;
+const MIN_APART = 2;
 /** Register offsets tried, smallest first; a character's total offset stays within ±3 semitones. */
 const OFFSETS = [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2, -2.5, 2.5, -3, 3];
 
