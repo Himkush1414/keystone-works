@@ -851,7 +851,7 @@ export function* castSteps(
 
     const lastSpeaker = lastSpeakers[lastSpeakers.length - 1];
     let paragraphSpeaker: { id: string; confidence: number } | undefined;
-    const local: { span: DialogueSpan; id?: string; confidence: number }[] = [];
+    const local: { span: DialogueSpan; id?: string; confidence: number; fixed?: true }[] = [];
     spans.forEach((span, k) => {
       const after = text.slice(span.end, spans[k + 1]?.start ?? text.length).slice(0, 80);
       const before = text.slice(spans[k - 1]?.end ?? 0, span.start).slice(-80);
@@ -866,7 +866,7 @@ export function* castSteps(
           touch(id);
           paragraphSpeaker = { id, confidence: 1 };
         }
-        local.push(id ? { span, id, confidence: 1 } : { span, confidence: 1 });
+        local.push(id ? { span, id, confidence: 1, fixed: true } : { span, confidence: 1, fixed: true });
         return;
       }
       const id = found ? resolve(found.tag, quote, lastSpeaker, namedHere) : undefined;
@@ -883,7 +883,7 @@ export function* castSteps(
     if (paragraphSpeaker) {
       // One tag in a paragraph usually covers every quote in it.
       for (const l of local) {
-        if (!l.id) {
+        if (!l.id && !l.fixed) {
           l.id = paragraphSpeaker.id;
           l.confidence = Math.min(0.85, paragraphSpeaker.confidence);
         }
@@ -911,6 +911,7 @@ export function* castSteps(
         // Two people taking turns is the commonest pattern in fiction; confident enough for their own voices.
         const confidence = previous === other || called.length === 1 ? 0.75 : 0.7;
         for (const l of local) {
+          if (l.fixed) continue;
           l.id = other;
           l.confidence = confidence;
         }
@@ -923,7 +924,7 @@ export function* castSteps(
       attributions.push(
         l.id
           ? { block, span: l.span, speaker: l.id, confidence: l.confidence }
-          : { block, span: l.span, confidence: 0 },
+          : { block, span: l.span, confidence: l.fixed ? 1 : 0 },
       );
       if (l.id) {
         const c = chars.get(l.id);
