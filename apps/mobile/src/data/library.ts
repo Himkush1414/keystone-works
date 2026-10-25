@@ -1,3 +1,4 @@
+import { CAST_VERSION } from '@lamplight/core';
 import type { Block, Chapter, Character, DocumentKind, PreparedDocument, Sentence } from '@lamplight/core';
 import type { Db } from './db';
 import { newId } from './ids';
@@ -12,14 +13,19 @@ export interface DocumentSettings {
   clean?: Partial<Record<string, boolean>>;
   customSkips?: string[];
   speed?: number;
+  /** Speakers the listener has set: the quotation (paragraph, start) and who says it (null: no one). */
+  speakerFixes?: { block: number; start: number; speaker: string | null }[];
+  /** The Cast version that attributed this document's dialogue (CAST_VERSION; absent: older). */
+  castVersion?: number;
 }
 
 /**
  * The importer's version, stored with each document's text. Raise it when a fix changes the text an import
  * produces: a file opened again with an older version's text is then imported afresh, in place.
  * 1: Hindi PDFs read through ActualText (#64), no more paragraphs cut at the first unmapped glyph.
+ * 2: stories that aren't books (a short story saved as a PDF) get Cast, so their dialogue has speakers.
  */
-export const IMPORT_VERSION = 1;
+export const IMPORT_VERSION = 2;
 
 export interface LibraryItem {
   id: string;
@@ -281,6 +287,8 @@ export function saveContent(
         id,
       ],
     );
+    // This text's dialogue was just attributed by the current Cast.
+    updateSettings(db, id, { castVersion: CAST_VERSION });
   });
 }
 

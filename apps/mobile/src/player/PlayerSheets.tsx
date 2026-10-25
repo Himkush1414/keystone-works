@@ -261,6 +261,48 @@ export function CastSheet({
 }
 
 /** Clean Read review (R-CR-4): each detector's findings in this document, switched on or off here. */
+/** Who says this line: the book's characters, or no one in particular. */
+export function SpeakerSheet({
+  visible,
+  characters,
+  current,
+  colors,
+  onClose,
+  onChoose,
+}: {
+  visible: boolean;
+  characters: readonly CastCharacter[];
+  /** The speaker Cast gave the line now. */
+  current: string | null;
+  colors: ReadonlyMap<string, string>;
+  onClose(): void;
+  onChoose(characterId: string | null): void;
+}) {
+  const t = useT();
+  return (
+    <Sheet visible={visible} title={t('speaker.title')} onClose={onClose} closeLabel={t('common.close')}>
+      <Text variant="callout" tone="soft">
+        {t('speaker.hint')}
+      </Text>
+      <ScrollView style={{ maxHeight: 460 }}>
+        {characters
+          .filter((c) => c.lineCount > 0 || c.id === current)
+          .map((c) => (
+            <ChoiceRow
+              key={c.id}
+              label={c.name}
+              description={t('cast.lines', { n: c.lineCount })}
+              selected={c.id === current}
+              {...(colors.has(c.id) ? { accent: colors.get(c.id) ?? '' } : {})}
+              onPress={() => onChoose(c.id)}
+            />
+          ))}
+        <ChoiceRow label={t('speaker.nobody')} selected={current === null} onPress={() => onChoose(null)} />
+      </ScrollView>
+    </Sheet>
+  );
+}
+
 export function CleanReadSheet({
   visible,
   rows,

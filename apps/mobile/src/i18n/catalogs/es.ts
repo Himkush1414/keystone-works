@@ -172,6 +172,7 @@ export const es: Catalog = {
     voiceUnavailable: 'La voz no pudo iniciarse. Reinstalar Lamplight puede ayudar.',
   },
   player: {
+    speakerUnknown: '¿Quién?',
     reimport:
       'Este PDF se añadió con una versión anterior de Lamplight y algunas líneas quedaron cortadas. Vuelve a abrir el mismo archivo (Añadir › Abrir un archivo) para obtener el texto completo; se conserva tu posición.',
     play: 'Reproducir',
@@ -230,6 +231,11 @@ export const es: Catalog = {
     studioDesc: 'Alta calidad, empieza antes.',
     studioPlus: 'Estudio+',
     studioPlusDesc: 'La máxima calidad, recomendada. Las primeras palabras pueden tardar unos segundos más.',
+  },
+  speaker: {
+    title: '¿Quién lo dice?',
+    nobody: 'Nadie en particular',
+    hint: 'Tu elección se guarda para este libro y las líneas siguientes se ajustan.',
   },
   cast: {
     title: 'Reparto',
@@ -352,6 +358,8 @@ export const es: Catalog = {
     voiceProcessing: 'Procesado de emociones',
     voiceProcessingDesc:
       'Cambia el tono de la voz para interpretar emociones y personajes. Desactivado, la voz suena natural, tal como habla.',
+    speakerLabels: 'Nombres de quien habla',
+    speakerLabelsDesc: 'Muestra quién dice cada línea; toca un nombre para corregirlo',
     reduceMotion: 'Reducir movimiento',
     reduceMotionDesc: 'Usa fundidos en lugar de movimiento. Sigue el ajuste del sistema por defecto.',
     haptics: 'Respuesta háptica',

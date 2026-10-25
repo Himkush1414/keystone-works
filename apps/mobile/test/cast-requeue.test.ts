@@ -4,6 +4,7 @@ import { loadContent } from '../src/data/content';
 import { createDocument, saveContent } from '../src/data/library';
 import {
   changeCharacterVoice,
+  correctSpeakerAndRequeue,
   mergeCharactersAndRequeue,
   planSession,
   type SessionSettings,
@@ -85,6 +86,27 @@ describe('Cast changes while playing', () => {
       plan.queue.segments.filter((s) => content.sentences[s.i]?.speaker === anna?.id).map((s) => s.voice),
     );
     expect(dialogueVoices.size).toBe(1);
+  });
+});
+
+describe('Correcting a speaker while playing', () => {
+  it('re-voices the corrected line from the next sentence on, and the queue knows it changed', async () => {
+    const { db, id, deps, sent } = seed();
+    const anna = characterNamed(db, id, 'Anna');
+    const content = loadContent(db, id);
+    const ord = content.sentences.findIndex((s) =>
+      content.blocks[s.block]?.text.slice(s.start, s.end).includes('Then hurry'),
+    );
+    const before = planSession(db, id, SETTINGS).queue.key;
+    expect(await correctSpeakerAndRequeue(deps, id, ord, anna?.id ?? '', SETTINGS, 0)).toBe(true);
+    expect(loadContent(db, id).sentences[ord]?.speaker).toBe(anna?.id);
+    const after = planSession(db, id, SETTINGS);
+    expect(after.queue.key).not.toBe(before);
+    const annaVoice = after.queue.segments.find(
+      (s) => s.i !== ord && loadContent(db, id).sentences[s.i]?.speaker === anna?.id,
+    )?.voice;
+    expect(after.queue.segments.find((s) => s.i === ord)?.voice).toBe(annaVoice);
+    expect(sent.length).toBeGreaterThan(0);
   });
 });
 

@@ -5,7 +5,7 @@ import { givenNameGender } from './names';
 /** Speech verbs per language, used to find dialogue tags ("said Elizabeth", "Elizabeth asked"). */
 // prettier-ignore
 const VERBS: Record<string, string> = {
-  en: 'said says asked asks replied replies answered answers whispered whispers shouted shouts cried cries called calls murmured murmurs muttered mutters exclaimed exclaims added adds continued continues began begins remarked remarks returned returns observed observes sighed sighs laughed laughs snapped snaps declared declares insisted insists protested protests repeated repeats told tells demanded demands inquired enquired went yelled screamed breathed admitted agreed suggested warned urged pleaded interrupted retorted grumbled growled hissed sobbed giggled chuckled groaned stammered gasped barked roared bellowed teased explained announced confessed promised wondered whimpered moaned',
+  en: 'said says thought thinks asked asks replied replies answered answers whispered whispers shouted shouts cried cries called calls murmured murmurs muttered mutters exclaimed exclaims added adds continued continues began begins remarked remarks returned returns observed observes sighed sighs laughed laughs snapped snaps declared declares insisted insists protested protests repeated repeats told tells demanded demands inquired enquired went yelled screamed breathed admitted agreed suggested warned urged pleaded interrupted retorted grumbled growled hissed sobbed giggled chuckled groaned stammered gasped barked roared bellowed teased explained announced confessed promised wondered whimpered moaned',
   es: 'dijo dice preguntó pregunta respondió responde contestó contesta susurró susurra gritó grita exclamó exclama murmuró murmura añadió añade continuó continúa repitió repite insistió insiste replicó replica',
   de: 'sagte sagt fragte fragt antwortete antwortet flüsterte flüstert rief ruft schrie schreit murmelte murmelt meinte meint fügte erwiderte erwidert fuhr wiederholte',
   fr: 'dit demanda demande répondit répond murmura murmure cria crie s’écria chuchota chuchote ajouta ajoute reprit reprend continua continue répéta répète lança lance',
@@ -77,7 +77,17 @@ const HI_AGREE_M = new Set('गया आया था लगा रहा स�
 
 /** Capitalised words that start sentences but aren't names. */
 // prettier-ignore
-const NOT_NAMES = new Set('the a an and but or then there this that these those it its he she they we you i his her their our your my when while if as so yet still now here what who why how where which oh ah well yes no not one all some every no-one nobody somebody everyone old young with without after before for from once since upon at in on to into by of though although because perhaps indeed suddenly finally later meanwhile again never always only even just however therefore besides beyond moreover otherwise presently sometimes outside inside january february march april may june july august september october november december monday tuesday wednesday thursday friday saturday sunday el la los las un una y pero entonces ella él ellos der die das ein eine und aber dann sie er es le la les un une et mais puis elle il ils il lo gli una e ma poi lei lui o a os as um uma mas então ela ele'.split(' '));
+const NOT_NAMES = new Set('the a an and but or then there this that these those it its he she they we you i his her their our your my when while if as so yet still now here what who why how where which oh ah well yes no not one all some every no-one nobody somebody everyone old young with without after before for from once since upon at in on to into by of though although because perhaps indeed suddenly finally later meanwhile again never always only even just however therefore besides beyond moreover otherwise presently sometimes outside inside january february march april may june july august september october november december monday tuesday wednesday thursday friday saturday sunday english french german spanish italian latin greek hindi urdu chinese japanese russian american british indian european el la los las un una y pero entonces ella él ellos der die das ein eine und aber dann sie er es le la les un une et mais puis elle il ils il lo gli una e ma poi lei lui o a os as um uma mas então ela ele'.split(' '));
+
+/** Words that open a Hindi clause without being its speaker: adverbs, conjunctions, postpositions, time words. */
+// prettier-ignore
+const HI_NOT_SUBJECT = new Set('अन्तमें अंतमें अन्त अंत में फिर तब अब इतने इतनेमें उसके बाद सहसा अचानक आखिर अंततः परन्तु लेकिन किन्तु मगर और तो भी ही यह वह इस उस एक दिन रात सुबह शाम आज कल को से पर का की के ने जो जब जैसे अपने सामने उनसे उससे उन्हें उसे'.split(' '));
+/** A word before these starts a participle phrase ("प्रभावित होकर", "मुस्कुराते हुए"), not the speaker. */
+// prettier-ignore
+const HI_PARTICIPLE_NEXT = new Set('होकर हुए होते करके कर'.split(' '));
+
+// prettier-ignore
+const CALENDAR = new Set('january february march april may june july august september october november december monday tuesday wednesday thursday friday saturday sunday'.split(' '));
 
 const FEMALE_PRONOUNS = new Set(['she', 'her', 'hers', 'herself', 'ella', 'sie', 'elle', 'lei', 'ela']);
 const MALE_PRONOUNS = new Set(['he', 'him', 'his', 'himself', 'él', 'er', 'il', 'lui', 'ele']);
@@ -114,8 +124,13 @@ export interface CastAnalysis {
 }
 
 const HONORIFIC_WORDS = String.raw`(?:Mr|Mrs|Ms|Miss|Dr|Sir|Lady|Lord|Captain|Colonel|Madame|Monsieur|Señor|Señora|Herr|Frau|Signor|Signora|Dom|Dona|Don|Doña)`;
-const NAME = String.raw`((?:${HONORIFIC_WORDS}\.?\s+)?\p{Lu}[\p{L}'’-]+(?:\s+\p{Lu}[\p{L}'’-]+){0,2})`;
-const HONORIFIC_NAME = new RegExp(String.raw`\b(${HONORIFIC_WORDS}\.?\s+\p{Lu}[\p{L}'’-]+)`, 'gu');
+/** A name, possibly after "the" or a small adjective ("the Hatter", "little Amy", "old Mr. Grey"). */
+const NAME_LEAD = String.raw`(?:(?:the|little|old|young|poor|dear)\s+)?`;
+const NAME = String.raw`(${NAME_LEAD}(?:${HONORIFIC_WORDS}\.?\s+)?\p{Lu}[\p{L}'’-]+(?:\s+\p{Lu}[\p{L}'’-]+){0,2})`;
+const HONORIFIC_NAME = new RegExp(
+  String.raw`\b(${HONORIFIC_WORDS}\.?\s+\p{Lu}[\p{L}'’-]+(?:\s+\p{Lu}[\p{L}'’-]+)?)`,
+  'gu',
+);
 const PRONOUN = String.raw`(he|she|they|I|we|él|ella|er|sie|il|elle|lui|lei|ele|ela)`;
 // prettier-ignore
 const DESCRIPTOR_NOUNS = 'wife|husband|lady|mother|father|son|daughter|man|woman|boy|girl|gentleman|stranger|child|sister|brother|friend|companion|host|hostess|servant|maid|soldier|captain|doctor|priest|king|queen';
@@ -168,9 +183,12 @@ function tagPatterns(lang: string) {
     verbDescriptor: new RegExp(String.raw`^[\s,—–-]*(?:${verbs})\s+${DESCRIPTOR}\b`, 'iu'),
     descriptorVerb: new RegExp(String.raw`^[\s,—–-]*${DESCRIPTOR}\s+(?:\p{Ll}+\s+)?(?:${verbs})\b`, 'iu'),
     // Before the quote: "Elizabeth said, " / "Elizabeth turned to him and said:"
-    before: new RegExp(String.raw`${NAME}\s+(?:[^.!?“”"«»]{0,40}\s)?(?:${verbs})\s*[,:]?\s*$`, 'u'),
+    before: new RegExp(
+      String.raw`${NAME}\s+(?:[^.!?“”"«»]{0,40}\s)?(?:${verbs})(?:\s[^.!?“”"«»]{0,30})?\s*[,:]?\s*$`,
+      'u',
+    ),
     // Action beat in a dialogue paragraph: "Anna pulled on her coat."
-    beat: new RegExp(String.raw`^[\s,—–-]*${NAME}\s+\p{Ll}+`, 'u'),
+    beat: new RegExp(String.raw`^[\s,—–-]*(?:(?:And|But|Then|So|and|but|then|so)\s+)?${NAME}\s+\p{Ll}+`, 'u'),
     // Hindi: "मीरा ने पूछा", "मीरा हँसकर बोली", "वह बोला"; before: "दादी ने खिड़की से आवाज़ लगाई,"
     hiAfter: new RegExp(
       String.raw`^[\s,।—–-]*(${W})(?:\s+ने)?\s+(?:${W}\s+){0,3}?(${hiVerbs})(?=[\s।,!?.]|$)`,
@@ -187,6 +205,18 @@ function tagPatterns(lang: string) {
     ),
     // Hindi action beat right after a quote: "अनु ने नाक सिकोड़ी", "Arjun ne cup uthaya"
     hiBeat: new RegExp(String.raw`^[\s,।—–-]*(${W})\s+(?:ने|ne)\s+`, 'iu'),
+    // Hindi speech without quotation marks (cast/dialogue.ts hindiSpans), named just before it:
+    // "मोहसिन—", "महमूद ने कहा—", "खालाने नम्रतासे कहा, ", "हामिद को यकीन न आया—".
+    hiOpening: /(?:[—―]|--|–{2}|,)\s*$/u,
+    hiLabel: new RegExp(String.raw`(?:^|[।?!॥]\s*)[\s\u200b\u2060]*(${W}(?:\s${W})?)\s*[—―–-]+\s*$`, 'u'),
+    hiSayClause: new RegExp(
+      String.raw`(?:^|[।?!॥]\s*)[\s\u200b\u2060]*(${W})[^।?!]*?\s(${alt([...HI_VERBS_M, ...HI_VERBS_F, ...HI_VERBS_N, ...HG_VERBS_M, ...HG_VERBS_F, ...HG_VERBS_N, 'कहता', 'कहती', 'कहते', 'कहेगी', 'कहेगा', 'जवाब दिया', 'उत्तर दिया', 'सुनाया', 'वोले'])})(?:\s+(?:है|हैं|था|थी|थे))?\s*,?\s*[—―–-]*\s*$`,
+      'iu',
+    ),
+    hiClause: new RegExp(
+      String.raw`(?:^|[।?!॥]\s*)[\s\u200b\u2060]*(${W})\s[^।?!]*?(?:[—―]+|-{2,})[-–]*\s*$`,
+      'u',
+    ),
     // A known name opening the narration before a quote: "पिताजी मुस्कुराए।", "Maria laughed."
     leadingWord: new RegExp(String.raw`(?:^|[.!?।]\s+)(${W})\s+${W}[^.!?।]*[.!?।]?\s*$`, 'u'),
   };
@@ -244,8 +274,27 @@ const CONVERSATION_GAP = 3;
  * Detects dialogue across paragraphs and attributes speakers. `blocks` are paragraph texts in reading order;
  * non-paragraph blocks should be passed as empty strings so indices line up.
  */
-export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysis {
-  const steps = castSteps(blocks, lang);
+/**
+ * Cast's version: raise it when attribution improves, so books analysed before are analysed again the next
+ * time they play (the listener's corrections held fixed). 2: dialogue measured on real books (Premchand's
+ * unquoted Hindi, "said the Hatter", turns by name and by the first-person narrator).
+ */
+export const CAST_VERSION = 2;
+
+/** A line whose speaker the listener has set: the quotation starting at `start` in paragraph `block`. */
+export interface FixedSpeaker {
+  block: number;
+  start: number;
+  /** The speaker's name as Cast knows it, or null for no one in particular. */
+  speaker: string | null;
+}
+
+export function analyseCast(
+  blocks: readonly string[],
+  lang = 'en',
+  fixed: readonly FixedSpeaker[] = [],
+): CastAnalysis {
+  const steps = castSteps(blocks, lang, fixed);
   for (;;) {
     const r = steps.next();
     if (r.done) return r.value;
@@ -259,8 +308,14 @@ const CAST_STEP = 200;
  * [analyseCast] in steps: the generator pauses every few hundred paragraphs, so a caller on the UI thread can
  * let the screen draw in between, and returns the analysis when done.
  */
-export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<void, CastAnalysis> {
+export function* castSteps(
+  blocks: readonly string[],
+  lang = 'en',
+  fixed: readonly FixedSpeaker[] = [],
+): Generator<void, CastAnalysis> {
   const base = lang.slice(0, 2);
+  // Lines the listener has set are taken as given, and the turns after them follow from them.
+  const fixedAt = new Map(fixed.map((f) => [`${f.block}:${f.start}`, f.speaker]));
   const pat = tagPatterns(base);
   const chars = new Map<string, Character>();
   const genderVotes = new Map<string, { f: number; m: number }>();
@@ -285,12 +340,20 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
     return matches.sort((a, b) => recent.lastIndexOf(b.id) - recent.lastIndexOf(a.id))[0];
   };
 
-  const register = (raw: string, gender?: Gender): string | undefined => {
+  const register = (input: string, gender?: Gender): string | undefined => {
+    // "the Hatter" is the Hatter, "little Amy" is Amy, "Holmes’ quick eye" is Holmes.
+    const raw = input
+      .trim()
+      .replace(/^(?:(?:the|little|old|young|poor|dear)\s+)+/u, '')
+      .replace(/['’]s?$/u, '');
     const words = raw.trim().split(/\s+/);
     const lower = raw.trim().toLowerCase();
     if (words.length === 1 && (NOT_NAMES.has(lower) || HI_PRONOUNS.has(lower) || HI_FIRST_PERSON.has(lower)))
       return undefined;
-    if (NOT_NAMES.has((words[0] ?? '').toLowerCase()) && !HONORIFIC.test(words[0] ?? '')) return undefined;
+    // A function word can't start a name, but a month can ("March Hare", "May Bennet").
+    const first = (words[0] ?? '').toLowerCase();
+    if (NOT_NAMES.has(first) && !HONORIFIC.test(words[0] ?? '') && !(words.length > 1 && CALENDAR.has(first)))
+      return undefined;
     const { key, display, honorific } = canonicalKey(raw);
     if (!key || NOT_NAMES.has(key)) return undefined;
     let existing = findKnown(raw);
@@ -427,6 +490,23 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
     return out;
   };
 
+  /** Characters spoken to by name: "Don’t, Jo." "So I did, Beth." "Ah, Watson, …" (at the start or after a comma). */
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const vocatives = (quote: string): Set<string> => {
+    const out = new Set<string>();
+    for (const c of chars.values()) {
+      if (c.id === 'narrator-i') continue;
+      for (const a of c.aliases) {
+        const re = new RegExp(
+          String.raw`(?:^[“"‘'«„]?\s*(?:(?:Oh|Ah|Well|Yes|No|Now|Come),?\s+)?|,\s+)${escape(a)}(?=\s*[,.!?;—–])`,
+          'u',
+        );
+        if (re.test(quote)) out.add(c.id);
+      }
+    }
+    return out;
+  };
+
   const resolve = (
     tag: Tag,
     quote: string,
@@ -519,7 +599,116 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
   };
 
   /** Finds a tag in the narration right after (or, failing that, right before) a quotation. */
+  /** The speaker named before Hindi speech that has no quotation marks (a dash or a speech verb's comma). */
+  const hindiOpening = (before: string): { tag: Tag; confidence: number } | undefined => {
+    if (base !== 'hi' || !pat.hiOpening.test(before)) return undefined;
+    // The transcription often glues ने to the name ("खालाने", "जुम्मनने"): the name is the word without it.
+    const subject = (word: string) => {
+      const w = word.replace(/[\u200b\u2060]/gu, '');
+      return /ने$/u.test(w) && w.length > 4 && !HI_PRONOUNS.has(w) ? w.slice(0, -2) : w;
+    };
+    const asTag = (raw: string, verb: string | undefined, confidence: number) => {
+      const word = subject(raw);
+      const lower = word.toLowerCase();
+      const gender = verb ? verbGender(verb) : undefined;
+      if (HI_FIRST_PERSON.has(lower)) return { tag: { kind: 'first-person' } as Tag, confidence };
+      if (HI_PRONOUNS.has(lower) || ['वे', 'उन्होंने', 've'].includes(lower)) {
+        // "चौधराइन ने … दोषारोपण किया। उसने कहा, …": the pronoun is whoever was just named, if the verb allows.
+        const ref = lastAgentIn(before) ?? lastNamedIn(before);
+        if (ref) {
+          const known = findKnown(ref);
+          const refGender = (known ? genderOf(known.id) : undefined) ?? givenNameGender(ref);
+          if (!gender || !refGender || refGender === gender)
+            return {
+              tag: { kind: 'name', text: ref, ...(gender ? { gender } : {}), confidence: 0.75 } as Tag,
+              confidence: 0.75,
+            };
+        }
+      }
+      if (HI_PRONOUNS.has(lower) || ['वे', 'उन्होंने', 've'].includes(lower))
+        return {
+          tag: { kind: 'pronoun', text: word, ...(gender ? { gender } : {}) } as Tag,
+          confidence: confidence - 0.1,
+        };
+      if (NOT_NAMES.has(lower)) return undefined;
+      return {
+        tag: { kind: 'name', text: word, ...(gender ? { gender } : {}), confidence } as Tag,
+        confidence,
+      };
+    };
+    const say = pat.hiSayClause.exec(before);
+    if (say?.[2]) {
+      const who = hiSubject(clauseOf(before), say[2]);
+      if (who) return asTag(who, say[2], 0.9);
+      // The person named just before: a known character, or the agent of the previous sentence ("सम्मी ने
+      // खेजरी ली थी। प्रभावित होकर बोला---…").
+      const named = lastNamedIn(before) ?? lastAgentIn(before);
+      if (named) return asTag(named, say[2], 0.8);
+      const gender = verbGender(say[2]);
+      return { tag: { kind: 'pronoun', text: 'वह', ...(gender ? { gender } : {}) }, confidence: 0.7 };
+    }
+    const label = pat.hiLabel.exec(before);
+    if (label?.[1] && label[1].split(/\s+/).length <= 2)
+      return asTag(label[1].split(/\s+/)[0] ?? label[1], undefined, 0.9);
+    const clause = pat.hiClause.exec(before);
+    if (clause?.[1]) {
+      const who = hiSubject(clauseOf(before)) ?? lastNamedIn(before);
+      if (who) return asTag(who, undefined, 0.8);
+    }
+    return undefined;
+  };
+
+  /** The clause that introduces speech: from the last sentence end before it. */
+  const clauseOf = (before: string) =>
+    before.slice(Math.max(...['।', '?', '!', '॥'].map((c) => before.lastIndexOf(c))) + 1);
+  /**
+   * Who speaks in a Hindi clause introducing speech: with कहा, पूछा or जवाब दिया, the one marked by ने
+   * ("…खालाने जुम्मनसे कहा,"); otherwise the first word that can be a person, skipping adverbs, postpositions
+   * and the start of a participle phrase ("अन्तमें एक दिन…", "प्रभावित होकर बोला"). Undefined when none is.
+   */
+  const hiSubject = (clause: string, verb?: string): string | undefined => {
+    const words = clause
+      .replace(/[\u200b\u2060]/gu, '')
+      .split(/[\s,]+/)
+      .filter(Boolean);
+    if (verb && !verbGender(verb)) {
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i] ?? '';
+        if (words[i + 1] === 'ने' && !HI_PRONOUNS.has(w)) return w;
+        if (/ने$/u.test(w) && w.length > 4 && !HI_PRONOUNS.has(w) && !HI_NOT_SUBJECT.has(w))
+          return w.slice(0, -2);
+      }
+    }
+    for (let i = 0; i < words.length; i++) {
+      const w = words[i] ?? '';
+      const next = words[i + 1] ?? '';
+      if (HI_NOT_SUBJECT.has(w) || /कर$/u.test(w) || HI_PARTICIPLE_NEXT.has(next)) continue;
+      if (/[—―–-]/u.test(w) || /\p{Nd}/u.test(w)) return undefined;
+      return w;
+    }
+    return undefined;
+  };
+  /** The last person marked by ने in `text` ("सम्मी ने …"), not a pronoun. */
+  const lastAgentIn = (text: string): string | undefined => {
+    const agents = [...text.matchAll(/([\p{L}\p{M}]+)\s+ने\s/gu)].map((m) => m[1] ?? '');
+    return agents.reverse().find((w) => w && !HI_PRONOUNS.has(w) && !HI_NOT_SUBJECT.has(w));
+  };
+  /** The last known character named in `text`. */
+  const lastNamedIn = (text: string): string | undefined => {
+    let best: { at: number; name: string } | undefined;
+    for (const c of chars.values()) {
+      if (c.id === 'narrator-i') continue;
+      for (const a of c.aliases) {
+        const at = text.lastIndexOf(a);
+        if (at >= 0 && (!best || at > best.at)) best = { at, name: a };
+      }
+    }
+    return best?.name;
+  };
+
   const findTag = (after: string, before: string): { tag: Tag; confidence: number } | undefined => {
+    const opening = hindiOpening(before);
+    if (opening) return opening;
     const name = pat.verbName.exec(after) ?? pat.nameVerb.exec(after);
     if (name?.[1]) return { tag: { kind: 'name', text: name[1], confidence: 0.95 }, confidence: 0.95 };
     const hi = pat.hiAfter.exec(after) ?? pat.hgAfter.exec(after);
@@ -634,6 +823,9 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
   };
 
   let lastSpeakers: string[] = []; // speakers of recent dialogue paragraphs, most recent last
+  let lastVocatives = new Set<string>(); // who the last dialogue paragraph spoke to by name
+  let lastFirstPerson = -Infinity; // the last paragraph whose narration says "I", "me" or "my" (English)
+  const inferred = new Set<number>(); // attributions guessed from turn-taking, open to a later vocative
   let narrationSince = 0;
 
   for (let block = 0; block < blocks.length; block++) {
@@ -646,6 +838,11 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
       continue;
     }
     const spans = findDialogue(text, base);
+    const outsideQuotes = spans.length
+      ? spans.reduce((acc, s, k) => acc + text.slice(spans[k - 1]?.end ?? 0, s.start), '') +
+        text.slice(spans[spans.length - 1]?.end ?? 0)
+      : text;
+    if (base === 'en' && /\b(?:I|me|my)\b/u.test(outsideQuotes)) lastFirstPerson = block;
     if (!spans.length) {
       noticeNames(text);
       if (++narrationSince > CONVERSATION_GAP) lastSpeakers = [];
@@ -661,7 +858,7 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
 
     const lastSpeaker = lastSpeakers[lastSpeakers.length - 1];
     let paragraphSpeaker: { id: string; confidence: number } | undefined;
-    const local: { span: DialogueSpan; id?: string; confidence: number }[] = [];
+    const local: { span: DialogueSpan; id?: string; confidence: number; fixed?: true }[] = [];
     spans.forEach((span, k) => {
       const after = text.slice(span.end, spans[k + 1]?.start ?? text.length).slice(0, 80);
       const before = text.slice(spans[k - 1]?.end ?? 0, span.start).slice(-80);
@@ -669,6 +866,16 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
       const found = findTag(after, before);
       const ambiguous =
         found?.tag.kind === 'pronoun' && pronounIsAmbiguous(found.tag, quote, lastSpeaker, namedHere);
+      const set = fixedAt.get(`${block}:${span.start}`);
+      if (set !== undefined) {
+        const id = set === null ? undefined : register(set);
+        if (id) {
+          touch(id);
+          paragraphSpeaker = { id, confidence: 1 };
+        }
+        local.push(id ? { span, id, confidence: 1, fixed: true } : { span, confidence: 1, fixed: true });
+        return;
+      }
       const id = found ? resolve(found.tag, quote, lastSpeaker, namedHere) : undefined;
       // "she asked" with two women in the scene: keep the guess, but below the threshold for a named voice.
       const confidence = ambiguous ? 0.6 : (found?.confidence ?? 0.8);
@@ -683,7 +890,7 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
     if (paragraphSpeaker) {
       // One tag in a paragraph usually covers every quote in it.
       for (const l of local) {
-        if (!l.id) {
+        if (!l.id && !l.fixed) {
           l.id = paragraphSpeaker.id;
           l.confidence = Math.min(0.85, paragraphSpeaker.confidence);
         }
@@ -693,25 +900,38 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
       const quotes = local.map((l) => text.slice(l.span.start, l.span.end)).join(' ');
       const spokenTo = addressees(quotes);
       const previous = lastSpeakers[lastSpeakers.length - 2];
+      // The one just spoken to by name answers ("Don’t, Jo. It’s so boyish!" / "That’s why I do it.").
+      const called = [...lastVocatives].filter((id) => id !== lastSpeaker && !spokenTo.has(id));
+      // In a story told in the first person, the narrator is the likely other side of a conversation.
+      const narrator =
+        !previous && lastSpeaker !== 'narrator-i' && block - lastFirstPerson <= 12
+          ? register('Narrator-I')
+          : undefined;
       const other =
-        previous && previous !== lastSpeaker && !spokenTo.has(previous)
-          ? previous
-          : recentWhere((id) => id !== lastSpeaker && !spokenTo.has(id) && id !== 'narrator-i');
+        called.length === 1
+          ? called[0]
+          : previous && previous !== lastSpeaker && !spokenTo.has(previous)
+            ? previous
+            : (narrator ??
+              recentWhere((id) => id !== lastSpeaker && !spokenTo.has(id) && id !== 'narrator-i'));
       if (other && lastSpeaker) {
         // Two people taking turns is the commonest pattern in fiction; confident enough for their own voices.
-        const confidence = previous === other ? 0.75 : 0.7;
+        const confidence = previous === other || called.length === 1 ? 0.75 : 0.7;
         for (const l of local) {
+          if (l.fixed) continue;
           l.id = other;
           l.confidence = confidence;
         }
       }
+      for (let k = 0; k < local.length; k++) inferred.add(attributions.length + k);
     }
+    lastVocatives = vocatives(local.map((l) => text.slice(l.span.start, l.span.end)).join(' '));
 
     for (const l of local) {
       attributions.push(
         l.id
           ? { block, span: l.span, speaker: l.id, confidence: l.confidence }
-          : { block, span: l.span, confidence: 0 },
+          : { block, span: l.span, confidence: l.fixed ? 1 : 0 },
       );
       if (l.id) {
         const c = chars.get(l.id);
@@ -721,6 +941,20 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
     }
     const speaker = local.find((l) => l.id)?.id;
     if (speaker) lastSpeakers = [...lastSpeakers, speaker].slice(-4);
+  }
+
+  // A guessed turn followed by a reply that names whoever spoke it ("So I did, Beth.") was that person's.
+  for (let i = 0; i < attributions.length; i++) {
+    const a = attributions[i];
+    if (!a || !inferred.has(i)) continue;
+    const next = attributions.find((n, j) => j > i && n.block > a.block);
+    if (!next || next.block !== a.block + 1) continue;
+    const reply = (blocks[next.block] ?? '').slice(next.span.start, next.span.end);
+    const named = [...vocatives(reply.slice(0, 40))].filter((id) => id !== next.speaker);
+    if (named.length === 1 && named[0] && named[0] !== a.speaker) {
+      const was = a.speaker;
+      for (const b of attributions) if (b.block === a.block && b.speaker === was) b.speaker = named[0];
+    }
   }
 
   for (const c of chars.values()) {

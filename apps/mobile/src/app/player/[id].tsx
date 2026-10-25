@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
 import { useStore } from 'zustand';
 import LamplightEngine from '../../../modules/lamplight-engine';
-import { listCharacters, loadContent } from '@/data/content';
+import { listCharacters, loadContent, loadSpeakers } from '@/data/content';
 import { getItem } from '@/data/library';
 import { rulesFor } from '@/data/userdata';
 import { useT } from '@/i18n/useLocale';
@@ -14,6 +14,7 @@ import {
   changeVoice,
   cleanReadRows,
   cleanSettingsFor,
+  correctSpeakerAndRequeue,
   mergeCharactersAndRequeue,
 } from '@/player/session';
 import { useServices } from '@/services/context';
@@ -104,6 +105,20 @@ export default function PlayerRoute() {
             services.player.getState().progress.index,
           ),
         ),
+      speakers: () => (id ? loadSpeakers(services.db, id) : []),
+      setSpeaker: (index, characterId) =>
+        id
+          ? correctSpeakerAndRequeue(
+              { db: services.db, store: services.player, engine: LamplightEngine, ...queueCache },
+              id,
+              index,
+              characterId,
+              services.settings.getState(),
+              services.player.getState().progress.index,
+            )
+              .then(() => undefined)
+              .catch(failed)
+          : Promise.resolve(),
       mergeCharacters: (from, into) =>
         id &&
         run(

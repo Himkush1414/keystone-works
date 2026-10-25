@@ -1,4 +1,5 @@
-import { analyseCast, findDialogue, NAMED_VOICE_CONFIDENCE } from '../src';
+import { analyseCast, findDialogue, NAMED_VOICE_CONFIDENCE, type FixedSpeaker } from '../src';
+import type { BookExcerpt } from './fixtures/castBooks';
 import type { CastStory } from './fixtures/castCorpus';
 
 export interface CastScore {
@@ -56,4 +57,114 @@ export function scoreStory(story: CastStory): CastScore {
     consistent,
     characters: characters.map((c) => c.name),
   };
+}
+
+export interface BookScore {
+  id: string;
+  /** Gold lines scored (those that are someone's). */
+  lines: number;
+  /** Lines inside a dialogue span Cast found. */
+  detected: number;
+  /** Lines given to the right character. */
+  named: number;
+  /** Right character with confidence enough for their own voice. */
+  voiced: number;
+  /** Dialogue Cast found where no labelled line is: narration it would read as someone speaking. */
+  spurious: number;
+}
+
+/** Runs Cast on a book excerpt and checks the speaker of every gold line (found by its snippet, in order). */
+export function scoreBook(book: BookExcerpt): BookScore {
+  const paragraphs = book.text.split('\n\n');
+  const starts: number[] = [];
+  let at = 0;
+  for (const p of paragraphs) {
+    starts.push(at);
+    at += p.length + 2;
+  }
+  const { characters, attributions } = analyseCast(paragraphs, book.lang);
+  const byId = new Map(characters.map((c) => [c.id, c]));
+  const score: BookScore = { id: book.id, lines: 0, detected: 0, named: 0, voiced: 0, spurious: 0 };
+  const anchors: number[] = [];
+  let pos = 0;
+  for (const [anchor, gold] of book.lines) {
+    const i = book.text.indexOf(anchor, pos);
+    if (i < 0) throw new Error(`${book.id}: snippet not found: ${anchor}`);
+    pos = i + anchor.length;
+    anchors.push(i);
+    if (!gold) continue;
+    score.lines++;
+    let block = starts.length - 1;
+    while (block > 0 && (starts[block] ?? 0) > i) block--;
+    const local = i - (starts[block] ?? 0);
+    const a = attributions.find((x) => x.block === block && x.span.start <= local + 1 && local < x.span.end);
+    if (!a) continue;
+    score.detected++;
+    const c = a.speaker ? byId.get(a.speaker) : undefined;
+    const names = book.speakers[gold]?.names ?? [];
+    if (c && c.aliases.concat(c.name).some((n) => names.some((g) => norm(g) === norm(n)))) {
+      score.named++;
+      if (a.confidence >= NAMED_VOICE_CONFIDENCE) score.voiced++;
+    }
+  }
+  for (const a of attributions) {
+    const from = (starts[a.block] ?? 0) + a.span.start - 1;
+    const to = (starts[a.block] ?? 0) + a.span.end;
+    if (!anchors.some((x) => x >= from && x < to)) score.spurious++;
+  }
+  return score;
+}
+
+/**
+ * A listener reading the excerpt in order who taps every wrong speaker: how many lines were wrong, and how
+ * many taps fix them all, when Cast runs again after each one with the corrected lines held fixed.
+ */
+export function tapsToFix(book: BookExcerpt): { wrong: number; taps: number } {
+  const paragraphs = book.text.split('\n\n');
+  const starts: number[] = [];
+  let at = 0;
+  for (const p of paragraphs) {
+    starts.push(at);
+    at += p.length + 2;
+  }
+  const where: { block: number; local: number; gold: string }[] = [];
+  let pos = 0;
+  for (const [anchor, who] of book.lines) {
+    const i = book.text.indexOf(anchor, pos);
+    pos = i + anchor.length;
+    if (!who) continue;
+    let block = starts.length - 1;
+    while (block > 0 && (starts[block] ?? 0) > i) block--;
+    where.push({ block, local: i - (starts[block] ?? 0), gold: who });
+  }
+  const fixed: FixedSpeaker[] = [];
+  const run = () => {
+    const { characters, attributions } = analyseCast(paragraphs, book.lang, fixed);
+    const byId = new Map(characters.map((c) => [c.id, c]));
+    return where.map((w) => {
+      const a = attributions.find(
+        (x) => x.block === w.block && x.span.start <= w.local + 1 && w.local < x.span.end,
+      );
+      const c = a?.speaker ? byId.get(a.speaker) : undefined;
+      const names = book.speakers[w.gold]?.names ?? [];
+      const right = !!c && c.aliases.concat(c.name).some((n) => names.some((g) => norm(g) === norm(n)));
+      return { a, right };
+    });
+  };
+  let state = run();
+  const wrong = state.filter((x) => x.a && !x.right).length;
+  let taps = 0;
+  for (let k = 0; k < where.length; k++) {
+    const x = state[k];
+    const w = where[k];
+    if (!x?.a || x.right || !w) continue;
+    taps++;
+    fixed.push({
+      block: x.a.block,
+      start: x.a.span.start,
+      speaker: book.speakers[w.gold]?.names[0] ?? w.gold,
+    });
+    state = run();
+  }
+  return { wrong, taps };
 }

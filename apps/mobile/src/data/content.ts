@@ -1,3 +1,4 @@
+import { CAST_VERSION, recastSpeakers, speakerSpanOf } from '@lamplight/core';
 import type {
   Age,
   Block,
@@ -10,6 +11,7 @@ import type {
   Temperament,
 } from '@lamplight/core';
 import type { Db } from './db';
+import { getItem, updateSettings, type DocumentSettings } from './library';
 
 /** Everything the reader and the queue builder need for one document. */
 export interface DocumentContent {
@@ -193,4 +195,116 @@ export function sentenceAtBlock(db: Db, documentId: string, blockOrd: number): n
     'SELECT ord FROM sentences WHERE document_id = ? AND block_ord >= ? ORDER BY ord LIMIT 1',
     [documentId, blockOrd],
   )?.ord;
+}
+
+/**
+ * The listener says who speaks sentence `ord` (a character's id, or null for no one in particular). The
+ * correction is kept with the document, Cast runs again with every correction held fixed so the turns after
+ * it follow, and the sentences and characters are updated; each character keeps the voice chosen for it.
+ * Returns false when the sentence isn't in a quotation Cast can pin.
+ */
+export function correctSpeaker(db: Db, documentId: string, ord: number, characterId: string | null): boolean {
+  const item = getItem(db, documentId);
+  if (!item) return false;
+  const content = loadContent(db, documentId);
+  const sentence = content.sentences[ord];
+  const pin = sentence ? speakerSpanOf(content.blocks, sentence, item.language) : undefined;
+  if (!pin) return false;
+  const name =
+    characterId === null ? null : (content.characters.find((c) => c.id === characterId)?.name ?? null);
+  if (characterId !== null && name === null) return false;
+  const fixes = (item.settings.speakerFixes ?? []).filter(
+    (f) => f.block !== pin.block || f.start !== pin.start,
+  );
+  fixes.push({ ...pin, speaker: name });
+  applyRecast(db, documentId, item.language, content, fixes);
+  return true;
+}
+
+/**
+ * Runs Cast again over a stored document with `fixes` held fixed and saves the result: each sentence's
+ * speaker and confidence, and the characters (each keeps the voice chosen for it; one who no longer speaks
+ * keeps its row with no lines). Records the fixes and the Cast version that made the result.
+ */
+function applyRecast(
+  db: Db,
+  documentId: string,
+  language: string,
+  content: DocumentContent,
+  fixes: NonNullable<DocumentSettings['speakerFixes']>,
+): void {
+  const recast = recastSpeakers(content.blocks, content.sentences, language, fixes);
+  db.transaction(() => {
+    recast.speakers.forEach((speaker, i) => {
+      const s = content.sentences[i];
+      if (!s || s.kind !== 'dialogue') return;
+      db.run('UPDATE sentences SET speaker_id = ?, confidence = ? WHERE document_id = ? AND ord = ?', [
+        speaker ?? null,
+        recast.confidence[i] ?? 0,
+        documentId,
+        i,
+      ]);
+    });
+    const known = new Set(content.characters.map((c) => c.id));
+    for (const c of recast.characters) {
+      if (known.has(c.id)) {
+        db.run(
+          'UPDATE characters SET name = ?, aliases_json = ?, gender = ?, line_count = ?, age = ?, temperament = ? WHERE document_id = ? AND id = ?',
+          [
+            c.name,
+            JSON.stringify(c.aliases),
+            c.gender ?? null,
+            c.lines,
+            c.age ?? null,
+            c.temperament ?? null,
+            documentId,
+            c.id,
+          ],
+        );
+      } else {
+        db.run(
+          'INSERT INTO characters (document_id, id, name, aliases_json, gender, line_count, age, temperament) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [
+            documentId,
+            c.id,
+            c.name,
+            JSON.stringify(c.aliases),
+            c.gender ?? null,
+            c.lines,
+            c.age ?? null,
+            c.temperament ?? null,
+          ],
+        );
+      }
+    }
+    // Characters who no longer speak keep their row (and any voice chosen for them) with no lines.
+    const speaking = new Set(recast.characters.map((c) => c.id));
+    for (const id of known) {
+      if (!speaking.has(id))
+        db.run('UPDATE characters SET line_count = 0 WHERE document_id = ? AND id = ?', [documentId, id]);
+    }
+    updateSettings(db, documentId, { speakerFixes: fixes, castVersion: CAST_VERSION });
+  });
+}
+
+/**
+ * A document Cast analysed with an older version is analysed again, the listener's corrections held fixed.
+ * Returns true when it was.
+ */
+export function refreshCast(db: Db, documentId: string): boolean {
+  const item = getItem(db, documentId);
+  if (!item || item.status !== 'ready') return false;
+  if ((item.settings.castVersion ?? 0) >= CAST_VERSION) return false;
+  applyRecast(db, documentId, item.language, loadContent(db, documentId), item.settings.speakerFixes ?? []);
+  return true;
+}
+
+/** Who speaks each sentence, in order (undefined for narration and dialogue nobody was given). */
+export function loadSpeakers(db: Db, documentId: string): (string | undefined)[] {
+  return db
+    .all<{ speaker_id: string | null }>(
+      'SELECT speaker_id FROM sentences WHERE document_id = ? ORDER BY ord',
+      [documentId],
+    )
+    .map((r) => r.speaker_id ?? undefined);
 }

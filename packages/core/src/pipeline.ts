@@ -1,4 +1,4 @@
-import { castSteps, type Character } from './cast/attribute';
+import { analyseCast, castSteps, type Character, type FixedSpeaker } from './cast/attribute';
 import { findDialogue } from './cast/dialogue';
 import { profileCharacters } from './cast/profile';
 import { NEUTRAL } from './perform/cues';
@@ -141,8 +141,9 @@ export function* prepareSteps(
   };
   const chapterStarts = new Set(chapters.map((c) => c.blockStart));
 
-  const useCast = opts.cast ?? draft.meta.kind === 'book';
   const castBlocks = blocks.map((b) => (b.kind === 'paragraph' || b.kind === 'quote' ? b.text : ''));
+  // Books, and any other text that tells a story in dialogue (a short story saved as a PDF).
+  const useCast = opts.cast ?? (draft.meta.kind === 'book' || hasDialogue(castBlocks, docLang));
   const cast = useCast ? yield* castSteps(castBlocks, docLang) : { characters: [], attributions: [] };
   if (cast.characters.length) {
     const quotes = new Map<number, ReturnType<typeof findDialogue>>();
@@ -357,4 +358,59 @@ export function buildQueue(doc: QueueSource, opts: QueueOptions): QueueSegment[]
     if (p.breath) seg.breath = true;
   });
   return out;
+}
+
+/** The dialogue span a sentence belongs to, as Cast sees it: where to pin a speaker the listener sets. */
+export function speakerSpanOf(
+  blocks: readonly Block[],
+  sentence: Pick<Sentence, 'block' | 'start' | 'end'>,
+  lang: string,
+): { block: number; start: number } | undefined {
+  const text = blocks[sentence.block]?.text ?? '';
+  const span = findDialogue(text, lang.slice(0, 2)).find(
+    (d) => sentence.start < d.end && sentence.end > d.start,
+  );
+  return span ? { block: sentence.block, start: span.start } : undefined;
+}
+
+/**
+ * Runs Cast again over a prepared document with the listener's corrections held fixed, so the turns after a
+ * corrected line follow from it. Returns each sentence's speaker and confidence (narration keeps none) and
+ * the characters, profiled as at import.
+ */
+export function recastSpeakers(
+  blocks: readonly Block[],
+  sentences: readonly Sentence[],
+  lang: string,
+  fixed: readonly FixedSpeaker[],
+): { speakers: (string | undefined)[]; confidence: number[]; characters: Character[] } {
+  const castBlocks = blocks.map((b) => (b.kind === 'paragraph' || b.kind === 'quote' ? b.text : ''));
+  const base = lang.slice(0, 2);
+  const cast = analyseCast(castBlocks, base, fixed);
+  const quotes = new Map<number, ReturnType<typeof findDialogue>>();
+  const quotesOf = (bi: number) => {
+    let q = quotes.get(bi);
+    if (!q) quotes.set(bi, (q = findDialogue(castBlocks[bi] ?? '', base)));
+    return q;
+  };
+  const profiles = profileCharacters(castBlocks, cast.characters, cast.attributions, quotesOf);
+  const speakers: (string | undefined)[] = [];
+  const confidence: number[] = [];
+  for (const s of sentences) {
+    const a =
+      s.kind === 'dialogue'
+        ? cast.attributions.find((x) => x.block === s.block && s.start < x.span.end && s.end > x.span.start)
+        : undefined;
+    speakers.push(a?.speaker);
+    confidence.push(a?.confidence ?? 0);
+  }
+  return { speakers, confidence, characters: cast.characters.map((c) => ({ ...c, ...profiles[c.id] })) };
+}
+
+/** Text with real dialogue: at least 5 paragraphs with speech in them, and at least a tenth of all. */
+export function hasDialogue(paragraphs: readonly string[], lang: string): boolean {
+  const text = paragraphs.filter((p) => p.trim());
+  let speaking = 0;
+  for (const p of text) if (findDialogue(p, lang.slice(0, 2)).length) speaking++;
+  return speaking >= 5 && speaking * 10 >= text.length;
 }

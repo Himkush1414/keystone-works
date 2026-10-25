@@ -99,3 +99,58 @@ export function wordTimesFor(
   });
   return estimateWordTimes(spoken, block.text, durationMs);
 }
+
+/** A small coloured name before a line of dialogue: who the app thinks says it. */
+export interface SpeakerLabel {
+  /** The character's id, or null when Cast couldn't tell. */
+  id: string | null;
+  name: string;
+  color: string;
+}
+
+/** Colours for speaker names: at least 4.6:1 on every light reader paper (sepia included) and 6:1 on the dark ones. */
+const LABEL_COLORS = {
+  light: ['#9D432E', '#2D6592', '#456B28', '#764BB0', '#7A5B0F', '#1B6B62', '#A13B67', '#4757A3'],
+  dark: ['#F08A6E', '#7DB8E8', '#9BCB72', '#BE9BF2', '#E2C060', '#6CCFC2', '#EF8DB5', '#9DA8EE'],
+} as const;
+const UNKNOWN_COLOR = { light: '#606060', dark: '#A8A8A8' } as const;
+
+/**
+ * The label for the first sentence of each turn of dialogue (a turn: consecutive dialogue sentences of one
+ * speaker in one paragraph). Colours go to characters in order of their first line in the book, so a
+ * character keeps the same colour when a correction changes who has the most lines.
+ */
+export function speakerLabels(
+  sentences: readonly Pick<Sentence, 'block' | 'kind'>[],
+  speakers: readonly (string | undefined)[],
+  names: ReadonlyMap<string, string>,
+  unknown: string,
+  dark: boolean,
+): Map<number, SpeakerLabel> {
+  const palette = LABEL_COLORS[dark ? 'dark' : 'light'];
+  const order = new Map<string, number>();
+  const out = new Map<number, SpeakerLabel>();
+  let prev: { block: number; speaker: string | undefined } | null = null;
+  sentences.forEach((s, i) => {
+    if (s.kind !== 'dialogue') {
+      prev = null;
+      return;
+    }
+    const speaker = speakers[i];
+    if (speaker && !order.has(speaker)) order.set(speaker, order.size);
+    if (!prev || prev.block !== s.block || prev.speaker !== speaker) {
+      out.set(
+        i,
+        speaker
+          ? {
+              id: speaker,
+              name: names.get(speaker) ?? speaker,
+              color: palette[(order.get(speaker) ?? 0) % palette.length] ?? palette[0],
+            }
+          : { id: null, name: unknown, color: UNKNOWN_COLOR[dark ? 'dark' : 'light'] },
+      );
+    }
+    prev = { block: s.block, speaker };
+  });
+  return out;
+}

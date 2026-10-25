@@ -176,6 +176,7 @@ export const fr: Catalog = {
     voiceUnavailable: 'La voix n’a pas pu démarrer. Réinstaller Lamplight peut aider.',
   },
   player: {
+    speakerUnknown: 'Qui ?',
     reimport:
       'Ce PDF a été ajouté avec une version antérieure de Lamplight et certaines lignes ont été coupées. Rouvrez le même fichier (Ajouter › Ouvrir un fichier) pour obtenir le texte complet. Votre position est conservée.',
     play: 'Lire',
@@ -235,6 +236,11 @@ export const fr: Catalog = {
     studioPlus: 'Studio+',
     studioPlusDesc:
       'La meilleure qualité, recommandée. Les premiers mots peuvent prendre quelques secondes de plus.',
+  },
+  speaker: {
+    title: 'Qui dit cela ?',
+    nobody: 'Personne en particulier',
+    hint: 'Votre choix est gardé pour ce livre, et les répliques suivantes s’ajustent.',
   },
   cast: {
     title: 'Distribution',
@@ -358,6 +364,8 @@ export const fr: Catalog = {
     voiceProcessing: 'Traitement des émotions',
     voiceProcessingDesc:
       'Modifie la hauteur de la voix pour jouer les émotions et les personnages. Désactivé, la voix reste naturelle, telle qu’elle parle.',
+    speakerLabels: 'Noms des personnages',
+    speakerLabelsDesc: 'Montre qui dit chaque réplique. Touchez un nom pour le corriger',
     reduceMotion: 'Réduire les animations',
     reduceMotionDesc: 'Utilise des fondus plutôt que des mouvements. Suit le réglage du système par défaut.',
     haptics: 'Retour haptique',

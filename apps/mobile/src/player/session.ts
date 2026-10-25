@@ -15,7 +15,9 @@ import type { StoreApi } from 'zustand/vanilla';
 import type { Quality, QueueFile } from '../../modules/lamplight-engine/src/types';
 import type { QueueSegment } from '@lamplight/core';
 import {
+  correctSpeaker,
   loadContent,
+  refreshCast,
   mergeCharacters,
   saveAutoVoices,
   setCharacterVoice,
@@ -79,6 +81,8 @@ const QUEUE_FORMAT = 1;
 
 /** Reads the document and the listener's choices, and settles Cast's voices (saved the first time). */
 export function queueContext(db: Db, documentId: string, settings: SessionSettings): QueueContext {
+  // A book analysed by an older Cast is analysed again before it plays (corrections held fixed).
+  refreshCast(db, documentId);
   const item = getItem(db, documentId);
   if (!item || item.status !== 'ready') throw new Error(`document ${documentId} is not ready to play`);
   const content = loadContent(db, documentId);
@@ -129,6 +133,8 @@ export function queueContext(db: Db, documentId: string, settings: SessionSettin
       content.blocks.length,
       // Cast's automatic picks are saved on first play; the assignment in `options` already carries them.
       content.characters.map(({ autoVoiceId: _, ...c }) => c),
+      // Speakers the listener set change who speaks without changing any count.
+      item.settings.speakerFixes ?? [],
       meta,
       options,
     ]),
@@ -480,6 +486,20 @@ export async function mergeCharactersAndRequeue(
 ): Promise<void> {
   mergeCharacters(deps.db, documentId, from, into);
   await requeue(deps, documentId, settings, current);
+}
+
+/** Sets who speaks sentence `ord` (null: no one in particular), then re-voices what follows. */
+export async function correctSpeakerAndRequeue(
+  deps: RevoiceDeps,
+  documentId: string,
+  ord: number,
+  characterId: string | null,
+  settings: SessionSettings,
+  current: number,
+): Promise<boolean> {
+  const done = correctSpeaker(deps.db, documentId, ord, characterId);
+  if (done) await requeue(deps, documentId, settings, current);
+  return done;
 }
 
 /** Changes the quality for one document: saved on it, and applied by the engine from the next sentence. */

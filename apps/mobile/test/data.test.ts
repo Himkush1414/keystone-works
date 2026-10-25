@@ -1,4 +1,4 @@
-import { parsePlainText, prepareDocument, type DocumentDraft } from '@lamplight/core';
+import { parsePlainText, prepareDocument, type DocumentDraft, CAST_VERSION } from '@lamplight/core';
 import { describe, expect, it } from 'vitest';
 import { loadContent, mergeCharacters, setCharacterVoice } from '../src/data/content';
 import { newId } from '../src/data/ids';
@@ -154,7 +154,11 @@ describe('documents', () => {
     updateDetails(db, id, { title: '  Lamp  ', author: '' });
     expect(getItem(db, id)).toMatchObject({ title: 'Lamp', author: null });
     updateSettings(db, id, { voice: 'F2' });
-    expect(updateSettings(db, id, { castMode: 'full' })).toEqual({ voice: 'F2', castMode: 'full' });
+    expect(updateSettings(db, id, { castMode: 'full' })).toEqual({
+      voice: 'F2',
+      castMode: 'full',
+      castVersion: CAST_VERSION, // saving the text records which Cast attributed it
+    });
   });
 
   it('soft-deletes with undo, then purges with cascades', () => {

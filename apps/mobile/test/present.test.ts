@@ -1,6 +1,7 @@
 import { coverPalettes } from '@lamplight/tokens';
 import { describe, expect, it } from 'vitest';
 import type { LibraryItem } from '../src/data/library';
+import { IMPORT_VERSION } from '../src/data/library';
 import {
   coverTitleSize,
   estimatedListeningMs,
@@ -26,7 +27,7 @@ const item = (patch: Partial<LibraryItem> = {}): LibraryItem => ({
   wordCount: 16_200,
   sentenceCount: 900,
   loading: null,
-  importVersion: 1,
+  importVersion: IMPORT_VERSION,
   settings: {},
   addedAt: 0,
   openedAt: null,
@@ -144,7 +145,7 @@ describe('needsReimport', () => {
 
   it('leaves whole text, current imports, pasted text and short documents alone', () => {
     expect(needsReimport(item({ importVersion: 0 }), blocks(whole))).toBe(false);
-    expect(needsReimport(item({ importVersion: 1 }), blocks(cut))).toBe(false);
+    expect(needsReimport(item({ importVersion: IMPORT_VERSION }), blocks(cut))).toBe(false);
     expect(needsReimport(item({ importVersion: 0, source: 'paste' }), blocks(cut))).toBe(false);
     expect(needsReimport(item({ importVersion: 0 }), blocks(cut.slice(0, 5)))).toBe(false);
   });
