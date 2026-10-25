@@ -42,6 +42,8 @@ interface RuleContext {
   /** Absolute offset of the match in the block text. */
   at: number;
   range: Span;
+  /** Read links aloud as "link" (false: drop them). */
+  speakUrls: boolean;
 }
 
 const L = '\\p{L}\\p{N}';
@@ -49,7 +51,7 @@ const before = `(?<![${L}])`;
 const after = `(?![${L}])`;
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-function applyRule(text: string, pieces: Piece[], rule: Rule, range: Span): Piece[] {
+function applyRule(text: string, pieces: Piece[], rule: Rule, range: Span, speakUrls: boolean): Piece[] {
   const out: Piece[] = [];
   for (const p of pieces) {
     if (p.replaced) {
@@ -61,7 +63,7 @@ function applyRule(text: string, pieces: Piece[], rule: Rule, range: Span): Piec
     for (const m of slice.matchAll(rule.re)) {
       const idx = m.index;
       if (idx < last || m[0].length === 0) continue;
-      const spoken = rule.fn(m, { text, at: p.start + idx, range });
+      const spoken = rule.fn(m, { text, at: p.start + idx, range, speakUrls });
       if (spoken === null) continue;
       if (idx > last) out.push({ start: p.start + last, end: p.start + idx, spoken: '', replaced: false });
       out.push({ start: p.start + idx, end: p.start + idx + m[0].length, spoken, replaced: true });
@@ -131,7 +133,18 @@ function feminine(word: string, lang: NumberLang): string {
   return word;
 }
 
-function rulesFor(lang: NumberLang, lex: Lexicon, opts: NormalizeOptions): Rule[] {
+/**
+ * The rules for one language, compiled once: building them meant compiling ~30 Unicode regexes per sentence,
+ * which on Hermes (the phone's JavaScript engine, no JIT) made opening a long book take minutes.
+ */
+const rulesCache = new Map<NumberLang, Rule[]>();
+function rulesFor(lang: NumberLang): Rule[] {
+  let rules = rulesCache.get(lang);
+  if (!rules) rulesCache.set(lang, (rules = buildRules(lang, lexicons[lang])));
+  return rules;
+}
+
+function buildRules(lang: NumberLang, lex: Lexicon): Rule[] {
   const rules: Rule[] = [];
   const unitKeys = Object.keys(lex.units)
     .sort((a, b) => b.length - a.length)
@@ -156,7 +169,7 @@ function rulesFor(lang: NumberLang, lex: Lexicon, opts: NormalizeOptions): Rule[
   // URLs and e-mail addresses.
   rules.push({
     re: /\b(?:https?:\/\/|www\.)[^\s<>"]+[^\s<>".,;:!?)\]]|\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b/giu,
-    fn: () => (opts.speakUrls === false ? '' : lex.link),
+    fn: (_, ctx) => (ctx.speakUrls ? lex.link : ''),
   });
 
   // English street/saint and doctor/drive before the generic abbreviations.
@@ -404,7 +417,14 @@ function rulesFor(lang: NumberLang, lex: Lexicon, opts: NormalizeOptions): Rule[
   return rules;
 }
 
+const dictionaryCache = new WeakMap<readonly DictionaryRule[], Rule[]>();
 function dictionaryRules(dictionary: readonly DictionaryRule[]): Rule[] {
+  let rules = dictionaryCache.get(dictionary);
+  if (!rules) dictionaryCache.set(dictionary, (rules = compileDictionary(dictionary)));
+  return rules;
+}
+
+function compileDictionary(dictionary: readonly DictionaryRule[]): Rule[] {
   return [...dictionary]
     .filter((d) => d.match.trim() !== '')
     .sort((a, b) => b.match.length - a.match.length)
@@ -421,6 +441,8 @@ function dictionaryRules(dictionary: readonly DictionaryRule[]): Rule[] {
  * Builds the spoken form of `text[range]` for the voice: skipped spans removed, pronunciation dictionary
  * applied, and numbers, abbreviations and symbols expanded for `lang`.
  */
+const NO_RULES: readonly DictionaryRule[] = [];
+
 export function normalize(text: string, range: Span, lang: string, opts: NormalizeOptions = {}): Spoken {
   let pieces: Piece[] = [{ start: range.start, end: range.end, spoken: '', replaced: false }];
 
@@ -449,8 +471,10 @@ export function normalize(text: string, range: Span, lang: string, opts: Normali
   }
 
   const nl = numberLang(lang);
-  const rules = [...dictionaryRules(opts.dictionary ?? []), ...(nl ? rulesFor(nl, lexicons[nl], opts) : [])];
-  for (const rule of rules) pieces = applyRule(text, pieces, rule, range);
+  const speakUrls = opts.speakUrls !== false;
+  for (const rule of dictionaryRules(opts.dictionary ?? NO_RULES))
+    pieces = applyRule(text, pieces, rule, range, speakUrls);
+  if (nl) for (const rule of rulesFor(nl)) pieces = applyRule(text, pieces, rule, range, speakUrls);
 
   for (const p of pieces) if (!p.replaced) p.spoken = text.slice(p.start, p.end);
   const joined = pieces

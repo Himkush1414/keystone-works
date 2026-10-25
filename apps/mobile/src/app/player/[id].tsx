@@ -17,7 +17,7 @@ import {
   mergeCharactersAndRequeue,
 } from '@/player/session';
 import { useServices } from '@/services/context';
-import { playDocument } from '@/services/device';
+import { playDocument, queueCache } from '@/services/device';
 import { failureOf } from '@/player/failure';
 import { lookUpWord } from '@/player/meaning';
 import { DEFAULT_NARRATOR } from '@lamplight/core';
@@ -78,7 +78,7 @@ export default function PlayerRoute() {
         id &&
         run(
           changeVoice(
-            { db: services.db, store: services.player, engine: LamplightEngine },
+            { db: services.db, store: services.player, engine: LamplightEngine, ...queueCache },
             id,
             voice,
             services.settings.getState(),
@@ -92,7 +92,7 @@ export default function PlayerRoute() {
         id &&
         run(
           changeCharacterVoice(
-            { db: services.db, store: services.player, engine: LamplightEngine },
+            { db: services.db, store: services.player, engine: LamplightEngine, ...queueCache },
             id,
             characterId,
             voice,
@@ -104,7 +104,7 @@ export default function PlayerRoute() {
         id &&
         run(
           mergeCharactersAndRequeue(
-            { db: services.db, store: services.player, engine: LamplightEngine },
+            { db: services.db, store: services.player, engine: LamplightEngine, ...queueCache },
             id,
             from,
             into,
@@ -123,7 +123,7 @@ export default function PlayerRoute() {
         id &&
         run(
           changeCleanRead(
-            { db: services.db, store: services.player, engine: LamplightEngine },
+            { db: services.db, store: services.player, engine: LamplightEngine, ...queueCache },
             id,
             reason,
             on,
