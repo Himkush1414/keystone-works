@@ -6,7 +6,7 @@ import { assignVoices } from '../src/cast/voices';
 import { defaultCleanSettings } from '../src/clean/detect';
 import { parsePlainText } from '../src/import/text';
 import { TURN } from '../src/perform/plan';
-import { buildQueue, prepareDocument, type QueueSegment } from '../src/pipeline';
+import { buildQueue, MAX_SHIFT, prepareDocument, type QueueSegment } from '../src/pipeline';
 
 /**
  * Sample scenes for turn-taking and character voices. Their queues are also the fixture the engine's
@@ -44,13 +44,13 @@ export const SCENES: Record<string, string> = {
   ].join('\n\n'),
 };
 
-function queueOf(text: string, lang: string) {
+function queueOf(text: string, lang: string, voiceProcessing = true) {
   const draft = parsePlainText(text, 'Scene', 'book');
   const doc = prepareDocument({ ...draft, meta: { ...draft.meta, language: lang } });
   const assignment = assignVoices(doc.characters, 'F1', VOICE_CATALOG);
   const q = buildQueue(
     { ...doc, blocks: doc.draft.blocks, chapters: doc.draft.chapters, language: doc.language },
-    { clean: defaultCleanSettings('book', false), assignment, castMode: 'full' },
+    { clean: defaultCleanSettings('book', false), assignment, castMode: 'full', voiceProcessing },
   );
   return { q, doc, assignment };
 }
@@ -89,6 +89,23 @@ describe('sample scenes', () => {
     const two = built['en-two']?.q ?? [];
     const again = two.findIndex((s) => s.text.includes('Again?'));
     expect(two[again]?.pauseMs).toBe(TURN.quick);
+  });
+
+  it('in Natural mode (no emotion processing) sends no pitch shifts or shaped endings, only a clean cut', () => {
+    for (const [name, text] of Object.entries(SCENES)) {
+      const { q } = queueOf(text, name.startsWith('en') ? 'en' : 'hi', false);
+      for (const s of q) {
+        expect(s.pitch, `${name}: ${s.text}`).toBeUndefined();
+        expect([undefined, 'cut']).toContain(s.ending);
+      }
+    }
+    const arg = queueOf(SCENES['en-argument'] ?? '', 'en', false).q;
+    expect(arg.some((s) => s.ending === 'cut')).toBe(true);
+  });
+
+  it('keeps every shift within the cap when processing is on', () => {
+    for (const { q } of Object.values(built))
+      for (const s of q) expect(Math.abs(s.pitch ?? 0)).toBeLessThanOrEqual(MAX_SHIFT);
   });
 
   it('matches the engine fixture', () => {
