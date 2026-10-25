@@ -62,6 +62,12 @@ describe('toQueueFile', () => {
     expect(JSON.parse(JSON.stringify(q))).toEqual(q);
   });
 
+  it('carries the performance: pace, loudness, pitch and breath', () => {
+    const performed = { ...seg(0), rate: 0.9, gainDb: -2.5, pitch: -1.5, breath: true as const };
+    const q = toQueueFile({ docId: 'd', title: 't' }, chapters, sentences, [performed, seg(1), seg(2)]);
+    expect(q.segments[0]).toMatchObject({ rate: 0.9, gainDb: -2.5, pitch: -1.5, breath: true });
+  });
+
   it('rejects a queue with gaps, which the player would index wrongly', () => {
     expect(() => toQueueFile({ docId: 'd', title: 't' }, chapters, sentences, [seg(0), seg(2)])).toThrow(
       /contiguous/,
