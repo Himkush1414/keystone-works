@@ -5,7 +5,7 @@ import { givenNameGender } from './names';
 /** Speech verbs per language, used to find dialogue tags ("said Elizabeth", "Elizabeth asked"). */
 // prettier-ignore
 const VERBS: Record<string, string> = {
-  en: 'said says asked asks replied replies answered answers whispered whispers shouted shouts cried cries called calls murmured murmurs muttered mutters exclaimed exclaims added adds continued continues began begins remarked remarks returned returns observed observes sighed sighs laughed laughs snapped snaps declared declares insisted insists protested protests repeated repeats told tells demanded demands inquired enquired went yelled screamed breathed admitted agreed suggested warned urged pleaded interrupted retorted grumbled growled hissed sobbed giggled chuckled groaned stammered gasped barked roared bellowed teased explained announced confessed promised wondered whimpered moaned',
+  en: 'said says thought thinks asked asks replied replies answered answers whispered whispers shouted shouts cried cries called calls murmured murmurs muttered mutters exclaimed exclaims added adds continued continues began begins remarked remarks returned returns observed observes sighed sighs laughed laughs snapped snaps declared declares insisted insists protested protests repeated repeats told tells demanded demands inquired enquired went yelled screamed breathed admitted agreed suggested warned urged pleaded interrupted retorted grumbled growled hissed sobbed giggled chuckled groaned stammered gasped barked roared bellowed teased explained announced confessed promised wondered whimpered moaned',
   es: 'dijo dice preguntó pregunta respondió responde contestó contesta susurró susurra gritó grita exclamó exclama murmuró murmura añadió añade continuó continúa repitió repite insistió insiste replicó replica',
   de: 'sagte sagt fragte fragt antwortete antwortet flüsterte flüstert rief ruft schrie schreit murmelte murmelt meinte meint fügte erwiderte erwidert fuhr wiederholte',
   fr: 'dit demanda demande répondit répond murmura murmure cria crie s’écria chuchota chuchote ajouta ajoute reprit reprend continua continue répéta répète lança lance',
@@ -77,7 +77,10 @@ const HI_AGREE_M = new Set('गया आया था लगा रहा स�
 
 /** Capitalised words that start sentences but aren't names. */
 // prettier-ignore
-const NOT_NAMES = new Set('the a an and but or then there this that these those it its he she they we you i his her their our your my when while if as so yet still now here what who why how where which oh ah well yes no not one all some every no-one nobody somebody everyone old young with without after before for from once since upon at in on to into by of though although because perhaps indeed suddenly finally later meanwhile again never always only even just however therefore besides beyond moreover otherwise presently sometimes outside inside january february march april may june july august september october november december monday tuesday wednesday thursday friday saturday sunday el la los las un una y pero entonces ella él ellos der die das ein eine und aber dann sie er es le la les un une et mais puis elle il ils il lo gli una e ma poi lei lui o a os as um uma mas então ela ele'.split(' '));
+const NOT_NAMES = new Set('the a an and but or then there this that these those it its he she they we you i his her their our your my when while if as so yet still now here what who why how where which oh ah well yes no not one all some every no-one nobody somebody everyone old young with without after before for from once since upon at in on to into by of though although because perhaps indeed suddenly finally later meanwhile again never always only even just however therefore besides beyond moreover otherwise presently sometimes outside inside january february march april may june july august september october november december monday tuesday wednesday thursday friday saturday sunday english french german spanish italian latin greek hindi urdu chinese japanese russian american british indian european el la los las un una y pero entonces ella él ellos der die das ein eine und aber dann sie er es le la les un une et mais puis elle il ils il lo gli una e ma poi lei lui o a os as um uma mas então ela ele'.split(' '));
+
+// prettier-ignore
+const CALENDAR = new Set('january february march april may june july august september october november december monday tuesday wednesday thursday friday saturday sunday'.split(' '));
 
 const FEMALE_PRONOUNS = new Set(['she', 'her', 'hers', 'herself', 'ella', 'sie', 'elle', 'lei', 'ela']);
 const MALE_PRONOUNS = new Set(['he', 'him', 'his', 'himself', 'él', 'er', 'il', 'lui', 'ele']);
@@ -114,7 +117,9 @@ export interface CastAnalysis {
 }
 
 const HONORIFIC_WORDS = String.raw`(?:Mr|Mrs|Ms|Miss|Dr|Sir|Lady|Lord|Captain|Colonel|Madame|Monsieur|Señor|Señora|Herr|Frau|Signor|Signora|Dom|Dona|Don|Doña)`;
-const NAME = String.raw`((?:${HONORIFIC_WORDS}\.?\s+)?\p{Lu}[\p{L}'’-]+(?:\s+\p{Lu}[\p{L}'’-]+){0,2})`;
+/** A name, possibly after "the" or a small adjective ("the Hatter", "little Amy", "old Mr. Grey"). */
+const NAME_LEAD = String.raw`(?:(?:the|little|old|young|poor|dear)\s+)?`;
+const NAME = String.raw`(${NAME_LEAD}(?:${HONORIFIC_WORDS}\.?\s+)?\p{Lu}[\p{L}'’-]+(?:\s+\p{Lu}[\p{L}'’-]+){0,2})`;
 const HONORIFIC_NAME = new RegExp(String.raw`\b(${HONORIFIC_WORDS}\.?\s+\p{Lu}[\p{L}'’-]+)`, 'gu');
 const PRONOUN = String.raw`(he|she|they|I|we|él|ella|er|sie|il|elle|lui|lei|ele|ela)`;
 // prettier-ignore
@@ -168,9 +173,12 @@ function tagPatterns(lang: string) {
     verbDescriptor: new RegExp(String.raw`^[\s,—–-]*(?:${verbs})\s+${DESCRIPTOR}\b`, 'iu'),
     descriptorVerb: new RegExp(String.raw`^[\s,—–-]*${DESCRIPTOR}\s+(?:\p{Ll}+\s+)?(?:${verbs})\b`, 'iu'),
     // Before the quote: "Elizabeth said, " / "Elizabeth turned to him and said:"
-    before: new RegExp(String.raw`${NAME}\s+(?:[^.!?“”"«»]{0,40}\s)?(?:${verbs})\s*[,:]?\s*$`, 'u'),
+    before: new RegExp(
+      String.raw`${NAME}\s+(?:[^.!?“”"«»]{0,40}\s)?(?:${verbs})(?:\s[^.!?“”"«»]{0,30})?\s*[,:]?\s*$`,
+      'u',
+    ),
     // Action beat in a dialogue paragraph: "Anna pulled on her coat."
-    beat: new RegExp(String.raw`^[\s,—–-]*${NAME}\s+\p{Ll}+`, 'u'),
+    beat: new RegExp(String.raw`^[\s,—–-]*(?:(?:And|But|Then|So|and|but|then|so)\s+)?${NAME}\s+\p{Ll}+`, 'u'),
     // Hindi: "मीरा ने पूछा", "मीरा हँसकर बोली", "वह बोला"; before: "दादी ने खिड़की से आवाज़ लगाई,"
     hiAfter: new RegExp(
       String.raw`^[\s,।—–-]*(${W})(?:\s+ने)?\s+(?:${W}\s+){0,3}?(${hiVerbs})(?=[\s।,!?.]|$)`,
@@ -297,12 +305,20 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
     return matches.sort((a, b) => recent.lastIndexOf(b.id) - recent.lastIndexOf(a.id))[0];
   };
 
-  const register = (raw: string, gender?: Gender): string | undefined => {
+  const register = (input: string, gender?: Gender): string | undefined => {
+    // "the Hatter" is the Hatter, "little Amy" is Amy, "Holmes’ quick eye" is Holmes.
+    const raw = input
+      .trim()
+      .replace(/^(?:(?:the|little|old|young|poor|dear)\s+)+/u, '')
+      .replace(/['’]s?$/u, '');
     const words = raw.trim().split(/\s+/);
     const lower = raw.trim().toLowerCase();
     if (words.length === 1 && (NOT_NAMES.has(lower) || HI_PRONOUNS.has(lower) || HI_FIRST_PERSON.has(lower)))
       return undefined;
-    if (NOT_NAMES.has((words[0] ?? '').toLowerCase()) && !HONORIFIC.test(words[0] ?? '')) return undefined;
+    // A function word can't start a name, but a month can ("March Hare", "May Bennet").
+    const first = (words[0] ?? '').toLowerCase();
+    if (NOT_NAMES.has(first) && !HONORIFIC.test(words[0] ?? '') && !(words.length > 1 && CALENDAR.has(first)))
+      return undefined;
     const { key, display, honorific } = canonicalKey(raw);
     if (!key || NOT_NAMES.has(key)) return undefined;
     let existing = findKnown(raw);
