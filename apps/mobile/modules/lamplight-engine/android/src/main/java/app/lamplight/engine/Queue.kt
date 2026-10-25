@@ -15,6 +15,8 @@ data class Segment(
     val rate: Float = 1f,
     /** Loudness change in dB for the line's emotion. */
     val gainDb: Float = 0f,
+    /** Pitch change in semitones (the line's emotion, a character's register); see perform/plan.ts. */
+    val pitch: Float = 0f,
     /** A soft breath before the line. */
     val breath: Boolean = false,
     /** The line split by voice language (a Hindi phrase in an English line, or the reverse); null for one language. */
@@ -88,6 +90,7 @@ class QueueSpec(
                     kind = s.optString("kind", "narration"),
                     rate = s.optDouble("rate", 1.0).toFloat().coerceIn(0.7f, 1.4f),
                     gainDb = s.optDouble("gainDb", 0.0).toFloat().coerceIn(-12f, 6f),
+                    pitch = s.optDouble("pitch", 0.0).toFloat().coerceIn(-4f, 4f),
                     breath = s.optBoolean("breath", false),
                     runs = s.optJSONArray("runs")?.let { r ->
                         List(r.length()) { j -> r.getJSONObject(j).let { Run(it.getString("text"), it.getString("lang")) } }

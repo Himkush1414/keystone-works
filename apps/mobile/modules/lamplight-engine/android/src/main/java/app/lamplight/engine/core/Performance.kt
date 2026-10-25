@@ -2,6 +2,9 @@ package app.lamplight.engine.core
 
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.exp
 import kotlin.math.pow
 import kotlin.math.sin
@@ -28,11 +31,16 @@ object Performance {
     fun dbToGain(db: Double): Float = 10.0.pow(db / 20.0).toFloat()
 
     /**
-     * Returns [samples] with [gainDb] applied and, if [breath], a breath in front. [seed] makes the breath
-     * repeatable (use the sentence's own seed).
+     * Returns [samples] raised or lowered by [pitch] semitones and sped up by [rate], with [gainDb] applied
+     * and, if [breath], a breath in front. [seed] makes the breath repeatable (use the sentence's own seed).
+     *
+     * Pace is applied here rather than by the model: asked for another rate, the model renders a different
+     * take (its own pitch moved by up to ±2.3 semitones in DeliveryScanTest, swamping the line's emotion),
+     * and in Hindi it shortened mostly its silent padding, not the speech.
      */
-    fun apply(samples: FloatArray, sampleRate: Int, gainDb: Float, breath: Boolean, seed: Long): FloatArray {
-        val voiced = if (gainDb == 0f) samples else gain(samples, gainDb)
+    fun apply(samples: FloatArray, sampleRate: Int, gainDb: Float, breath: Boolean, seed: Long, pitch: Float = 0f, rate: Float = 1f): FloatArray {
+        val shifted = if (pitch == 0f && rate == 1f) samples else shiftPitch(samples, sampleRate, pitch, rate)
+        val voiced = if (gainDb == 0f) shifted else gain(shifted, gainDb)
         if (!breath) return voiced
         val b = breath(sampleRate, seed)
         return FloatArray(b.size + voiced.size).also {
@@ -77,5 +85,71 @@ object Performance {
         val rms = sqrt(shaped.fold(0.0) { acc, v -> acc + v * v } / inhale)
         val scale = if (rms > 0) (dbToGain(BREATH_RMS_DB) / rms).toFloat() else 0f
         return FloatArray(total) { i -> if (i < inhale) shaped[i] * scale else 0f }
+    }
+
+    /**
+     * Moves the pitch by [semitones] and plays [rate] times as fast, in one pass: the speech is stretched in
+     * time by ratio / rate (WSOLA: 30 ms windows, each placed where it lines up best with the last, so voiced
+     * sounds keep their period), then read back at the pitch ratio. Formants move with the pitch, so this is
+     * for the small shifts a delivery needs (about ±2 semitones), not for changing who is speaking.
+     */
+    fun shiftPitch(samples: FloatArray, sampleRate: Int, semitones: Float, rate: Float = 1f): FloatArray {
+        if ((semitones == 0f && rate == 1f) || samples.isEmpty()) return samples
+        val ratio = 2.0.pow(semitones / 12.0)
+        val stretched = stretch(samples, sampleRate, ratio / rate)
+        return FloatArray((samples.size / rate).toInt()) { i ->
+            val at = i * ratio
+            val k = at.toInt()
+            if (k + 1 >= stretched.size) stretched.lastOrNull() ?: 0f
+            else (stretched[k] + (stretched[k + 1] - stretched[k]) * (at - k)).toFloat()
+        }
+    }
+
+    /** WSOLA time stretch: the result is [factor] times as long, at the same pitch. */
+    fun stretch(x: FloatArray, sampleRate: Int, factor: Double): FloatArray {
+        val n = sampleRate * 30 / 1000
+        val hop = n / 2
+        val tol = sampleRate * 8 / 1000
+        val outLen = (x.size * factor).toInt()
+        if (x.size < n * 2) return FloatArray(outLen) { i -> x[min(x.size - 1, (i / factor).toInt())] }
+        val window = FloatArray(n) { (0.5 - 0.5 * cos(2 * PI * it / n)).toFloat() }
+        val out = FloatArray(outLen + n)
+        val norm = FloatArray(outLen + n)
+        val last = x.size - n
+        var prev = 0
+        var pos = 0
+        while (pos < outLen) {
+            val nominal = min(last, (pos / factor).toInt())
+            val start = if (pos == 0) 0 else bestMatch(x, min(last, prev + hop), nominal, tol, n, last)
+            for (i in 0 until n) {
+                out[pos + i] += x[start + i] * window[i]
+                norm[pos + i] += window[i]
+            }
+            prev = start
+            pos += hop
+        }
+        return FloatArray(outLen) { i -> if (norm[i] > 1e-3f) out[i] / norm[i] else out[i] }
+    }
+
+    /** The start near [nominal] whose frame best continues the one at [natural] (correlation every 4th sample). */
+    private fun bestMatch(x: FloatArray, natural: Int, nominal: Int, tol: Int, n: Int, last: Int): Int {
+        var best = nominal
+        var score = Double.NEGATIVE_INFINITY
+        var c = max(0, nominal - tol)
+        val end = min(last, nominal + tol)
+        while (c <= end) {
+            var s = 0.0
+            var i = 0
+            while (i < n) {
+                s += x[natural + i] * x[c + i]
+                i += 4
+            }
+            if (s > score) {
+                score = s
+                best = c
+            }
+            c += 2
+        }
+        return best
     }
 }

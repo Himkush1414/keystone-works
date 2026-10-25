@@ -88,4 +88,36 @@ class PerformanceTest {
         val air = listOf(1200.0, 1600.0, 2000.0).sumOf { power(b, it) }
         assertTrue(10 * log10(air / rumble) > 10, "air band should dominate the rumble band")
     }
+
+    /** A voiced sound at [f0] Hz: five harmonics, gently falling. */
+    private fun voiced(f0: Double, ms: Int = 1000): FloatArray {
+        val sr = 44_100
+        return FloatArray(sr * ms / 1000) { i -> (1..5).sumOf { h -> 0.3 / h * kotlin.math.sin(2 * Math.PI * f0 * h * i / sr) }.toFloat() }
+    }
+
+    private fun medianF0(x: FloatArray) = Prosody.pitch(x, 44_100).sorted().let { it[it.size / 2] }
+
+    @Test
+    fun `pitch moves by the semitones asked for and the length stays`() {
+        val x = voiced(150.0)
+        for (st in listOf(-2f, -1f, 1f, 2f)) {
+            val y = Performance.shiftPitch(x, 44_100, st)
+            assertEquals(x.size, y.size)
+            val want = 150.0 * Math.pow(2.0, st / 12.0)
+            val got = medianF0(y)
+            assertTrue(kotlin.math.abs(got / want - 1) < 0.03, "$st st: $got Hz, want $want")
+        }
+        assertTrue(Performance.shiftPitch(x, 44_100, 0f) === x)
+    }
+
+    @Test
+    fun `pace changes the length and keeps the pitch`() {
+        val x = voiced(150.0)
+        for (rate in listOf(0.9f, 1.07f)) {
+            val y = Performance.shiftPitch(x, 44_100, 0f, rate)
+            assertEquals((x.size / rate).toInt(), y.size)
+            assertTrue(kotlin.math.abs(medianF0(y) / 150.0 - 1) < 0.03, "rate $rate: ${medianF0(y)} Hz")
+        }
+    }
 }
+
