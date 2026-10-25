@@ -14,6 +14,7 @@ export const titles: Record<string, readonly string[]> = {
   de: ['hr', 'fr', 'dr', 'prof', 'st'],
   fr: ['m', 'mm', 'mme', 'mmes', 'mlle', 'mlles', 'dr', 'pr', 'me', 'st', 'ste'],
   pt: ['sr', 'sra', 'srta', 'dr', 'dra', 'prof', 'profa', 'd', 'v', 'exmo', 'exma'],
+  hi: ['डॉ', 'प्रो', 'श्री', 'श्रीमती', 'सु', 'कु', 'स्व', 'मो', 'मि'],
   it: ['sig', 'sigg', 'sig.ra', 'dott', 'dott.ssa', 'prof', 'avv', 'ing', 'on', 's', 'sant'],
 };
 

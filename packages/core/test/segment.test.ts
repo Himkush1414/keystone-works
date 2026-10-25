@@ -21,6 +21,31 @@ describe('splitSentences', () => {
     expect(sentences('Dr. Watson and St. Clair arrived.')).toEqual(['Dr. Watson and St. Clair arrived.']);
   });
 
+  it('keeps run-together initials and number-taking abbreviations inside the sentence', () => {
+    expect(sentences('The book was by J.R.R. Tolkien and it sold well.')).toEqual([
+      'The book was by J.R.R. Tolkien and it sold well.',
+    ]);
+    expect(sentences('She moved to the U.S. In May she left.')).toEqual([
+      'She moved to the U.S.',
+      'In May she left.',
+    ]);
+    expect(sentences('Call me at ext. 42 tomorrow.')).toEqual(['Call me at ext. 42 tomorrow.']);
+    expect(sentences('It cost $3.50 at the shop. Then it rose.')).toEqual([
+      'It cost $3.50 at the shop.',
+      'Then it rose.',
+    ]);
+    expect(sentences('Dr. A. K. Sharma arrived at 9 a.m. sharp.')).toEqual([
+      'Dr. A. K. Sharma arrived at 9 a.m. sharp.',
+    ]);
+  });
+
+  it('keeps Hindi titles, initials and a trailing-off ellipsis inside the sentence', () => {
+    expect(sentences('डॉ. शर्मा कल आए। वे थके थे।', 'hi')).toEqual(['डॉ. शर्मा कल आए।', 'वे थके थे।']);
+    expect(sentences('श्री ए. के. शर्मा ने कहा।', 'hi')).toEqual(['श्री ए. के. शर्मा ने कहा।']);
+    expect(sentences('मैंने सोचा... पर कुछ नहीं कहा।', 'hi')).toEqual(['मैंने सोचा... पर कुछ नहीं कहा।']);
+    expect(sentences('उसका वज़न 2.5 किलो था।', 'hi')).toEqual(['उसका वज़न 2.5 किलो था।']);
+  });
+
   it('keeps initials together', () => {
     expect(sentences('J. R. R. Tolkien wrote it. Then he rested.')).toEqual([
       'J. R. R. Tolkien wrote it.',
