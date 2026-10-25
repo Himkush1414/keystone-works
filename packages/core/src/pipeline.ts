@@ -17,12 +17,18 @@ import { detectLanguage, lineLanguage, VOICE_LANGUAGES, type VoiceLanguage } fro
 import { normalize, type DictionaryRule } from './text/normalize';
 import { segment, type Span } from './text/segment';
 
+/**
+ * Silence after a sentence, in ms. The engine trims the model's own padding and keeps about 90 ms of quiet
+ * edges, so a listener hears roughly this plus 90 ms: about 0.45 s between sentences, 0.85 s between
+ * paragraphs. (Before the trim, 0.9–1.4 s of padding sat on top of every one of these.)
+ */
 export const PAUSE = {
-  sentence: 140,
-  split: 60,
-  paragraph: 450,
-  heading: 700,
-  chapter: 1200,
+  sentence: 370,
+  /** Between the parts of one sentence split at a quotation ("Stop," she said). */
+  split: 170,
+  paragraph: 760,
+  heading: 900,
+  chapter: 1500,
 } as const;
 
 export interface PreparedDocument {

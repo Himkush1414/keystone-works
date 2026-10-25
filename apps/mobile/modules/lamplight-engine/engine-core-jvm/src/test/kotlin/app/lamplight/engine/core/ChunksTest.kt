@@ -49,12 +49,38 @@ class ChunksTest {
         assertEquals(text, pieces.joinToString(" ") { it.text })
     }
 
+    /** [ms] of silence, [speechMs] of a tone, then [ms] of silence again. */
+    private fun padded(ms: Int, speechMs: Int): FloatArray {
+        val sr = 44_100
+        val pad = sr * ms / 1000
+        val speech = sr * speechMs / 1000
+        return FloatArray(pad * 2 + speech) { i -> if (i in pad until pad + speech) 0.3f * kotlin.math.sin(i * 0.05f) else 1e-6f }
+    }
+
     @Test
-    fun `edges fade only where pieces meet`() {
-        val s = FloatArray(1000) { 1f }
-        assertTrue(Chunks.fadeEdges(s, 44_100, fadeIn = false, fadeOut = false) === s)
-        val f = Chunks.fadeEdges(s, 44_100, fadeIn = true, fadeOut = false)
-        assertEquals(0f, f[0])
-        assertEquals(1f, f.last())
+    fun `trimming leaves the speech and a short quiet edge either side`() {
+        val t = Chunks.trim(padded(600, 1000), 44_100)
+        val ms = t.size * 1000 / 44_100
+        assertTrue(ms in 1000..1000 + Chunks.LEAD_KEEP_MS + Chunks.TRAIL_KEEP_MS + 10, "kept $ms ms")
+        assertEquals(0f, t[0])
+        assertEquals(0f, t.last())
+        val silent = FloatArray(4410)
+        assertTrue(Chunks.trim(silent, 44_100) === silent)
+    }
+
+    @Test
+    fun `a piece with no pause after it overlaps the next one, others pass through whole`() {
+        val sr = 44_100
+        val a = FloatArray(sr / 2) { 0.2f }
+        val b = FloatArray(sr / 2) { 0.2f }
+        val j = Chunks.Joiner(sr)
+        val n = sr * Chunks.XFADE_MS / 1000
+        val first = j.push(a, gapMs = 0, last = false)
+        assertEquals(a.size - n, first.size)
+        val second = j.push(b, gapMs = 0, last = true)
+        assertEquals(b.size, second.size)
+        assertEquals(a.size + b.size - n, first.size + second.size)
+        val paused = Chunks.Joiner(sr)
+        assertTrue(paused.push(a, gapMs = Chunks.COMMA_GAP_MS, last = false) === a)
     }
 }

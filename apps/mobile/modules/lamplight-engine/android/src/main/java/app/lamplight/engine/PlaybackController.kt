@@ -45,7 +45,8 @@ class PlaybackController private constructor(private val context: Context) : Str
     private val main = Handler(Looper.getMainLooper())
     private val listeners = CopyOnWriteArraySet<Listener>()
     val host = EngineHost(context.applicationContext)
-    private val cache = AudioCache(context.applicationContext, MODEL_VERSION)
+    // "trimmed": audio cached before the model's padding was trimmed is never reused.
+    private val cache = AudioCache(context.applicationContext, "$MODEL_VERSION|trimmed")
     private val prefs = context.getSharedPreferences("lamplight-engine", Context.MODE_PRIVATE)
 
     // ── state (guarded by lock) ──
@@ -96,8 +97,8 @@ class PlaybackController private constructor(private val context: Context) : Str
     private val engineLock = ReentrantLock()
     private val readAhead = ReadAhead(lookaheadMs = LOOKAHEAD_MS)
     private val pacing = Pacing().apply {
-        val fixed = prefs.getFloat("pacingFixed", -1f)
-        if (fixed >= 0) seed(fixed.toDouble(), prefs.getFloat("pacingPerStep", -1f).toDouble())
+        val fixed = prefs.getFloat(PACING_FIXED, -1f)
+        if (fixed >= 0) seed(fixed.toDouble(), prefs.getFloat(PACING_PER_STEP, -1f).toDouble())
     }
 
     /** Cache files are encoded here, so the render thread never stops to compress audio. */
@@ -142,8 +143,9 @@ class PlaybackController private constructor(private val context: Context) : Str
                 val t0 = System.nanoTime()
                 val r = engine.synthesize(text, "en", voice, steps)
                 val workMs = (System.nanoTime() - t0) / 1_000_000
-                pacing.record(steps, workMs, r.durationMs, text.length)
-                workMs / r.durationMs.toDouble()
+                val speechMs = Chunks.trim(r.samples, r.sampleRate).size * 1000L / r.sampleRate
+                pacing.record(steps, workMs, speechMs, text.length)
+                workMs / speechMs.toDouble()
             }
             rtf(4) to rtf(8)
         }
@@ -549,10 +551,12 @@ class PlaybackController private constructor(private val context: Context) : Str
             if (job.gen != generation || renders[i]?.complete == true) return
             renders[i] = rendered
         }
+        val joiner = Chunks.Joiner(SAMPLE_RATE)
         for ((k, piece) in pieces.withIndex()) {
             if (job.gen != generation) return
             val t0 = System.nanoTime()
-            val raw = engineLock.withLock { host.engine().synthesize(piece.text, piece.lang, voice, job.steps, BASE_RATE * seg.rate) }
+            val last = k == pieces.lastIndex
+            val raw = engineLock.withLock { host.engine().synthesize(piece.text, piece.lang, voice, job.steps, BASE_RATE * seg.rate, continues = !last) }
             val workMs = (System.nanoTime() - t0) / 1_000_000
             if (raw.dropped.isNotEmpty()) EngineLog.i(TAG, "dropped characters ${raw.dropped}")
             lastRender = mapOf("sentence" to i.toLong(), "piece" to k.toLong(), "steps" to job.steps.toLong(), "workMs" to workMs, "audioMs" to raw.durationMs) +
@@ -563,12 +567,12 @@ class PlaybackController private constructor(private val context: Context) : Str
                 failures = 0
                 emitState()
             }
-            pacing.record(job.steps, workMs, raw.durationMs, piece.text.length)
+            // The model pads every render with silence; only speech (and the pauses we choose) is heard.
+            val speech = Chunks.trim(raw.samples, raw.sampleRate)
+            pacing.record(job.steps, workMs, speech.size * 1000L / raw.sampleRate, piece.text.length)
             val seed = Seed.forSentence(piece.text, voice.id, job.steps)
-            val performed = Performance.apply(raw.samples, raw.sampleRate, seg.gainDb, seg.breath && k == 0, seed)
-            val samples = if (pieces.size == 1) performed
-            else Chunks.fadeEdges(performed, raw.sampleRate, fadeIn = k > 0, fadeOut = k < pieces.lastIndex)
-            val part = Part(samples, piece.gapMs)
+            val performed = Performance.apply(speech, raw.sampleRate, seg.gainDb, seg.breath && k == 0, seed)
+            val part = Part(joiner.push(performed, piece.gapMs, last), piece.gapMs)
             if (forPlayer) lock.withLock {
                 if (job.gen != generation) return
                 rendered.parts.add(part)
@@ -620,7 +624,7 @@ class PlaybackController private constructor(private val context: Context) : Str
 
     private fun savePacing() {
         val (fixed, perStep) = pacing.export()
-        prefs.edit().putFloat("pacingFixed", fixed.toFloat()).putFloat("pacingPerStep", perStep.toFloat()).apply()
+        prefs.edit().putFloat(PACING_FIXED, fixed.toFloat()).putFloat(PACING_PER_STEP, perStep.toFloat()).apply()
     }
 
     // ── ticker: progress, sentence changes, sleep timer ──
@@ -796,6 +800,9 @@ class PlaybackController private constructor(private val context: Context) : Str
 
         /** The model's own speaking rate (Supertonic.synthesize default); a line's rate multiplies it. */
         private const val BASE_RATE = 1.05f
+        /** Measured speed, per second of speech without the model's padding (v2; v1 counted the padding). */
+        private const val PACING_FIXED = "pacing2Fixed"
+        private const val PACING_PER_STEP = "pacing2PerStep"
         const val MODEL_VERSION = "supertonic3-int8-v1"
         const val SAMPLE_RATE = 44_100
         const val STUDIO_PLUS_STEPS = 16

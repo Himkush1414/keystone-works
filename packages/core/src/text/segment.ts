@@ -41,12 +41,20 @@ const NEVER_END = new Set([
   'sec',
   'pág',
   'págs',
+  'ext',
+  'tel',
 ]);
+
+/** English letter names as Hindi writes them, used as initials ("ए. के. शर्मा"). */
+// prettier-ignore
+const HINDI_INITIALS = new Set(['ए', 'बी', 'सी', 'डी', 'ई', 'एफ', 'जी', 'एच', 'आई', 'जे', 'के', 'एल', 'एम', 'एन', 'ओ', 'पी', 'क्यू', 'आर', 'एस', 'टी', 'यू', 'वी', 'डब्ल्यू', 'एक्स', 'वाई', 'ज़ेड', 'जेड']);
 
 const isSpace = (c: string | undefined) => c !== undefined && /\s/.test(c);
 const isLower = (c: string) => c !== c.toUpperCase() && c === c.toLowerCase();
 const isUpper = (c: string) => c !== c.toLowerCase() && c === c.toUpperCase();
 const isDigit = (c: string) => c >= '0' && c <= '9';
+/** A letter of a script without capitals (Devanagari, Arabic, Thai…), where case can't tell a sentence start. */
+const isCaseless = (c: string) => /\p{L}/u.test(c) && !isUpper(c) && !isLower(c);
 
 /** The word immediately before position `i` (exclusive), without leading opening punctuation. */
 function wordBefore(text: string, i: number): string {
@@ -114,6 +122,16 @@ export function splitSentences(text: string, lang = 'en'): Span[] {
     if (isLower(next)) continue; // "Wait... then", "¿Qué? dijo él", "etc. and"
 
     const ellipsis = c === '…' || text.slice(i, i + 3) === '...';
+    // Caseless scripts end sentences with their own marks (।, ؟), so a trailing-off "..." there runs on.
+    if (
+      ellipsis &&
+      isCaseless(next) &&
+      /[\p{L}\p{M}]/u.test(text[i - 1] ?? '') &&
+      !isUpper(text[i - 1] ?? '')
+    ) {
+      i = j - 1;
+      continue;
+    }
     if (c === '.' && !ellipsis && j === i + 1) {
       const word = wordBefore(text, i).toLowerCase();
       if (titles.has(word) || NEVER_END.has(word)) continue;
@@ -122,6 +140,14 @@ export function splitSentences(text: string, lang = 'en'): Span[] {
       if (dotted.some((f) => general.has(f)) && !isUpper(next)) continue;
       if (word.length === 1 && isUpper(word.toUpperCase()) && isUpper(wordBefore(text, i))) continue; // initials
       if (general.has(word) && !isUpper(next)) continue;
+      // Run-together initials before a name ("J.R.R. Tolkien"); listed ones like "U.S." are judged above.
+      if (
+        /^(?:\p{Lu}\.)+\p{Lu}$/u.test(wordBefore(text, i)) &&
+        !dotted.some((f) => general.has(f)) &&
+        isUpper(next)
+      )
+        continue;
+      if (HINDI_INITIALS.has(word) && isCaseless(next)) continue;
       if (/^\d+$/.test(word) && text.slice(start, i).trim() === word) continue; // "1. First item"
       if (isDigit(next) && /^[ivxlcdm]+$/.test(word)) continue; // "vol. iv. 3"
     }
