@@ -86,10 +86,10 @@ export function ContentsSheet({
 }
 
 const QUALITIES: { value: Quality; desc: TKey }[] = [
+  { value: 'studioPlus', desc: 'quality.studioPlusDesc' },
+  { value: 'studio', desc: 'quality.studioDesc' },
   { value: 'auto', desc: 'quality.autoDesc' },
   { value: 'live', desc: 'quality.liveDesc' },
-  { value: 'studio', desc: 'quality.studioDesc' },
-  { value: 'studioPlus', desc: 'quality.studioPlusDesc' },
 ];
 
 /** Voice and quality for this document (R-PL-5); both take effect from the next sentence. */

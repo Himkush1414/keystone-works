@@ -216,13 +216,14 @@ export const fr: Catalog = {
   },
   quality: {
     auto: 'Automatique',
-    autoDesc: 'La meilleure qualité que votre téléphone peut suivre.',
+    autoDesc: 'La meilleure qualité que votre téléphone peut suivre, sans jamais dégrader la voix.',
     live: 'Instantané',
-    liveDesc: 'Démarre tout de suite. Plus économe.',
+    liveDesc: 'La plus légère, démarre au plus vite et économise la batterie. Toujours claire.',
     studio: 'Studio',
-    studioDesc: 'Une narration plus riche et plus naturelle.',
+    studioDesc: 'Haute qualité, démarre plus vite.',
     studioPlus: 'Studio+',
-    studioPlusDesc: 'Notre meilleure qualité, préparée à l’avance.',
+    studioPlusDesc:
+      'La meilleure qualité, recommandée. Les premiers mots peuvent prendre quelques secondes de plus.',
   },
   cast: {
     title: 'Distribution',

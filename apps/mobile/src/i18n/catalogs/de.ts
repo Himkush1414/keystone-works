@@ -212,13 +212,13 @@ export const de: Catalog = {
   },
   quality: {
     auto: 'Automatisch',
-    autoDesc: 'Die beste Qualität, die dein Handy schafft.',
+    autoDesc: 'Die beste Qualität, die dein Handy schafft – nie unter einer klaren Stimme.',
     live: 'Sofort',
-    liveDesc: 'Startet sofort. Schont den Akku.',
+    liveDesc: 'Am leichtesten: startet am schnellsten und schont den Akku. Trotzdem klar.',
     studio: 'Studio',
-    studioDesc: 'Reichere, natürlichere Erzählung.',
+    studioDesc: 'Hohe Qualität, startet schneller.',
     studioPlus: 'Studio+',
-    studioPlusDesc: 'Unsere beste Qualität, im Voraus vorbereitet.',
+    studioPlusDesc: 'Höchste Qualität, empfohlen. Die ersten Worte können ein paar Sekunden länger dauern.',
   },
   cast: {
     title: 'Besetzung',
