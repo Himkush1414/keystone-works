@@ -120,7 +120,10 @@ const HONORIFIC_WORDS = String.raw`(?:Mr|Mrs|Ms|Miss|Dr|Sir|Lady|Lord|Captain|Co
 /** A name, possibly after "the" or a small adjective ("the Hatter", "little Amy", "old Mr. Grey"). */
 const NAME_LEAD = String.raw`(?:(?:the|little|old|young|poor|dear)\s+)?`;
 const NAME = String.raw`(${NAME_LEAD}(?:${HONORIFIC_WORDS}\.?\s+)?\p{Lu}[\p{L}'’-]+(?:\s+\p{Lu}[\p{L}'’-]+){0,2})`;
-const HONORIFIC_NAME = new RegExp(String.raw`\b(${HONORIFIC_WORDS}\.?\s+\p{Lu}[\p{L}'’-]+)`, 'gu');
+const HONORIFIC_NAME = new RegExp(
+  String.raw`\b(${HONORIFIC_WORDS}\.?\s+\p{Lu}[\p{L}'’-]+(?:\s+\p{Lu}[\p{L}'’-]+)?)`,
+  'gu',
+);
 const PRONOUN = String.raw`(he|she|they|I|we|él|ella|er|sie|il|elle|lui|lei|ele|ela)`;
 // prettier-ignore
 const DESCRIPTOR_NOUNS = 'wife|husband|lady|mother|father|son|daughter|man|woman|boy|girl|gentleman|stranger|child|sister|brother|friend|companion|host|hostess|servant|maid|soldier|captain|doctor|priest|king|queen';
@@ -455,6 +458,23 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
     return out;
   };
 
+  /** Characters spoken to by name: "Don’t, Jo." "So I did, Beth." "Ah, Watson, …" (at the start or after a comma). */
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const vocatives = (quote: string): Set<string> => {
+    const out = new Set<string>();
+    for (const c of chars.values()) {
+      if (c.id === 'narrator-i') continue;
+      for (const a of c.aliases) {
+        const re = new RegExp(
+          String.raw`(?:^[“"‘'«„]?\s*(?:(?:Oh|Ah|Well|Yes|No|Now|Come),?\s+)?|,\s+)${escape(a)}(?=\s*[,.!?;—–])`,
+          'u',
+        );
+        if (re.test(quote)) out.add(c.id);
+      }
+    }
+    return out;
+  };
+
   const resolve = (
     tag: Tag,
     quote: string,
@@ -698,6 +718,9 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
   };
 
   let lastSpeakers: string[] = []; // speakers of recent dialogue paragraphs, most recent last
+  let lastVocatives = new Set<string>(); // who the last dialogue paragraph spoke to by name
+  let lastFirstPerson = -Infinity; // the last paragraph whose narration says "I", "me" or "my" (English)
+  const inferred = new Set<number>(); // attributions guessed from turn-taking, open to a later vocative
   let narrationSince = 0;
 
   for (let block = 0; block < blocks.length; block++) {
@@ -710,6 +733,11 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
       continue;
     }
     const spans = findDialogue(text, base);
+    const outsideQuotes = spans.length
+      ? spans.reduce((acc, s, k) => acc + text.slice(spans[k - 1]?.end ?? 0, s.start), '') +
+        text.slice(spans[spans.length - 1]?.end ?? 0)
+      : text;
+    if (base === 'en' && /\b(?:I|me|my)\b/u.test(outsideQuotes)) lastFirstPerson = block;
     if (!spans.length) {
       noticeNames(text);
       if (++narrationSince > CONVERSATION_GAP) lastSpeakers = [];
@@ -757,19 +785,31 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
       const quotes = local.map((l) => text.slice(l.span.start, l.span.end)).join(' ');
       const spokenTo = addressees(quotes);
       const previous = lastSpeakers[lastSpeakers.length - 2];
+      // The one just spoken to by name answers ("Don’t, Jo. It’s so boyish!" / "That’s why I do it.").
+      const called = [...lastVocatives].filter((id) => id !== lastSpeaker && !spokenTo.has(id));
+      // In a story told in the first person, the narrator is the likely other side of a conversation.
+      const narrator =
+        !previous && lastSpeaker !== 'narrator-i' && block - lastFirstPerson <= 12
+          ? register('Narrator-I')
+          : undefined;
       const other =
-        previous && previous !== lastSpeaker && !spokenTo.has(previous)
-          ? previous
-          : recentWhere((id) => id !== lastSpeaker && !spokenTo.has(id) && id !== 'narrator-i');
+        called.length === 1
+          ? called[0]
+          : previous && previous !== lastSpeaker && !spokenTo.has(previous)
+            ? previous
+            : (narrator ??
+              recentWhere((id) => id !== lastSpeaker && !spokenTo.has(id) && id !== 'narrator-i'));
       if (other && lastSpeaker) {
         // Two people taking turns is the commonest pattern in fiction; confident enough for their own voices.
-        const confidence = previous === other ? 0.75 : 0.7;
+        const confidence = previous === other || called.length === 1 ? 0.75 : 0.7;
         for (const l of local) {
           l.id = other;
           l.confidence = confidence;
         }
       }
+      for (let k = 0; k < local.length; k++) inferred.add(attributions.length + k);
     }
+    lastVocatives = vocatives(local.map((l) => text.slice(l.span.start, l.span.end)).join(' '));
 
     for (const l of local) {
       attributions.push(
@@ -785,6 +825,20 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
     }
     const speaker = local.find((l) => l.id)?.id;
     if (speaker) lastSpeakers = [...lastSpeakers, speaker].slice(-4);
+  }
+
+  // A guessed turn followed by a reply that names whoever spoke it ("So I did, Beth.") was that person's.
+  for (let i = 0; i < attributions.length; i++) {
+    const a = attributions[i];
+    if (!a || !inferred.has(i)) continue;
+    const next = attributions.find((n, j) => j > i && n.block > a.block);
+    if (!next || next.block !== a.block + 1) continue;
+    const reply = (blocks[next.block] ?? '').slice(next.span.start, next.span.end);
+    const named = [...vocatives(reply.slice(0, 40))].filter((id) => id !== next.speaker);
+    if (named.length === 1 && named[0] && named[0] !== a.speaker) {
+      const was = a.speaker;
+      for (const b of attributions) if (b.block === a.block && b.speaker === was) b.speaker = named[0];
+    }
   }
 
   for (const c of chars.values()) {
