@@ -63,6 +63,18 @@ export interface Diagnostics {
   log: string[];
 }
 
+/** The sentence the Diagnostics A/B test renders and plays, and how. */
+export type AbKind = 'raw' | 'natural' | 'processed' | 'old';
+export interface AbSample {
+  kind: AbKind;
+  steps: number;
+  durationMs: number;
+  /** Samples at or beyond full scale. */
+  clipped: number;
+  /** Where the WAV was saved (the app's external files folder, readable with adb pull). */
+  path: string;
+}
+
 export interface VoiceTest {
   ok: boolean;
   loadMs?: number;

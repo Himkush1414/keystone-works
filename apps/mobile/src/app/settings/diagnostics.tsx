@@ -7,6 +7,7 @@ export default function DiagnosticsRoute() {
     <DiagnosticsScreen
       load={() => LamplightEngine.getDiagnostics()}
       test={() => LamplightEngine.runVoiceTest()}
+      ab={(kind, lang) => LamplightEngine.abSample(kind, lang)}
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/settings'))}
     />
   );

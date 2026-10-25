@@ -83,6 +83,7 @@ tasks.test {
     project.findProperty("pdfs")?.let { systemProperty("lamplight.pdfs", it.toString()) }
     project.findProperty("probe")?.let { systemProperty("lamplight.probe", it.toString()) }
     project.findProperty("probeOut")?.let { systemProperty("lamplight.probe.out", it.toString()) }
+    project.findProperty("abDir")?.let { systemProperty("lamplight.ab.dir", it.toString()) }
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = true

@@ -4,13 +4,15 @@
  */
 import { NativeModule, registerWebModule } from 'expo';
 import type {
+  AbKind,
+  AbSample,
   Calibration,
   Diagnostics,
   EngineInfo,
   LamplightEngineEvents,
   PlayerState,
-  QueueFile,
   Quality,
+  QueueFile,
   VoiceTest,
 } from './types';
 
@@ -158,6 +160,9 @@ class LamplightEngineWeb extends NativeModule<LamplightEngineEvents> {
   }
   async runVoiceTest(): Promise<VoiceTest> {
     return { ok: true, renderMs: 0, audioMs: 0 };
+  }
+  async abSample(kind: AbKind): Promise<AbSample> {
+    return { kind, steps: 0, durationMs: 0, clipped: 0, path: '' };
   }
   async lastPosition() {
     return null;

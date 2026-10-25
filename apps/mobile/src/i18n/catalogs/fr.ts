@@ -147,6 +147,15 @@ export const fr: Catalog = {
     share: 'Partager le rapport',
     testOk: '{audio} de parole, produite en {render}.',
     testFailed: 'Le test de la voix a échoué : {reason}',
+    abTitle: 'Voix A/B (mode test)',
+    abDesc: 'La même phrase, directement du modèle de voix ou via le lecteur, pour comparer à l’oreille.',
+    ab: {
+      raw: 'Brute',
+      natural: 'Naturelle',
+      processed: 'Traitée (triste)',
+      old: 'Ancienne (3 étapes)',
+    },
+    abResult: '{kind} : {steps} étapes, {seconds} s, {clipped} échantillons saturés. Enregistré dans {path}',
     volumeMuted: 'Le volume multimédia est coupé, la lecture est donc muette. Montez le volume.',
   },
   errors: {

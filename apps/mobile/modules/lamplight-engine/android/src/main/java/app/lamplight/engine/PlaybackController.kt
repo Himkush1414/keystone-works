@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import app.lamplight.engine.core.Chunks
+import app.lamplight.engine.core.LineRender
 import app.lamplight.engine.core.Pacing
 import app.lamplight.engine.core.Performance
 import app.lamplight.engine.core.ReadAhead
@@ -164,6 +165,30 @@ class PlaybackController private constructor(private val context: Context) : Str
             .apply()
         EngineLog.i(TAG, "calibrated rtf4=$r4 rtf8=$r8 live=$live studio=$studio threads=${host.threads}")
         return mapOf("rtf4" to r4, "rtf8" to r8, "liveSteps" to live, "studioSteps" to studio, "threads" to host.threads)
+    }
+
+    /**
+     * One sample sentence for the Diagnostics A/B test, rendered as [kind]: "raw" (the model's output at the
+     * steps narration aims for, untouched), "natural" (the player's path, no emotion processing),
+     * "processed" (the player's path for a sad line with emotion processing on) or "old" (raw at 3 steps,
+     * the floor before 25 Oct). Returns the steps used and the samples.
+     */
+    fun renderSample(text: String, lang: String, kind: String): Pair<Int, FloatArray> {
+        val steps = if (kind == "old") 3 else targetSteps()
+        val voice = host.voice("F1")
+        val engine = host.engine()
+        if (kind == "raw" || kind == "old") return steps to engineLock.withLock { engine.synthesize(text, lang, voice, steps, BASE_RATE) }.samples
+        val style = if (kind == "processed") LineRender.Style(rate = 0.9f, gainDb = -2.5f, pitch = -1.5f) else LineRender.Style()
+        val pieces = Chunks.split(text, lang)
+        val joiner = Chunks.Joiner(SAMPLE_RATE)
+        val out = ArrayList<Float>()
+        pieces.forEachIndexed { k, p ->
+            val last = k == pieces.lastIndex
+            val raw = engineLock.withLock { engine.synthesize(p.text, p.lang, voice, steps, style.modelRate(BASE_RATE), LineRender.continues(last, style)) }
+            LineRender.piece(Chunks.trim(raw.samples, raw.sampleRate), raw.sampleRate, k, last, style, 0L, p.gapMs, joiner).forEach(out::add)
+            if (!last) repeat(p.gapMs * SAMPLE_RATE / 1000) { out.add(0f) }
+        }
+        return steps to out.toFloatArray()
     }
 
     /** Steps the render-ahead aims for; [Pacing] goes lower (down to [ReadAhead.FLOOR_STEPS]) when it must to keep up. */
@@ -554,15 +579,12 @@ class PlaybackController private constructor(private val context: Context) : Str
             renders[i] = rendered
         }
         val joiner = Chunks.Joiner(SAMPLE_RATE)
-        // Natural (no pitch shift): the model speaks at the line's pace itself and nothing processes the voice.
-        // A pitch shift (emotion processing on) renders one take at the base rate and shapes pitch and pace together.
-        val processed = seg.pitch != 0f
-        val modelRate = if (processed) BASE_RATE else BASE_RATE * seg.rate
+        val style = LineRender.Style(seg.rate, seg.gainDb, seg.pitch, seg.ending, seg.breath)
         for ((k, piece) in pieces.withIndex()) {
             if (job.gen != generation) return
             val t0 = System.nanoTime()
             val last = k == pieces.lastIndex
-            val raw = engineLock.withLock { host.engine().synthesize(piece.text, piece.lang, voice, job.steps, modelRate, continues = !last || seg.ending == "cut") }
+            val raw = engineLock.withLock { host.engine().synthesize(piece.text, piece.lang, voice, job.steps, style.modelRate(BASE_RATE), LineRender.continues(last, style)) }
             val workMs = (System.nanoTime() - t0) / 1_000_000
             if (raw.dropped.isNotEmpty()) EngineLog.i(TAG, "dropped characters ${raw.dropped}")
             lastRender = mapOf("sentence" to i.toLong(), "piece" to k.toLong(), "steps" to job.steps.toLong(), "workMs" to workMs, "audioMs" to raw.durationMs) +
@@ -575,11 +597,9 @@ class PlaybackController private constructor(private val context: Context) : Str
             }
             // The model pads every render with silence; only speech (and the pauses we choose) is heard.
             val trimmed = Chunks.trim(raw.samples, raw.sampleRate)
-            val speech = if (last && seg.ending != null) Performance.ending(trimmed, raw.sampleRate, seg.ending) else trimmed
-            pacing.record(job.steps, workMs, speech.size * 1000L / raw.sampleRate, piece.text.length)
+            pacing.record(job.steps, workMs, trimmed.size * 1000L / raw.sampleRate, piece.text.length)
             val seed = Seed.forSentence(piece.text, voice.id, job.steps)
-            val performed = Performance.apply(speech, raw.sampleRate, seg.gainDb, seg.breath && k == 0, seed, seg.pitch, if (processed) seg.rate else 1f)
-            val part = Part(joiner.push(performed, piece.gapMs, last), piece.gapMs)
+            val part = Part(LineRender.piece(trimmed, raw.sampleRate, k, last, style, seed, piece.gapMs, joiner), piece.gapMs)
             if (forPlayer) lock.withLock {
                 if (job.gen != generation) return
                 rendered.parts.add(part)

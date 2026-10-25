@@ -144,6 +144,16 @@ export const de: Catalog = {
     share: 'Bericht teilen',
     testOk: '{audio} Sprache gesprochen, erzeugt in {render}.',
     testFailed: 'Der Stimmtest ist fehlgeschlagen: {reason}',
+    abTitle: 'Stimme A/B (Testmodus)',
+    abDesc: 'Derselbe Satz direkt aus dem Stimmmodell oder über den Player, zum Vergleichen nach Gehör.',
+    ab: {
+      raw: 'Roh',
+      natural: 'Natürlich',
+      processed: 'Bearbeitet (traurig)',
+      old: 'Alt (3 Schritte)',
+    },
+    abResult:
+      '{kind}: {steps} Schritte, {seconds} s, {clipped} übersteuerte Samples. Gespeichert unter {path}',
     volumeMuted: 'Die Medienlautstärke ist aus, daher ist nichts zu hören. Lautstärke erhöhen.',
   },
   errors: {

@@ -136,6 +136,25 @@ class LamplightEngineModule : Module() {
 
         AsyncFunction("getDiagnostics") { diagnostics() }
         AsyncFunction("runVoiceTest") { runVoiceTest() }
+        // Diagnostics › Voice A/B (hidden): one sentence, raw or through the player, played and saved as WAV.
+        AsyncFunction("abSample") { kind: String, lang: String ->
+            val text = if (lang == "hi") AB_HI else AB_EN
+            val (steps, samples) = controller.renderSample(text, lang, kind)
+            val dir = File(context.getExternalFilesDir(null) ?: context.filesDir, "ab").apply { mkdirs() }
+            val file = File(dir, "$lang-$kind-s$steps.wav")
+            writeWav(file, samples, PlaybackController.SAMPLE_RATE)
+            runOnMain {
+                if (controller.playing) controller.pause()
+                playPreview(samples, PlaybackController.SAMPLE_RATE)
+            }
+            mapOf(
+                "kind" to kind,
+                "steps" to steps,
+                "durationMs" to (samples.size * 1000L / PlaybackController.SAMPLE_RATE).toDouble(),
+                "clipped" to samples.count { kotlin.math.abs(it) >= 0.999f },
+                "path" to file.absolutePath,
+            )
+        }
         AsyncFunction("skip") { delta: Int -> controller.skip(delta) }
         AsyncFunction("skipChapter") { delta: Int -> controller.skipChapter(delta) }
         AsyncFunction("setSpeed") { speed: Double -> controller.setPlaybackSpeed(speed.toFloat()) }
@@ -327,5 +346,10 @@ class LamplightEngineModule : Module() {
             o.writeBytes("data"); le32(samples.size * 2)
             for (s in samples) le16((s.coerceIn(-1f, 1f) * 32767f).roundToInt())
         }
+    }
+
+    private companion object {
+        const val AB_EN = "When she finally reached the old house at the end of the lane, the door was already open, and a cold wind moved through the empty rooms."
+        const val AB_HI = "मैं कल सुबह बाज़ार गया, और वहाँ मुझे मेरा पुराना दोस्त मिला, जिसे मैंने बरसों से नहीं देखा था।"
     }
 }
