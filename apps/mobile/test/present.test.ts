@@ -25,6 +25,7 @@ const item = (patch: Partial<LibraryItem> = {}): LibraryItem => ({
   wordCount: 16_200,
   sentenceCount: 900,
   loading: null,
+  importVersion: 1,
   settings: {},
   addedAt: 0,
   openedAt: null,

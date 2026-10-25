@@ -14,6 +14,13 @@ export interface DocumentSettings {
   speed?: number;
 }
 
+/**
+ * The importer's version, stored with each document's text. Raise it when a fix changes the text an import
+ * produces: a file opened again with an older version's text is then imported afresh, in place.
+ * 1: Hindi PDFs read through ActualText (#64), no more paragraphs cut at the first unmapped glyph.
+ */
+export const IMPORT_VERSION = 1;
+
 export interface LibraryItem {
   id: string;
   kind: DocumentKind;
@@ -30,6 +37,8 @@ export interface LibraryItem {
   sentenceCount: number;
   /** A PDF still being read: its first pages are ready to play, the rest are coming. */
   loading: { pages: number; of: number } | null;
+  /** The [IMPORT_VERSION] that made the stored text (0: older than the record). */
+  importVersion: number;
   settings: DocumentSettings;
   addedAt: number;
   openedAt: number | null;
@@ -56,6 +65,7 @@ interface DocumentRow {
   sentence_count: number;
   pages_loaded: number | null;
   pages_total: number | null;
+  import_version: number | null;
   settings_json: string;
   added_at: number;
   opened_at: number | null;
@@ -95,6 +105,7 @@ const toItem = (r: DocumentRow): LibraryItem => ({
   sentenceCount: r.sentence_count,
   loading:
     r.pages_loaded !== null && r.pages_total !== null ? { pages: r.pages_loaded, of: r.pages_total } : null,
+  importVersion: r.import_version ?? 0,
   settings: parseSettings(r.settings_json),
   addedAt: r.added_at,
   openedAt: r.opened_at,
@@ -252,7 +263,8 @@ export function saveContent(
     });
     db.run(
       `UPDATE documents SET kind = ?, title = ?, author = ?, site_name = ?, published_at = ?, language = ?, cover_path = coalesce(?, cover_path),
-         word_count = ?, sentence_count = ?, status = 'ready', error_code = NULL, pages_loaded = ?, pages_total = ?
+         word_count = ?, sentence_count = ?, status = 'ready', error_code = NULL, pages_loaded = ?, pages_total = ?,
+         import_version = ${IMPORT_VERSION}
        WHERE id = ?`,
       [
         draft.meta.kind,
