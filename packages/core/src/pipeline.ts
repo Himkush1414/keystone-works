@@ -213,6 +213,9 @@ export function* prepareSteps(
   };
 }
 
+/** The largest pitch shift, in semitones, emotion processing may apply to a line. */
+export const MAX_SHIFT = 2;
+
 export interface QueueSegment {
   /** Sentence index in the document. */
   i: number;
@@ -246,6 +249,12 @@ export interface QueueOptions {
   expressive?: boolean;
   /** Breaths before long sentences and emotional beats (default on). */
   breaths?: boolean;
+  /**
+   * Emotion processing (default off: Natural). On, a line's pitch is shifted and trailing or clipped
+   * endings are shaped after the voice has spoken. Off, the voice is played exactly as the model speaks it:
+   * pace goes to the model as its own speaking rate, and only loudness, pauses and breaths are added.
+   */
+  voiceProcessing?: boolean;
   from?: number;
   to?: number;
 }
@@ -338,8 +347,13 @@ export function buildQueue(doc: QueueSource, opts: QueueOptions): QueueSegment[]
     seg.pauseMs = p.pauseMs;
     if (rate !== 1) seg.rate = rate;
     if (p.gainDb !== 0) seg.gainDb = p.gainDb;
-    if (p.pitch !== 0) seg.pitch = Math.round(Math.min(4, Math.max(-4, p.pitch)) * 10) / 10;
-    if (p.ending) seg.ending = p.ending;
+    if (opts.voiceProcessing) {
+      // Larger shifts audibly damage the voice (AbProbeTest: -3 st cost 0.05 of harmonicity).
+      const pitch = Math.round(Math.min(MAX_SHIFT, Math.max(-MAX_SHIFT, p.pitch)) * 10) / 10;
+      if (pitch !== 0) seg.pitch = pitch;
+      if (p.ending) seg.ending = p.ending;
+    } else if (p.ending === 'cut') seg.ending = 'cut'; // a clean stop, no processing
+
     if (p.breath) seg.breath = true;
   });
   return out;

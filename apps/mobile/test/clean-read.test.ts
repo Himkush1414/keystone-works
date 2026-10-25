@@ -15,6 +15,7 @@ const SETTINGS: SessionSettings = {
   rewindOnResume: true,
   expressive: true,
   breaths: true,
+  voiceProcessing: false,
 };
 
 const line = (text: string, y: number) => ({ text, x: 72, y, width: 400, size: 11 });

@@ -340,6 +340,9 @@ export const pt: Catalog = {
     expressiveDesc: 'Sussurros, gritos e pausas acompanham a história',
     breaths: 'Respirações naturais',
     breathsDesc: 'Uma respiração suave antes de frases longas e momentos emocionantes',
+    voiceProcessing: 'Processamento de emoções',
+    voiceProcessingDesc:
+      'Muda o tom da voz para interpretar emoções e personagens. Desligado, a voz fica natural, exatamente como fala.',
     reduceMotion: 'Reduzir movimento',
     reduceMotionDesc: 'Usa transições suaves em vez de movimento. Segue o ajuste do sistema por padrão.',
     haptics: 'Retorno tátil',

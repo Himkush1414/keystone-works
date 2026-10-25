@@ -38,6 +38,7 @@ export type SessionSettings = Pick<
   | 'rewindOnResume'
   | 'expressive'
   | 'breaths'
+  | 'voiceProcessing'
 >;
 
 export interface SessionPlan {
@@ -116,6 +117,7 @@ export function queueContext(db: Db, documentId: string, settings: SessionSettin
     castMode: (item.settings.castMode ?? settings.castMode) as CastMode,
     expressive: settings.expressive,
     breaths: settings.breaths,
+    voiceProcessing: settings.voiceProcessing,
   };
   const meta = { docId: item.id, title: item.title, author: item.author, artworkUri: item.coverPath };
   const key = hashKey(

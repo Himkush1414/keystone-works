@@ -341,6 +341,9 @@ export const de: Catalog = {
     expressiveDesc: 'Flüstern, Rufen und Pausen folgen der Geschichte',
     breaths: 'Natürliches Atmen',
     breathsDesc: 'Ein leiser Atemzug vor langen Sätzen und bewegenden Momenten',
+    voiceProcessing: 'Emotionsbearbeitung',
+    voiceProcessingDesc:
+      'Verändert die Tonhöhe der Stimme, um Gefühle und Figuren zu spielen. Aus klingt die Stimme natürlich, genau wie sie spricht.',
     reduceMotion: 'Bewegung reduzieren',
     reduceMotionDesc: 'Nutzt Überblendungen statt Bewegung. Folgt standardmäßig der Systemeinstellung.',
     haptics: 'Haptisches Feedback',
