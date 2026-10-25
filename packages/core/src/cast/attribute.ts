@@ -274,8 +274,20 @@ const CONVERSATION_GAP = 3;
  * Detects dialogue across paragraphs and attributes speakers. `blocks` are paragraph texts in reading order;
  * non-paragraph blocks should be passed as empty strings so indices line up.
  */
-export function analyseCast(blocks: readonly string[], lang = 'en'): CastAnalysis {
-  const steps = castSteps(blocks, lang);
+/** A line whose speaker the listener has set: the quotation starting at `start` in paragraph `block`. */
+export interface FixedSpeaker {
+  block: number;
+  start: number;
+  /** The speaker's name as Cast knows it, or null for no one in particular. */
+  speaker: string | null;
+}
+
+export function analyseCast(
+  blocks: readonly string[],
+  lang = 'en',
+  fixed: readonly FixedSpeaker[] = [],
+): CastAnalysis {
+  const steps = castSteps(blocks, lang, fixed);
   for (;;) {
     const r = steps.next();
     if (r.done) return r.value;
@@ -289,8 +301,14 @@ const CAST_STEP = 200;
  * [analyseCast] in steps: the generator pauses every few hundred paragraphs, so a caller on the UI thread can
  * let the screen draw in between, and returns the analysis when done.
  */
-export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<void, CastAnalysis> {
+export function* castSteps(
+  blocks: readonly string[],
+  lang = 'en',
+  fixed: readonly FixedSpeaker[] = [],
+): Generator<void, CastAnalysis> {
   const base = lang.slice(0, 2);
+  // Lines the listener has set are taken as given, and the turns after them follow from them.
+  const fixedAt = new Map(fixed.map((f) => [`${f.block}:${f.start}`, f.speaker]));
   const pat = tagPatterns(base);
   const chars = new Map<string, Character>();
   const genderVotes = new Map<string, { f: number; m: number }>();
@@ -841,6 +859,16 @@ export function* castSteps(blocks: readonly string[], lang = 'en'): Generator<vo
       const found = findTag(after, before);
       const ambiguous =
         found?.tag.kind === 'pronoun' && pronounIsAmbiguous(found.tag, quote, lastSpeaker, namedHere);
+      const set = fixedAt.get(`${block}:${span.start}`);
+      if (set !== undefined) {
+        const id = set === null ? undefined : register(set);
+        if (id) {
+          touch(id);
+          paragraphSpeaker = { id, confidence: 1 };
+        }
+        local.push(id ? { span, id, confidence: 1 } : { span, confidence: 1 });
+        return;
+      }
       const id = found ? resolve(found.tag, quote, lastSpeaker, namedHere) : undefined;
       // "she asked" with two women in the scene: keep the guess, but below the threshold for a named voice.
       const confidence = ambiguous ? 0.6 : (found?.confidence ?? 0.8);

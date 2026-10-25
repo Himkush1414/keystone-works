@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { scoreBook, type BookScore } from './castEval';
+import { scoreBook, tapsToFix, type BookScore } from './castEval';
 import { CAST_BOOKS } from './fixtures/castBooks';
 
 const pct = (a: number, b: number) => `${b ? Math.round((a / b) * 100) : 0}%`.padStart(4);
@@ -21,5 +21,15 @@ describe('Cast on real books', () => {
     }
     process.stdout.write(`\n${rows.join('\n')}\n`);
     expect(sum('lines')).toBe(204);
+  });
+
+  it('fixes most of the rest with fewer taps than wrong lines, as a correction flips the guesses after it', () => {
+    const rows = CAST_BOOKS.map((b) => ({ id: b.id, ...tapsToFix(b) }));
+    process.stdout.write(
+      `\n${rows.map((r) => `${r.id.padEnd(22)} wrong ${String(r.wrong).padStart(2)}  taps to fix ${r.taps}`).join('\n')}\n`,
+    );
+    const wrong = rows.reduce((n, r) => n + r.wrong, 0);
+    const taps = rows.reduce((n, r) => n + r.taps, 0);
+    expect(taps).toBeLessThan(wrong);
   });
 });
