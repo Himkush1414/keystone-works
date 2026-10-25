@@ -34,9 +34,10 @@ object Performance {
      * Returns [samples] raised or lowered by [pitch] semitones and sped up by [rate], with [gainDb] applied
      * and, if [breath], a breath in front. [seed] makes the breath repeatable (use the sentence's own seed).
      *
-     * Pace is applied here rather than by the model: asked for another rate, the model renders a different
-     * take (its own pitch moved by up to ±2.3 semitones in DeliveryScanTest, swamping the line's emotion),
-     * and in Hindi it shortened mostly its silent padding, not the speech.
+     * With emotion processing on, pace is applied here with the pitch, rather than by the model: asked for
+     * another rate, the model renders a different take (its own pitch moved by up to ±2.3 semitones in
+     * DeliveryScanTest, swamping the line's emotion). In Natural mode the caller passes [pitch] 0 and
+     * [rate] 1 and the model sets the pace, so nothing here touches the voice but [gainDb].
      */
     fun apply(samples: FloatArray, sampleRate: Int, gainDb: Float, breath: Boolean, seed: Long, pitch: Float = 0f, rate: Float = 1f): FloatArray {
         val shifted = if (pitch == 0f && rate == 1f) samples else shiftPitch(samples, sampleRate, pitch, rate)

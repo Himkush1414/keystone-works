@@ -50,10 +50,11 @@ class SceneRenderTest {
         val out = ArrayList<Float>()
         pieces.forEachIndexed { k, p ->
             val last = k == pieces.lastIndex
-            val raw = engine.synthesize(p.text, p.lang, voices.getValue(l.voice), 8, 1.05f, continues = !last || l.ending == "cut")
+            val processed = l.pitch != 0f
+            val raw = engine.synthesize(p.text, p.lang, voices.getValue(l.voice), 8, if (processed) 1.05f else 1.05f * l.rate, continues = !last || l.ending == "cut")
             val trimmed = Chunks.trim(raw.samples, sr)
             val speech = if (last && l.ending != null) Performance.ending(trimmed, sr, l.ending) else trimmed
-            val performed = Performance.apply(speech, sr, l.gainDb, false, 0L, l.pitch, l.rate)
+            val performed = Performance.apply(speech, sr, l.gainDb, false, 0L, l.pitch, if (processed) l.rate else 1f)
             joiner.push(performed, p.gapMs, last).forEach(out::add)
             if (!last) repeat(p.gapMs * sr / 1000) { out.add(0f) }
         }
