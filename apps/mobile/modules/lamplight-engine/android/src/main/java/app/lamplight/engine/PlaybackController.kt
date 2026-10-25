@@ -167,6 +167,30 @@ class PlaybackController private constructor(private val context: Context) : Str
         return mapOf("rtf4" to r4, "rtf8" to r8, "liveSteps" to live, "studioSteps" to studio, "threads" to host.threads)
     }
 
+    /**
+     * One sample sentence for the Diagnostics A/B test, rendered as [kind]: "raw" (the model's output at the
+     * steps narration aims for, untouched), "natural" (the player's path, no emotion processing),
+     * "processed" (the player's path for a sad line with emotion processing on) or "old" (raw at 3 steps,
+     * the floor before 25 Oct). Returns the steps used and the samples.
+     */
+    fun renderSample(text: String, lang: String, kind: String): Pair<Int, FloatArray> {
+        val steps = if (kind == "old") 3 else targetSteps()
+        val voice = host.voice("F1")
+        val engine = host.engine()
+        if (kind == "raw" || kind == "old") return steps to engineLock.withLock { engine.synthesize(text, lang, voice, steps, BASE_RATE) }.samples
+        val style = if (kind == "processed") LineRender.Style(rate = 0.9f, gainDb = -2.5f, pitch = -1.5f) else LineRender.Style()
+        val pieces = Chunks.split(text, lang)
+        val joiner = Chunks.Joiner(SAMPLE_RATE)
+        val out = ArrayList<Float>()
+        pieces.forEachIndexed { k, p ->
+            val last = k == pieces.lastIndex
+            val raw = engineLock.withLock { engine.synthesize(p.text, p.lang, voice, steps, style.modelRate(BASE_RATE), LineRender.continues(last, style)) }
+            LineRender.piece(Chunks.trim(raw.samples, raw.sampleRate), raw.sampleRate, k, last, style, 0L, p.gapMs, joiner).forEach(out::add)
+            if (!last) repeat(p.gapMs * SAMPLE_RATE / 1000) { out.add(0f) }
+        }
+        return steps to out.toFloatArray()
+    }
+
     /** Steps the render-ahead aims for; [Pacing] goes lower (down to [ReadAhead.FLOOR_STEPS]) when it must to keep up. */
     private fun targetSteps(): Int = when (quality) {
         Quality.LIVE -> liveSteps

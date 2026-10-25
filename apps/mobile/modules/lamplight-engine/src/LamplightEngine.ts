@@ -1,5 +1,7 @@
 import { NativeModule, requireNativeModule } from 'expo';
 import type {
+  AbKind,
+  AbSample,
   Calibration,
   Diagnostics,
   EngineInfo,
@@ -42,6 +44,8 @@ declare class LamplightEngineModule extends NativeModule<LamplightEngineEvents> 
   setSystemBars(dark: boolean, background: string | null): Promise<void>;
   /** Speaks a short test sentence through the engine and the speaker. */
   runVoiceTest(): Promise<VoiceTest>;
+  /** Diagnostics A/B: one sample sentence, raw from the model or through the player; played and saved. */
+  abSample(kind: AbKind, lang: 'en' | 'hi'): Promise<AbSample>;
   lastPosition(): Promise<string | null>;
   cacheBytes(): Promise<number>;
   clearCache(): Promise<void>;
