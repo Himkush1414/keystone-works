@@ -137,12 +137,12 @@
    "i": 7,
    "text": "“Both of you, stop it,”",
    "lang": "en",
-   "voice": "F3",
+   "voice": "F2",
    "pauseMs": 301,
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -1.5,
-   "pitch": -2,
+   "pitch": -0.8,
    "ending": "trail"
   },
   {
@@ -160,12 +160,12 @@
    "i": 9,
    "text": "“Sit down, both of you.”",
    "lang": "en",
-   "voice": "F3",
+   "voice": "F2",
    "pauseMs": 988,
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -1.5,
-   "pitch": -2,
+   "pitch": -0.8,
    "ending": "trail"
   }
  ],
@@ -308,12 +308,12 @@
    "i": 5,
    "text": "“अँधेरा होने से पहले लौट आना,”",
    "lang": "hi",
-   "voice": "F3",
+   "voice": "F2",
    "pauseMs": 284,
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -2,
-   "pitch": -2,
+   "pitch": -0.9,
    "ending": "trail"
   },
   {

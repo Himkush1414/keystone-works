@@ -117,8 +117,23 @@ export function assignVoices(
             ? low + (high - low) * 0.75
             : undefined;
     const fit = (v: VoiceTraits) => (target === undefined ? -distance(v) : Math.abs(v.pitch - target));
+    // A voice near one already cast for someone of the same gender sounds like them: those come last.
+    const near = (v: VoiceTraits) =>
+      Object.entries(byCharacter).some(([id, vid]) => {
+        const o = byId.get(vid);
+        const g = characters.find((x) => x.id === id)?.gender ?? o?.gender;
+        return (
+          o && g === (c.gender ?? v.gender) && Math.abs(o.pitch - v.pitch) * SEMITONES_PER_UNIT < MIN_APART
+        );
+      })
+        ? 1
+        : 0;
     const pick = [...group].sort(
-      (a, b) => (uses.get(a.id) ?? 0) - (uses.get(b.id) ?? 0) || fit(a) - fit(b) || a.id.localeCompare(b.id),
+      (a, b) =>
+        (uses.get(a.id) ?? 0) - (uses.get(b.id) ?? 0) ||
+        near(a) - near(b) ||
+        fit(a) - fit(b) ||
+        a.id.localeCompare(b.id),
     )[0];
     if (pick) take(c.id, pick.id);
   }
