@@ -69,6 +69,8 @@ export interface BookScore {
   named: number;
   /** Right character with confidence enough for their own voice. */
   voiced: number;
+  /** Dialogue Cast found where no labelled line is: narration it would read as someone speaking. */
+  spurious: number;
 }
 
 /** Runs Cast on a book excerpt and checks the speaker of every gold line (found by its snippet, in order). */
@@ -82,12 +84,14 @@ export function scoreBook(book: BookExcerpt): BookScore {
   }
   const { characters, attributions } = analyseCast(paragraphs, book.lang);
   const byId = new Map(characters.map((c) => [c.id, c]));
-  const score: BookScore = { id: book.id, lines: 0, detected: 0, named: 0, voiced: 0 };
+  const score: BookScore = { id: book.id, lines: 0, detected: 0, named: 0, voiced: 0, spurious: 0 };
+  const anchors: number[] = [];
   let pos = 0;
   for (const [anchor, gold] of book.lines) {
     const i = book.text.indexOf(anchor, pos);
     if (i < 0) throw new Error(`${book.id}: snippet not found: ${anchor}`);
     pos = i + anchor.length;
+    anchors.push(i);
     if (!gold) continue;
     score.lines++;
     let block = starts.length - 1;
@@ -102,6 +106,11 @@ export function scoreBook(book: BookExcerpt): BookScore {
       score.named++;
       if (a.confidence >= NAMED_VOICE_CONFIDENCE) score.voiced++;
     }
+  }
+  for (const a of attributions) {
+    const from = (starts[a.block] ?? 0) + a.span.start - 1;
+    const to = (starts[a.block] ?? 0) + a.span.end;
+    if (!anchors.some((x) => x >= from && x < to)) score.spurious++;
   }
   return score;
 }
