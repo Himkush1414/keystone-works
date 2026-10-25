@@ -47,6 +47,9 @@ object Chunks {
     const val TRAIL_KEEP_MS = 60
     const val TRIM_FLOOR_DB = -50.0
     private const val TRIM_FRAME_MS = 5
+    private const val STRONG_BELOW_PEAK_DB = 30.0
+    /** Quiet 5 ms frames bridged while walking out from the speech (a brief dip inside a soft consonant). */
+    private const val BRIDGE_FRAMES = 2
 
     /** Overlap where two pieces meet with no pause between them (a language switch). */
     const val XFADE_MS = 30
@@ -116,14 +119,36 @@ object Chunks {
     fun trim(samples: FloatArray, sampleRate: Int): FloatArray {
         val n = sampleRate * TRIM_FRAME_MS / 1000
         val frames = samples.size / n
-        val floor = Performance.dbToGain(TRIM_FLOOR_DB).let { it * it }
-        fun loud(f: Int): Boolean {
+        if (frames == 0) return samples
+        val energy = DoubleArray(frames) { f ->
             var e = 0.0
             for (i in f * n until (f + 1) * n) e += samples[i] * samples[i]
-            return e / n > floor
+            e / n
         }
-        val first = (0 until frames).firstOrNull(::loud) ?: return samples
-        val last = (frames - 1 downTo first).first(::loud)
+        val floor = Performance.dbToGain(TRIM_FLOOR_DB).let { it * it }
+        // Speech proper: within 30 dB of the loudest frame (and at least -40 dB). The edges are then walked out
+        // from it through continuous sound above the floor, so a soft onset leading into a word is kept while a
+        // faint blip separated from the speech by near-silence (one rendered 130 ms early) is not.
+        val peak = energy.max()
+        val strong = maxOf(peak * Math.pow(10.0, -STRONG_BELOW_PEAK_DB / 10), Performance.dbToGain(-40.0).let { it * it }.toDouble())
+        val firstStrong = energy.indexOfFirst { it >= strong }
+        if (firstStrong < 0) return samples
+        val lastStrong = energy.indexOfLast { it >= strong }
+        fun walk(from: Int, step: Int): Int {
+            var edge = from
+            var quiet = 0
+            var f = from + step
+            while (f in 0 until frames) {
+                if (energy[f] > floor) {
+                    edge = f
+                    quiet = 0
+                } else if (++quiet > BRIDGE_FRAMES) break
+                f += step
+            }
+            return edge
+        }
+        val first = walk(firstStrong, -1)
+        val last = walk(lastStrong, 1)
         val lead = sampleRate * LEAD_KEEP_MS / 1000
         val trail = sampleRate * TRAIL_KEEP_MS / 1000
         val from = max(0, first * n - lead)

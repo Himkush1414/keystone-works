@@ -4,10 +4,9 @@
    "i": 0,
    "text": "“Are you coming tonight?”",
    "lang": "en",
-   "voice": "M5",
+   "voice": "F5",
    "pauseMs": 510,
-   "kind": "dialogue",
-   "pitch": 1
+   "kind": "dialogue"
   },
   {
    "i": 1,
@@ -51,10 +50,9 @@
    "i": 5,
    "text": "“Again?”",
    "lang": "en",
-   "voice": "M5",
+   "voice": "F5",
    "pauseMs": 300,
-   "kind": "dialogue",
-   "pitch": 1
+   "kind": "dialogue"
   },
   {
    "i": 6,
@@ -70,7 +68,7 @@
    "i": 0,
    "text": "“You promised me you would be there,”",
    "lang": "en",
-   "voice": "M2",
+   "voice": "F5",
    "pauseMs": 250,
    "kind": "dialogue"
   },
@@ -89,10 +87,9 @@
    "i": 2,
    "text": "“I said I would try,”",
    "lang": "en",
-   "voice": "M5",
+   "voice": "M2",
    "pauseMs": 250,
-   "kind": "dialogue",
-   "pitch": 1
+   "kind": "dialogue"
   },
   {
    "i": 3,
@@ -109,17 +106,16 @@
    "i": 4,
    "text": "“That is not the same thing, and you know—”",
    "lang": "en",
-   "voice": "M5",
+   "voice": "M2",
    "pauseMs": 40,
    "kind": "dialogue",
-   "pitch": 1,
    "ending": "cut"
   },
   {
    "i": 5,
    "text": "“It is exactly the same thing!”",
    "lang": "en",
-   "voice": "M2",
+   "voice": "F5",
    "pauseMs": 510,
    "kind": "dialogue",
    "rate": 1.03,
@@ -141,12 +137,12 @@
    "i": 7,
    "text": "“Both of you, stop it,”",
    "lang": "en",
-   "voice": "M3",
+   "voice": "F2",
    "pauseMs": 301,
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -1.5,
-   "pitch": 1.2,
+   "pitch": -0.8,
    "ending": "trail"
   },
   {
@@ -164,12 +160,12 @@
    "i": 9,
    "text": "“Sit down, both of you.”",
    "lang": "en",
-   "voice": "M3",
+   "voice": "F2",
    "pauseMs": 988,
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -1.5,
-   "pitch": 1.2,
+   "pitch": -0.8,
    "ending": "trail"
   }
  ],
@@ -312,12 +308,12 @@
    "i": 5,
    "text": "“अँधेरा होने से पहले लौट आना,”",
    "lang": "hi",
-   "voice": "F3",
+   "voice": "F2",
    "pauseMs": 284,
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -2,
-   "pitch": -2,
+   "pitch": -0.9,
    "ending": "trail"
   },
   {

@@ -73,6 +73,9 @@ class SceneRenderTest {
                 )
             }
             val audio = lines.map(::render)
+            if (System.getProperty("lamplight.probe") != null) audio.forEachIndexed { k, x ->
+                println("onset $name $k ${Silences.levels(x, sr).take(30).map { it.toInt() }}")
+            }
             val scene = ArrayList<Float>()
             val pitchByVoice = LinkedHashMap<String, MutableList<Double>>()
             audio.forEachIndexed { k, a ->
@@ -83,7 +86,11 @@ class SceneRenderTest {
                 a.forEach(scene::add)
                 if (k < audio.lastIndex) {
                     repeat(l.pauseMs * sr / 1000) { scene.add(0f) }
-                    val heard = Silences.edges(a, sr).second + l.pauseMs + Silences.edges(audio[k + 1], sr).first
+                    // Silence as the trimmer sees it: anything above its floor is sound (a soft nasal onset like
+                    // "अँ" sits between -50 and -45 dB, and is speech, not a gap).
+                    val tail = Silences.edges(a, sr, Chunks.TRIM_FLOOR_DB).second
+                    val onset = Silences.edges(audio[k + 1], sr, Chunks.TRIM_FLOOR_DB).first
+                    val heard = tail + l.pauseMs + onset
                     // TURN in perform/plan.ts: interrupt 40, quick 300, gap 520 (before a character's pause scale).
                     val tag = when {
                         l.ending == "cut" -> "interrupted"
@@ -91,7 +98,9 @@ class SceneRenderTest {
                         l.pauseMs == 520 -> "hand-over"
                         else -> ""
                     }
-                    if (tag.isNotEmpty()) println("scene  %-16s %-16s %4d ms heard  after \"%s\"".format(name, tag, heard, l.text.takeLast(40)))
+                    if (tag.isNotEmpty()) println("scene  %-16s %-16s %4d ms heard (tail %d + pause %d + onset %d)  after \"%s\"".format(
+                        name, tag, heard, tail, l.pauseMs, onset, l.text.takeLast(40),
+                    ))
                     if (tag == "interrupted") assertTrue(heard <= 120, "$name: interruption heard as $heard ms")
                     if (tag == "hand-over") assertTrue(heard in 520..720, "$name: hand-over heard as $heard ms")
                     if (tag == "quick hand-over") assertTrue(heard in 300..500, "$name: quick hand-over heard as $heard ms")
