@@ -61,9 +61,10 @@ class Supertonic(
     /**
      * Synthesises [text] (already normalised for speech) in [lang] with [voice] using [steps] flow-matching
      * steps. [rate] is the speaking rate baked into the audio; playback speed is applied by the player.
+     * [continues] is set for a piece that its sentence goes on after (see [Prepare.forModel]).
      */
-    fun synthesize(text: String, lang: String, voice: VoiceStyle, steps: Int, rate: Float = 1.05f): Synthesis {
-        val prepared = Prepare.forModel(text, lang)
+    fun synthesize(text: String, lang: String, voice: VoiceStyle, steps: Int, rate: Float = 1.05f, continues: Boolean = false): Synthesis {
+        val prepared = Prepare.forModel(text, lang, continues)
         val (ids, dropped) = tokenize(prepared)
         val n = ids.size.toLong()
         val opened = ArrayList<AutoCloseable>()

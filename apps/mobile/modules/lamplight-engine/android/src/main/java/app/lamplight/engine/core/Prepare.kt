@@ -28,7 +28,13 @@ object Prepare {
     private val spaces = Regex("\\s+")
     private val finalPunct = Regex("[.!?;:,'\")\\]}…。」』】〉》›»]$")
 
-    fun forModel(text: String, lang: String): String {
+    private val trailingDash = Regex("\\s*-$")
+
+    /**
+     * [continues] marks a piece that the rest of its sentence follows: it ends on a comma, not the full stop
+     * the reference adds, so the model doesn't drop its pitch and close the sentence mid-way.
+     */
+    fun forModel(text: String, lang: String, continues: Boolean = false): String {
         val base = lang.take(2).let { if (it in MODEL_LANGUAGES) it else "en" }
         var t = Normalizer.normalize(text, Normalizer.Form.NFKD).replace(emoji, "")
         for ((re, to) in replacements) t = t.replace(re, to)
@@ -37,7 +43,8 @@ object Prepare {
             .replace(doubleApostrophes, "'")
             .replace(spaces, " ")
             .trim()
-        if (t.isNotEmpty() && !finalPunct.containsMatchIn(t)) t += "."
+        if (continues) t = t.replace(trailingDash, "")
+        if (t.isNotEmpty() && !finalPunct.containsMatchIn(t)) t += if (continues) "," else "."
         return "<$base>$t</$base>"
     }
 }

@@ -1,6 +1,10 @@
 package app.lamplight.engine.core
 
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sin
 
 /** A stretch of a sentence in one voice language, as packages/core `languageRuns` hands it over. */
 data class Run(val text: String, val lang: String)
@@ -22,16 +26,30 @@ object Chunks {
     const val MAX = 240
     private const val MIN = 24
 
-    /** Silence after a cut, by the punctuation it follows. */
-    const val COMMA_GAP_MS = 90
-    const val CLAUSE_GAP_MS = 180
-    const val DASH_GAP_MS = 140
+    /**
+     * Silence added after a cut, by the punctuation it follows. Each piece keeps [LEAD_KEEP_MS] + [TRAIL_KEEP_MS]
+     * of its own quiet edges, so the listener hears about 90 ms more than this: a comma lands near the
+     * 300–440 ms the model leaves at a comma inside a whole sentence (measured in GapScanTest).
+     */
+    const val COMMA_GAP_MS = 190
+    const val CLAUSE_GAP_MS = 290
+    const val DASH_GAP_MS = 160
 
-    /** Between two languages with no punctuation: just enough to keep the words apart. */
-    const val SWITCH_GAP_MS = 30
+    /** Between two languages with no punctuation: none added; the pieces overlap by [XFADE_MS] instead. */
+    const val SWITCH_GAP_MS = 0
 
-    /** Fade at each cut, so pieces join without a click. */
-    const val EDGE_MS = 4
+    /**
+     * Every render starts with 0.3–0.65 s and ends with 0.35–0.75 s of near-silence (about −105 dBFS) that
+     * the model pads its output with. Left in, two pieces met with over a second of silence mid-sentence.
+     * [trim] keeps this much of each edge below [TRIM_FLOOR_DB]: room for a soft onset and the release.
+     */
+    const val LEAD_KEEP_MS = 30
+    const val TRAIL_KEEP_MS = 60
+    const val TRIM_FLOOR_DB = -50.0
+    private const val TRIM_FRAME_MS = 5
+
+    /** Overlap where two pieces meet with no pause between them (a language switch). */
+    const val XFADE_MS = 30
 
     fun split(text: String, lang: String, runs: List<Run>? = null): List<Piece> {
         val parts = runs?.filter { it.text.isNotBlank() }?.takeIf { it.isNotEmpty() } ?: listOf(Run(text, lang))
@@ -90,17 +108,62 @@ object Chunks {
         else -> 0
     }
 
-    /** Short fades at both ends of a piece that sits next to another; a whole sentence is left untouched. */
-    fun fadeEdges(samples: FloatArray, sampleRate: Int, fadeIn: Boolean, fadeOut: Boolean): FloatArray {
-        if (!fadeIn && !fadeOut) return samples
-        val n = min(samples.size / 2, sampleRate * EDGE_MS / 1000)
-        if (n <= 0) return samples
-        val out = samples.copyOf()
-        for (i in 0 until n) {
-            val g = i.toFloat() / n
-            if (fadeIn) out[i] *= g
-            if (fadeOut) out[out.size - 1 - i] *= g
+    /**
+     * [samples] without the model's silent padding: from [LEAD_KEEP_MS] before the first 5 ms frame above
+     * [TRIM_FLOOR_DB] to [TRAIL_KEEP_MS] after the last, with the kept edges faded so nothing clicks.
+     * Audio with no frame above the floor is returned unchanged.
+     */
+    fun trim(samples: FloatArray, sampleRate: Int): FloatArray {
+        val n = sampleRate * TRIM_FRAME_MS / 1000
+        val frames = samples.size / n
+        val floor = Performance.dbToGain(TRIM_FLOOR_DB).let { it * it }
+        fun loud(f: Int): Boolean {
+            var e = 0.0
+            for (i in f * n until (f + 1) * n) e += samples[i] * samples[i]
+            return e / n > floor
         }
+        val first = (0 until frames).firstOrNull(::loud) ?: return samples
+        val last = (frames - 1 downTo first).first(::loud)
+        val lead = sampleRate * LEAD_KEEP_MS / 1000
+        val trail = sampleRate * TRAIL_KEEP_MS / 1000
+        val from = max(0, first * n - lead)
+        val to = min(samples.size, (last + 1) * n + trail)
+        val out = samples.copyOfRange(from, to)
+        val fadeIn = first * n - from
+        for (i in 0 until fadeIn) out[i] *= i.toFloat() / fadeIn
+        val fadeOut = to - (last + 1) * n
+        for (i in 0 until fadeOut) out[out.size - 1 - i] *= i.toFloat() / fadeOut
         return out
+    }
+
+    /**
+     * Joins a sentence's pieces as they're made. A piece followed by no pause hands its last [XFADE_MS] to
+     * the next one, which fades in over it, so a language switch runs on like one breath. Pieces with a
+     * pause after them pass through whole.
+     */
+    class Joiner(private val sampleRate: Int) {
+        private var held: FloatArray? = null
+
+        fun push(samples: FloatArray, gapMs: Int, last: Boolean): FloatArray {
+            val body = held?.let { overlap(it, samples) } ?: samples
+            held = null
+            if (last || gapMs > 0) return body
+            val n = min(sampleRate * XFADE_MS / 1000, body.size / 2)
+            held = body.copyOfRange(body.size - n, body.size)
+            return body.copyOfRange(0, body.size - n)
+        }
+
+        private fun overlap(tail: FloatArray, next: FloatArray): FloatArray {
+            val n = min(tail.size, next.size)
+            val out = FloatArray(next.size + tail.size - n)
+            tail.copyInto(out)
+            for (i in 0 until n) {
+                // Equal-power: the two voices are unrelated signals, so their powers add.
+                val g = (PI / 2 * (i + 0.5) / n)
+                out[i] = tail[i] * cos(g).toFloat() + next[i] * sin(g).toFloat()
+            }
+            next.copyInto(out, tail.size, n, next.size)
+            return out
+        }
     }
 }
