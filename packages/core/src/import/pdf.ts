@@ -250,8 +250,21 @@ export function buildPdfDocument(
     if (a && b && a.page === b.page && b.y > a.y) gaps.push(b.y - a.y);
   }
   const lineGap = median(gaps) || bodySize * 1.2;
-  const leftEdge = median(body.map((r) => r.x));
   const columnWidth = median(body.map((r) => r.width));
+  const exactSizes = body.filter((r) => Math.abs(r.size - bodySize) <= 0.3).length >= body.length * 0.8;
+  // Where a line's column starts: the smallest line start that recurs in the document (a column's edge, seen
+  // on many lines) within an indent's reach to its left. A one-off start (a navigation line, a centred word)
+  // never counts, so it can't make every ordinary line look indented.
+  const startCounts = new Map<number, number>();
+  for (const r of body) startCounts.set(Math.round(r.x), (startCounts.get(Math.round(r.x)) ?? 0) + 1);
+  const recurring = [...startCounts]
+    .filter(([, n]) => n >= Math.max(3, body.length * 0.05))
+    .map(([x]) => x)
+    .sort((a, b) => a - b);
+  const columnLeft = (r: Row) => {
+    const x = Math.round(r.x);
+    return recurring.find((s) => s <= x && s >= x - columnWidth * 0.3) ?? x;
+  };
 
   const headingSizes = [
     ...new Set(body.filter((r) => r.size >= bodySize * 1.18).map((r) => Math.round(r.size))),
@@ -288,16 +301,24 @@ export function buildPdfDocument(
       continue;
     }
     const isHeading = r.size >= bodySize * 1.18 && r.text.length < 140 && !/[.;,]$/.test(r.text.trim());
+    const indent = r.x - columnLeft(r);
+    const endsSentence = prev ? /[.!?:”"’)।॥]$/u.test(prev.text.trim()) : true;
+    const nextColumn =
+      !!prev && prev.page === r.page && r.y < prev.y - lineGap * 0.5 && r.x > prev.x + columnWidth * 0.5;
     const startsNew =
       !current ||
       !prev ||
       current.heading !== isHeading ||
       (isHeading && Math.abs(r.size - current.size) > 0.5) ||
-      (prev.page === r.page && r.y - prev.y > lineGap * 1.55) ||
-      (prev.page === r.page && r.y < prev.y - lineGap * 0.5 && r.x > prev.x + columnWidth * 0.5) || // next column
-      (!isHeading && r.x > leftEdge + bodySize * 1.2 && r.x < leftEdge + columnWidth * 0.3) || // first-line indent
+      // A byline, caption or pull quote set at another size than the text around it (only where sizes are
+      // exact: OCR guesses a size per line, 15-19 pt for one body text).
+      (exactSizes && !isHeading && Math.abs(r.size - prev.size) > bodySize * 0.08) ||
+      (prev.page === r.page && r.y - prev.y > lineGap * 1.35) ||
+      // The next column continues the paragraph unless the last one ended a sentence there.
+      (nextColumn && (endsSentence || indent > bodySize * 0.5)) ||
+      (!isHeading && indent > bodySize * 0.5 && indent < columnWidth * 0.3) || // first-line indent
       // A short line ending a sentence ends its paragraph (। and ॥ end sentences in Devanagari).
-      (!isHeading && /[.!?:”"’)।॥]$/u.test(prev.text.trim()) && prev.width < columnWidth * 0.8);
+      (!isHeading && endsSentence && prev.width < columnWidth * 0.8);
     if (startsNew) {
       flush();
       current = { text: r.text, page: r.page, size: r.size, heading: isHeading };
