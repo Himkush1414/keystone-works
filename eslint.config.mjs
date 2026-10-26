@@ -14,6 +14,7 @@ export default tseslint.config(
       'apps/mobile/android/**',
       'apps/mobile/ios/**',
       '_private/**',
+      'apps/web/next-env.d.ts',
     ],
   },
   js.configs.recommended,
@@ -26,6 +27,10 @@ export default tseslint.config(
       'no-console': ['error', { allow: ['warn', 'error'] }],
       eqeqeq: ['error', 'always', { null: 'ignore' }],
     },
+  },
+  {
+    files: ['apps/web/**/*.{ts,tsx}'],
+    languageOptions: { globals: { ...globals.browser } },
   },
   {
     files: ['tooling/**/*.mjs'],

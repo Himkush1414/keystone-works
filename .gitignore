@@ -54,3 +54,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 *.swp
+
+# Next.js generates this on every build
+apps/web/next-env.d.ts
