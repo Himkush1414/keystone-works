@@ -54,6 +54,15 @@ object Chunks {
     /** Overlap where two pieces meet with no pause between them (a language switch). */
     const val XFADE_MS = 30
 
+    /**
+     * The end of a line, kept as it dies away ([release]): sound is followed down to [RELEASE_FLOOR_DB] (the last
+     * word's decay and the breath after it, which [TRIM_FLOOR_DB] cuts) for at most [RELEASE_MAX_MS], then
+     * faded over [RELEASE_FADE_MS]. The player takes the extra length out of the pause that follows.
+     */
+    const val RELEASE_FLOOR_DB = -62.0
+    const val RELEASE_MAX_MS = 240
+    const val RELEASE_FADE_MS = 40
+
     fun split(text: String, lang: String, runs: List<Run>? = null): List<Piece> {
         val parts = runs?.filter { it.text.isNotBlank() }?.takeIf { it.isNotEmpty() } ?: listOf(Run(text, lang))
         val out = ArrayList<Piece>()
@@ -116,7 +125,19 @@ object Chunks {
      * [TRIM_FLOOR_DB] to [TRAIL_KEEP_MS] after the last, with the kept edges faded so nothing clicks.
      * Audio with no frame above the floor is returned unchanged.
      */
-    fun trim(samples: FloatArray, sampleRate: Int): FloatArray {
+    fun trim(samples: FloatArray, sampleRate: Int): FloatArray = cut(samples, sampleRate, release = false)
+
+    /**
+     * [trim], except that the end follows the sound further down, to [RELEASE_FLOOR_DB], so a line finishes its
+     * last word and breath before the next voice comes in. Measured in TurnProbeTest.
+     */
+    fun release(samples: FloatArray, sampleRate: Int): FloatArray = cut(samples, sampleRate, release = true)
+
+    /** How much longer [release] keeps the end than [trim] would, in samples. */
+    fun releaseExtra(samples: FloatArray, sampleRate: Int): Int =
+        cut(samples, sampleRate, true).size - cut(samples, sampleRate, false).size
+
+    private fun cut(samples: FloatArray, sampleRate: Int, release: Boolean): FloatArray {
         val n = sampleRate * TRIM_FRAME_MS / 1000
         val frames = samples.size / n
         if (frames == 0) return samples
@@ -134,12 +155,12 @@ object Chunks {
         val firstStrong = energy.indexOfFirst { it >= strong }
         if (firstStrong < 0) return samples
         val lastStrong = energy.indexOfLast { it >= strong }
-        fun walk(from: Int, step: Int): Int {
+        fun walk(from: Int, step: Int, below: Float): Int {
             var edge = from
             var quiet = 0
             var f = from + step
             while (f in 0 until frames) {
-                if (energy[f] > floor) {
+                if (energy[f] > below) {
                     edge = f
                     quiet = 0
                 } else if (++quiet > BRIDGE_FRAMES) break
@@ -147,16 +168,26 @@ object Chunks {
             }
             return edge
         }
-        val first = walk(firstStrong, -1)
-        val last = walk(lastStrong, 1)
+        val first = walk(firstStrong, -1, floor)
+        val last = walk(lastStrong, 1, floor)
         val lead = sampleRate * LEAD_KEEP_MS / 1000
         val trail = sampleRate * TRAIL_KEEP_MS / 1000
         val from = max(0, first * n - lead)
-        val to = min(samples.size, (last + 1) * n + trail)
+        var to = min(samples.size, (last + 1) * n + trail)
+        var fadeOut = to - (last + 1) * n
+        if (release) {
+            // Follow the decay below the trim floor, never further than RELEASE_MAX_MS past the speech.
+            val quiet = Performance.dbToGain(RELEASE_FLOOR_DB).let { it * it }
+            val limit = min(frames - 1, last + RELEASE_MAX_MS / TRIM_FRAME_MS)
+            var end = last
+            while (end < limit && energy[end + 1] > quiet) end++
+            val fade = sampleRate * RELEASE_FADE_MS / 1000
+            to = max(to, min(samples.size, (end + 1) * n + fade))
+            fadeOut = max(fadeOut, min(fade, to - (last + 1) * n))
+        }
         val out = samples.copyOfRange(from, to)
         val fadeIn = first * n - from
         for (i in 0 until fadeIn) out[i] *= i.toFloat() / fadeIn
-        val fadeOut = to - (last + 1) * n
         for (i in 0 until fadeOut) out[out.size - 1 - i] *= i.toFloat() / fadeOut
         return out
     }
