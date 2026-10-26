@@ -55,8 +55,10 @@ export function splitLong(text: string): { text: string; gapMs: number }[] {
 /**
  * Cuts the model's silent padding: keeps speech from the first to the last 5 ms frame within 30 dB of the
  * loudest (walked out through sound above -50 dB), plus 30 ms before and 60 ms after, faded (Chunks.trim).
+ * With `release`, the end follows the decay down to -62 dB for at most 240 ms and fades over 40 ms
+ * (Chunks.release), so a line finishes its last word and breath.
  */
-export function trim(samples: Float32Array, rate: number): Float32Array {
+export function trim(samples: Float32Array, rate: number, release = false): Float32Array {
   const n = Math.round((rate * 5) / 1000);
   const frames = Math.floor(samples.length / n);
   if (!frames) return samples;
@@ -85,11 +87,20 @@ export function trim(samples: Float32Array, rate: number): Float32Array {
   const first = walk(firstStrong, -1);
   const last = walk(lastStrong, 1);
   const from = Math.max(0, first * n - Math.round(rate * 0.03));
-  const to = Math.min(samples.length, (last + 1) * n + Math.round(rate * 0.06));
+  let to = Math.min(samples.length, (last + 1) * n + Math.round(rate * 0.06));
+  let fadeOut = to - (last + 1) * n;
+  if (release) {
+    const quiet = 10 ** (-62 / 10);
+    const limit = Math.min(frames - 1, last + 240 / 5);
+    let end = last;
+    while (end < limit && (energy[end + 1] ?? 0) > quiet) end++;
+    const fade = Math.trunc((rate * 40) / 1000);
+    to = Math.max(to, Math.min(samples.length, (end + 1) * n + fade));
+    fadeOut = Math.max(fadeOut, Math.min(fade, to - (last + 1) * n));
+  }
   const out = samples.slice(from, to);
   const fadeIn = first * n - from;
   for (let i = 0; i < fadeIn; i++) out[i] = (out[i] ?? 0) * (i / fadeIn);
-  const fadeOut = to - (last + 1) * n;
   for (let i = 0; i < fadeOut; i++) out[out.length - 1 - i] = (out[out.length - 1 - i] ?? 0) * (i / fadeOut);
   return out;
 }

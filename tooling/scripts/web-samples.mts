@@ -60,8 +60,6 @@ const SAMPLES: SampleSpec[] = [
     year: 1865,
     narrator: 'F2',
     source: 'Project Gutenberg eBook #11, the opening of Chapter 7.',
-    // “No room! No room!” they cried out: the Hatter and the March Hare together, not the sleeping Dormouse.
-    fixes: { lines: { 'No room!': null } },
   },
   {
     id: 'idgah',
@@ -83,9 +81,6 @@ const SAMPLES: SampleSpec[] = [
     narrator: 'M1',
     source:
       'Wikisource, Saptasaroj. Abridged; spelling modernised and the dialogue punctuated with quotation marks.',
-    // Cast takes the stick (लाठी) for the speaker of "लाठी पटक दी और दम लेकर बोली" and has no gender for
-    // अलगू, whose verbs here all take ने; both corrected as a listener would.
-    fixes: { lines: { 'बेटा, तुम भी': 'खाला' }, voices: { अलगू: 'M2' } },
   },
 ];
 
@@ -155,7 +150,8 @@ async function render(spec: SampleSpec, engine: SupertonicEngine, voices: Return
     const start = (length / rate) * 1000;
     if (seg.text.trim()) {
       const gain = 10 ** ((seg.gainDb ?? 0) / 20);
-      for (const piece of splitLong(seg.text)) {
+      const pieces = splitLong(seg.text);
+      for (const [k, piece] of pieces.entries()) {
         const r = await engine.synthesize({
           text: piece.text,
           lang: seg.lang,
@@ -165,7 +161,8 @@ async function render(spec: SampleSpec, engine: SupertonicEngine, voices: Return
         });
         rate = r.sampleRate;
         if (r.dropped.length) console.warn(`  ${spec.id}: dropped ${r.dropped.join('')}`);
-        const audio = trim(r.samples, rate);
+        // As the player does: the line's last piece ends as it dies away when the queue asks for it.
+        const audio = trim(r.samples, rate, !!seg.release && k === pieces.length - 1);
         if (gain !== 1) for (let i = 0; i < audio.length; i++) audio[i] = (audio[i] ?? 0) * gain;
         push(audio);
         if (piece.gapMs) silence(piece.gapMs);
