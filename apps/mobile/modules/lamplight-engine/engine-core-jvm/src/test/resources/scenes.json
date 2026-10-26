@@ -5,19 +5,22 @@
    "text": "“Are you coming tonight?”",
    "lang": "en",
    "voice": "F5",
-   "pauseMs": 510,
-   "kind": "dialogue"
+   "pauseMs": 540,
+   "kind": "dialogue",
+   "release": true
   },
   {
    "i": 1,
    "text": "Anna asked.",
    "lang": "en",
    "voice": "F1",
-   "pauseMs": 300,
+   "pauseMs": 270,
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "turn": "quick",
+   "release": true
   },
   {
    "i": 2,
@@ -25,7 +28,8 @@
    "lang": "en",
    "voice": "M2",
    "pauseMs": 250,
-   "kind": "dialogue"
+   "kind": "dialogue",
+   "release": true
   },
   {
    "i": 3,
@@ -36,31 +40,109 @@
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "release": true
   },
   {
    "i": 4,
    "text": "“I have to work late again.”",
    "lang": "en",
    "voice": "M2",
-   "pauseMs": 300,
-   "kind": "dialogue"
+   "pauseMs": 280,
+   "kind": "dialogue",
+   "turn": "quick",
+   "release": true
   },
   {
    "i": 5,
    "text": "“Again?”",
    "lang": "en",
    "voice": "F5",
-   "pauseMs": 300,
-   "kind": "dialogue"
+   "pauseMs": 280,
+   "kind": "dialogue",
+   "turn": "quick",
+   "release": true
   },
   {
    "i": 6,
    "text": "“Again.”",
    "lang": "en",
    "voice": "M2",
-   "pauseMs": 760,
-   "kind": "dialogue"
+   "pauseMs": 720,
+   "kind": "dialogue",
+   "release": true
+  }
+ ],
+ "en-two~natural": [
+  {
+   "i": 0,
+   "text": "“Are you coming tonight?”",
+   "lang": "en",
+   "voice": "F5",
+   "pauseMs": 540,
+   "kind": "dialogue",
+   "release": true
+  },
+  {
+   "i": 1,
+   "text": "Anna asked.",
+   "lang": "en",
+   "voice": "F1",
+   "pauseMs": 270,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "turn": "quick",
+   "release": true
+  },
+  {
+   "i": 2,
+   "text": "“I can’t,”",
+   "lang": "en",
+   "voice": "M2",
+   "pauseMs": 250,
+   "kind": "dialogue",
+   "release": true
+  },
+  {
+   "i": 3,
+   "text": "said Tom.",
+   "lang": "en",
+   "voice": "F1",
+   "pauseMs": 450,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "release": true
+  },
+  {
+   "i": 4,
+   "text": "“I have to work late again.”",
+   "lang": "en",
+   "voice": "M2",
+   "pauseMs": 280,
+   "kind": "dialogue",
+   "turn": "quick",
+   "release": true
+  },
+  {
+   "i": 5,
+   "text": "“Again?”",
+   "lang": "en",
+   "voice": "F5",
+   "pauseMs": 280,
+   "kind": "dialogue",
+   "turn": "quick",
+   "release": true
+  },
+  {
+   "i": 6,
+   "text": "“Again.”",
+   "lang": "en",
+   "voice": "M2",
+   "pauseMs": 720,
+   "kind": "dialogue",
+   "release": true
   }
  ],
  "en-argument": [
@@ -69,38 +151,43 @@
    "text": "“You promised me you would be there,”",
    "lang": "en",
    "voice": "F5",
-   "pauseMs": 250,
-   "kind": "dialogue"
+   "pauseMs": 270,
+   "kind": "dialogue",
+   "release": true
   },
   {
    "i": 1,
    "text": "said Maya.",
    "lang": "en",
    "voice": "F1",
-   "pauseMs": 520,
+   "pauseMs": 420,
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "turn": "reply",
+   "release": true
   },
   {
    "i": 2,
    "text": "“I said I would try,”",
    "lang": "en",
    "voice": "M2",
-   "pauseMs": 250,
-   "kind": "dialogue"
+   "pauseMs": 260,
+   "kind": "dialogue",
+   "release": true
   },
   {
    "i": 3,
    "text": "Ravi said.",
    "lang": "en",
    "voice": "F1",
-   "pauseMs": 450,
+   "pauseMs": 430,
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "release": true
   },
   {
    "i": 4,
@@ -109,64 +196,180 @@
    "voice": "M2",
    "pauseMs": 40,
    "kind": "dialogue",
-   "ending": "cut"
+   "ending": "cut",
+   "turn": "interrupt"
   },
   {
    "i": 5,
    "text": "“It is exactly the same thing!”",
    "lang": "en",
    "voice": "F5",
-   "pauseMs": 510,
+   "pauseMs": 530,
    "kind": "dialogue",
    "rate": 1.03,
    "gainDb": 2.5,
-   "pitch": 1.7
+   "pitch": 1.7,
+   "release": true
   },
   {
    "i": 6,
    "text": "Maya shouted.",
    "lang": "en",
    "voice": "F1",
-   "pauseMs": 520,
+   "pauseMs": 890,
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "turn": "heavy",
+   "release": true
   },
   {
    "i": 7,
    "text": "“Both of you, stop it,”",
    "lang": "en",
    "voice": "F2",
-   "pauseMs": 301,
+   "pauseMs": 310,
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -1.5,
    "pitch": -0.8,
-   "ending": "trail"
+   "ending": "trail",
+   "release": true
   },
   {
    "i": 8,
    "text": "said Grandmother quietly.",
    "lang": "en",
    "voice": "F1",
-   "pauseMs": 450,
+   "pauseMs": 410,
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "release": true
   },
   {
    "i": 9,
    "text": "“Sit down, both of you.”",
    "lang": "en",
    "voice": "F2",
-   "pauseMs": 988,
+   "pauseMs": 980,
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -1.5,
    "pitch": -0.8,
-   "ending": "trail"
+   "ending": "trail",
+   "release": true
+  }
+ ],
+ "en-argument~natural": [
+  {
+   "i": 0,
+   "text": "“You promised me you would be there,”",
+   "lang": "en",
+   "voice": "F5",
+   "pauseMs": 270,
+   "kind": "dialogue",
+   "release": true
+  },
+  {
+   "i": 1,
+   "text": "said Maya.",
+   "lang": "en",
+   "voice": "F1",
+   "pauseMs": 420,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "turn": "reply",
+   "release": true
+  },
+  {
+   "i": 2,
+   "text": "“I said I would try,”",
+   "lang": "en",
+   "voice": "M2",
+   "pauseMs": 260,
+   "kind": "dialogue",
+   "release": true
+  },
+  {
+   "i": 3,
+   "text": "Ravi said.",
+   "lang": "en",
+   "voice": "F1",
+   "pauseMs": 430,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "release": true
+  },
+  {
+   "i": 4,
+   "text": "“That is not the same thing, and you know—”",
+   "lang": "en",
+   "voice": "M2",
+   "pauseMs": 40,
+   "kind": "dialogue",
+   "ending": "cut",
+   "turn": "interrupt"
+  },
+  {
+   "i": 5,
+   "text": "“It is exactly the same thing!”",
+   "lang": "en",
+   "voice": "F5",
+   "pauseMs": 530,
+   "kind": "dialogue",
+   "rate": 1.03,
+   "gainDb": 2.5,
+   "release": true
+  },
+  {
+   "i": 6,
+   "text": "Maya shouted.",
+   "lang": "en",
+   "voice": "F1",
+   "pauseMs": 890,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "turn": "heavy",
+   "release": true
+  },
+  {
+   "i": 7,
+   "text": "“Both of you, stop it,”",
+   "lang": "en",
+   "voice": "F2",
+   "pauseMs": 310,
+   "kind": "dialogue",
+   "rate": 0.87,
+   "gainDb": -1.5,
+   "release": true
+  },
+  {
+   "i": 8,
+   "text": "said Grandmother quietly.",
+   "lang": "en",
+   "voice": "F1",
+   "pauseMs": 410,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "release": true
+  },
+  {
+   "i": 9,
+   "text": "“Sit down, both of you.”",
+   "lang": "en",
+   "voice": "F2",
+   "pauseMs": 980,
+   "kind": "dialogue",
+   "rate": 0.87,
+   "gainDb": -1.5,
+   "release": true
   }
  ],
  "en-narrator-one": [
@@ -175,43 +378,97 @@
    "text": "The old man looked out at the sea for a long time.",
    "lang": "en",
    "voice": "F1",
-   "pauseMs": 370,
-   "kind": "narration"
+   "pauseMs": 340,
+   "kind": "narration",
+   "release": true
   },
   {
    "i": 1,
    "text": "The boats were coming in, one by one.",
    "lang": "en",
    "voice": "F1",
-   "pauseMs": 760,
-   "kind": "narration"
+   "pauseMs": 800,
+   "kind": "narration",
+   "release": true
   },
   {
    "i": 2,
    "text": "“They always come back,”",
    "lang": "en",
    "voice": "M2",
-   "pauseMs": 250,
-   "kind": "dialogue"
+   "pauseMs": 240,
+   "kind": "dialogue",
+   "release": true
   },
   {
    "i": 3,
    "text": "the old man said at last.",
    "lang": "en",
    "voice": "F1",
-   "pauseMs": 450,
+   "pauseMs": 480,
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "release": true
   },
   {
    "i": 4,
    "text": "“Every evening, they come back.”",
    "lang": "en",
    "voice": "M2",
-   "pauseMs": 760,
-   "kind": "dialogue"
+   "pauseMs": 770,
+   "kind": "dialogue",
+   "release": true
+  }
+ ],
+ "en-narrator-one~natural": [
+  {
+   "i": 0,
+   "text": "The old man looked out at the sea for a long time.",
+   "lang": "en",
+   "voice": "F1",
+   "pauseMs": 340,
+   "kind": "narration",
+   "release": true
+  },
+  {
+   "i": 1,
+   "text": "The boats were coming in, one by one.",
+   "lang": "en",
+   "voice": "F1",
+   "pauseMs": 800,
+   "kind": "narration",
+   "release": true
+  },
+  {
+   "i": 2,
+   "text": "“They always come back,”",
+   "lang": "en",
+   "voice": "M2",
+   "pauseMs": 240,
+   "kind": "dialogue",
+   "release": true
+  },
+  {
+   "i": 3,
+   "text": "the old man said at last.",
+   "lang": "en",
+   "voice": "F1",
+   "pauseMs": 480,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "release": true
+  },
+  {
+   "i": 4,
+   "text": "“Every evening, they come back.”",
+   "lang": "en",
+   "voice": "M2",
+   "pauseMs": 770,
+   "kind": "dialogue",
+   "release": true
   }
  ],
  "en-whisper": [
@@ -220,41 +477,89 @@
    "text": "“Don’t move,”",
    "lang": "en",
    "voice": "M2",
-   "pauseMs": 250,
+   "pauseMs": 240,
    "kind": "dialogue",
    "rate": 0.92,
    "gainDb": -6,
-   "pitch": -0.8
+   "pitch": -0.8,
+   "release": true
   },
   {
    "i": 1,
    "text": "she whispered.",
    "lang": "en",
    "voice": "F1",
-   "pauseMs": 450,
+   "pauseMs": 490,
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "release": true
   },
   {
    "i": 2,
    "text": "“Someone is outside the door.”",
    "lang": "en",
    "voice": "M2",
-   "pauseMs": 760,
+   "pauseMs": 830,
    "kind": "dialogue",
    "rate": 0.92,
    "gainDb": -6,
-   "pitch": -0.8
+   "pitch": -0.8,
+   "release": true
   },
   {
    "i": 3,
    "text": "He held his breath and waited.",
    "lang": "en",
    "voice": "F1",
-   "pauseMs": 760,
-   "kind": "narration"
+   "pauseMs": 770,
+   "kind": "narration",
+   "release": true
+  }
+ ],
+ "en-whisper~natural": [
+  {
+   "i": 0,
+   "text": "“Don’t move,”",
+   "lang": "en",
+   "voice": "M2",
+   "pauseMs": 240,
+   "kind": "dialogue",
+   "rate": 0.92,
+   "gainDb": -6,
+   "release": true
+  },
+  {
+   "i": 1,
+   "text": "she whispered.",
+   "lang": "en",
+   "voice": "F1",
+   "pauseMs": 490,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "release": true
+  },
+  {
+   "i": 2,
+   "text": "“Someone is outside the door.”",
+   "lang": "en",
+   "voice": "M2",
+   "pauseMs": 830,
+   "kind": "dialogue",
+   "rate": 0.92,
+   "gainDb": -6,
+   "release": true
+  },
+  {
+   "i": 3,
+   "text": "He held his breath and waited.",
+   "lang": "en",
+   "voice": "F1",
+   "pauseMs": 770,
+   "kind": "narration",
+   "release": true
   }
  ],
  "hi-family": [
@@ -264,26 +569,30 @@
    "lang": "hi",
    "voice": "F5",
    "pauseMs": 510,
-   "kind": "dialogue"
+   "kind": "dialogue",
+   "release": true
   },
   {
    "i": 1,
    "text": "माँ ने पूछा।",
    "lang": "hi",
    "voice": "F1",
-   "pauseMs": 300,
+   "pauseMs": 270,
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "turn": "quick",
+   "release": true
   },
   {
    "i": 2,
    "text": "“बाज़ार,”",
    "lang": "hi",
    "voice": "M2",
-   "pauseMs": 250,
-   "kind": "dialogue"
+   "pauseMs": 240,
+   "kind": "dialogue",
+   "release": true
   },
   {
    "i": 3,
@@ -294,27 +603,31 @@
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "release": true
   },
   {
    "i": 4,
    "text": "“जल्दी आ जाऊँगा।”",
    "lang": "hi",
    "voice": "M2",
-   "pauseMs": 520,
-   "kind": "dialogue"
+   "pauseMs": 480,
+   "kind": "dialogue",
+   "turn": "reply",
+   "release": true
   },
   {
    "i": 5,
    "text": "“अँधेरा होने से पहले लौट आना,”",
    "lang": "hi",
    "voice": "F2",
-   "pauseMs": 284,
+   "pauseMs": 260,
    "kind": "dialogue",
    "rate": 0.87,
    "gainDb": -2,
    "pitch": -0.9,
-   "ending": "trail"
+   "ending": "trail",
+   "release": true
   },
   {
    "i": 6,
@@ -325,7 +638,83 @@
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "release": true
+  }
+ ],
+ "hi-family~natural": [
+  {
+   "i": 0,
+   "text": "“तुम कहाँ जा रहे हो?”",
+   "lang": "hi",
+   "voice": "F5",
+   "pauseMs": 510,
+   "kind": "dialogue",
+   "release": true
+  },
+  {
+   "i": 1,
+   "text": "माँ ने पूछा।",
+   "lang": "hi",
+   "voice": "F1",
+   "pauseMs": 270,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "turn": "quick",
+   "release": true
+  },
+  {
+   "i": 2,
+   "text": "“बाज़ार,”",
+   "lang": "hi",
+   "voice": "M2",
+   "pauseMs": 240,
+   "kind": "dialogue",
+   "release": true
+  },
+  {
+   "i": 3,
+   "text": "रोहन ने कहा।",
+   "lang": "hi",
+   "voice": "F1",
+   "pauseMs": 450,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "release": true
+  },
+  {
+   "i": 4,
+   "text": "“जल्दी आ जाऊँगा।”",
+   "lang": "hi",
+   "voice": "M2",
+   "pauseMs": 480,
+   "kind": "dialogue",
+   "turn": "reply",
+   "release": true
+  },
+  {
+   "i": 5,
+   "text": "“अँधेरा होने से पहले लौट आना,”",
+   "lang": "hi",
+   "voice": "F2",
+   "pauseMs": 260,
+   "kind": "dialogue",
+   "rate": 0.87,
+   "gainDb": -2,
+   "release": true
+  },
+  {
+   "i": 6,
+   "text": "दादी ने धीरे से कहा।",
+   "lang": "hi",
+   "voice": "F1",
+   "pauseMs": 760,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "release": true
   }
  ],
  "hinglish-exam": [
@@ -335,37 +724,85 @@
    "lang": "hi",
    "voice": "M2",
    "pauseMs": 250,
-   "kind": "dialogue"
+   "kind": "dialogue",
+   "release": true
   },
   {
    "i": 1,
    "text": "Kabir ने कहा.",
    "lang": "hi",
    "voice": "F1",
-   "pauseMs": 520,
+   "pauseMs": 490,
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "turn": "reply",
+   "release": true
   },
   {
    "i": 2,
    "text": "“Relax यार, हम साथ में padhenge,”",
    "lang": "hi",
    "voice": "F5",
-   "pauseMs": 250,
-   "kind": "dialogue"
+   "pauseMs": 270,
+   "kind": "dialogue",
+   "release": true
   },
   {
    "i": 3,
    "text": "Neha बोली.",
    "lang": "hi",
    "voice": "F1",
-   "pauseMs": 760,
+   "pauseMs": 700,
    "kind": "narration",
    "rate": 1.06,
    "gainDb": -1.5,
-   "pitch": -0.7
+   "pitch": -0.7,
+   "release": true
+  }
+ ],
+ "hinglish-exam~natural": [
+  {
+   "i": 0,
+   "text": "“कल exam है, और maine कुछ नहीं पढ़ा,”",
+   "lang": "hi",
+   "voice": "M2",
+   "pauseMs": 250,
+   "kind": "dialogue",
+   "release": true
+  },
+  {
+   "i": 1,
+   "text": "Kabir ने कहा.",
+   "lang": "hi",
+   "voice": "F1",
+   "pauseMs": 490,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "turn": "reply",
+   "release": true
+  },
+  {
+   "i": 2,
+   "text": "“Relax यार, हम साथ में padhenge,”",
+   "lang": "hi",
+   "voice": "F5",
+   "pauseMs": 270,
+   "kind": "dialogue",
+   "release": true
+  },
+  {
+   "i": 3,
+   "text": "Neha बोली.",
+   "lang": "hi",
+   "voice": "F1",
+   "pauseMs": 700,
+   "kind": "narration",
+   "rate": 1.06,
+   "gainDb": -1.5,
+   "release": true
   }
  ]
 }
