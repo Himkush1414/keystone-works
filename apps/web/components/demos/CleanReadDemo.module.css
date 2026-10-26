@@ -1,0 +1,55 @@
+.wrap {
+  display: grid;
+  gap: 18px;
+}
+
+.page {
+  margin: 0;
+  background: #fdfbf6;
+  color: #2b2620;
+  border-radius: 6px;
+  padding: 26px 28px 20px;
+  font-family: var(--font-reader), Georgia, serif;
+  font-size: 17px;
+  line-height: 1.7;
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.04),
+    0 30px 60px -28px rgba(28, 25, 21, 0.45),
+    -14px 14px 0 -8px #ece4d4;
+  transform: rotate(-1deg);
+  margin-inline: 10px;
+}
+
+.page p {
+  margin: 14px 0;
+}
+
+.head,
+.folio {
+  font-family: var(--font-ui), sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.skip {
+  transition:
+    opacity 500ms var(--ease-out),
+    color 500ms var(--ease-out);
+}
+
+[data-clean='true'] .skip {
+  opacity: 0.28;
+  text-decoration: line-through;
+  text-decoration-color: #b5641d;
+  text-decoration-thickness: 2px;
+}
+
+[data-clean='true'] .hyphen,
+[data-clean='true'] .break {
+  display: none;
+}
+
+.heard {
+  margin: 14px 0 0;
+}
