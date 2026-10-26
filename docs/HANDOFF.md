@@ -49,7 +49,8 @@ Before launch, these need you:
 1. **Support email.** Play requires a contact address. Add it to `apps/web/app/support/page.tsx`; it replaces the GitHub issues link there.
 2. **Governing law.** `/terms` says the laws "of the country where the developer is established". Name the country.
 3. **Play badge.** At launch, replace the "Coming soon" button (`apps/web/components/PlayButton.tsx`) with Google's official "Get it on Google Play" badge, linking to `https://play.google.com/store/apps/details?id=app.lamplight.reader`. Google's badge rules allow the artwork only once the listing is live.
-4. **Store listing vs app.** The listing draft promises audio export, bookmarks, line focus, OpenDyslexic and 0.5–3× speed. None of these are in the app's UI yet (speed is 0.75–2×). The website leaves them out. Either build them or trim the listing.
+4. **Store listing vs app.** Fixed on 26 Oct: the listing draft now promises only what the app does. Bookmarks (#96), line focus (#97) and audio export (#98) are tracked as issues; promise them again once they ship.
+5. **Pin the roadmap.** Discussions are on, with "Roadmap and feedback" (#103) under Announcements. GitHub's API can't pin a discussion: open it and choose **Pin discussion** in the right-hand column.
 
 ## 3. Translations to review
 
