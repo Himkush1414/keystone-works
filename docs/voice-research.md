@@ -57,3 +57,19 @@ On top of the emotions:
   stress on one word) needs pitch marks and PSOLA, or a model that takes prosody input. Neither is done.
 - Formants move with the pitch, so shifts stay within about ±2 st.
 - A whisper is still voiced: quieter, slower and lower, not breathy.
+
+## Re-check, 26 October 2026: more natural prosody from what we have
+
+- **Other models.** Still nothing phone-sized that is clearly more expressive _and_ speaks Hindi. svara-TTS (Indian
+  languages, emotion tags) is an LLM-style model far above phone size; Chatterbox Multilingual (exaggeration control)
+  is a 0.5B autoregressive model; NeuTTS-2E (emotions) is English only. Thiva-indic (Apache-2.0, Indian languages)
+  is unverified here: size, speed and emotion control not measured.
+- **The model's own takes.** The flow-matching noise is seeded per sentence; another seed is another take of the same
+  words. `SeedProbeTest` (`-Pprobe=1`), five takes of six lines at Studio+: intonation range (p10–p90) differs by
+  3–5 semitones between takes (for example 3.6–8.4 st for one Hindi line), median pitch by up to 40 Hz, length by
+  about 10%, and the clean-sound measures differ too (one English line's HF ranged −12 to −6.6 dB). This is the only
+  native lever for livelier prosody we found. Choosing a take automatically would need a measure of "natural", which
+  we don't have, and it multiplies rendering per line, so it is left as a listening question (HANDOFF §5).
+- **What shipped instead** works on timing, which never touches the voice: hand-overs by situation, varied pauses,
+  lines that finish (`Chunks.release`), a steady narrator. A/B against the old Natural path: clipping 0 → 0, clicks
+  equal, HF within 0.1 dB, harmonicity within ±0.015.

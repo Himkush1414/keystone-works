@@ -44,11 +44,34 @@ export const BEAT = {
 } as const;
 
 /**
- * The whole silence when one speaker hands over to another: a conversation, not two paragraphs. A quick
- * reply (a few words, or the answer to a question) comes sooner, and a line cut off with a dash is
- * interrupted almost at once, its last word clipped.
+ * The whole silence when one speaker hands over to another, chosen by what just happened, as in a real
+ * conversation: a few words back come almost at once, a question that needs an answer gets a thoughtful
+ * pause, something heavy or surprising (an exclamation, a sad or frightened line, a trailing "…") gets a
+ * longer beat, and only a line the text cuts off with a dash is broken into. Every hand-over but the
+ * interruption varies by up to [TURN.jitter] either way, so no two have the same timing.
  */
-export const TURN = { gap: 520, quick: 300, quickWords: 4, interrupt: 40 } as const;
+export const TURN = {
+  reply: 480,
+  quick: 260,
+  quickWords: 4,
+  thoughtful: 620,
+  heavy: 820,
+  interrupt: 40,
+  jitter: 0.12,
+} as const;
+
+export type TurnKind = 'quick' | 'reply' | 'thoughtful' | 'heavy' | 'interrupt';
+
+/** Pauses inside one voice's speech vary by up to this much either way: no two sentences fall alike. */
+export const CADENCE_JITTER = 0.1;
+
+/** `ms` varied by up to `amount` either way, the same every time for the same text (so audio caches hold). */
+export function vary(ms: number, seed: string, amount: number): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 0x01000193);
+  const u = ((h >>> 0) / 0xffffffff) * 2 - 1;
+  return Math.round((ms * (1 + amount * u)) / 10) * 10;
+}
 
 /** The whole silence at a scene break (`* * *`, `#`, `⁂`, `———`). */
 export const SCENE_BREAK_MS = 1600;
@@ -82,10 +105,8 @@ export function deliveryOf(
   quotes: readonly DialogueSpan[],
 ): Delivery {
   const own = cueInLine(blockText.slice(sentence.start, sentence.end));
-  if (sentence.kind !== 'dialogue') {
-    // The narrator stays composed: only a hint of the line's own excitement.
-    return own.emotion === 'excited' ? { emotion: 'excited', intensity: own.intensity * 0.5 } : NEUTRAL;
-  }
+  // The narrator stays calm and steady; the characters carry the feeling.
+  if (sentence.kind !== 'dialogue') return NEUTRAL;
   const quote = quotes.find((q) => sentence.start >= q.start && sentence.end <= q.end);
   const tag = quote ? cueIn(narrationAround(blockText, quote, quotes)) : NEUTRAL;
   if (tag.emotion === own.emotion && tag.emotion !== 'neutral')
@@ -125,6 +146,8 @@ export interface Performance {
   breath: boolean;
   /** How the line ends: trailing off, clipped, or cut off by the next speaker. */
   ending?: 'trail' | 'clip' | 'cut';
+  /** Why the pause is what it is, when this line hands over to another speaker. */
+  turn?: TurnKind;
 }
 
 const wordCount = (s: string) => s.split(/\s+/).filter(Boolean).length;
@@ -223,9 +246,24 @@ export function perform(
           if (l.kind === 'dialogue' && /[—–]$/.test(raw)) {
             p.pauseMs = TURN.interrupt;
             p.ending = 'cut';
-          } else if (wordCount(nextSaid?.raw ?? next.raw) <= TURN.quickWords || /\?$/.test(said))
-            p.pauseMs = TURN.quick;
-          else p.pauseMs = TURN.gap;
+            p.turn = 'interrupt';
+          } else {
+            const turnOf = (l.kind === 'dialogue' ? l : quoteBeside(i)) ?? l;
+            const heavy =
+              /(?:…|\.\.\.|!)$/.test(said) ||
+              (['sad', 'fear', 'shout', 'angry'].includes(turnOf.delivery.emotion) &&
+                turnOf.delivery.intensity >= 0.5);
+            const kind: TurnKind =
+              wordCount(unquoted(nextSaid?.raw ?? next.raw)) <= TURN.quickWords && !heavy
+                ? 'quick'
+                : heavy
+                  ? 'heavy'
+                  : /\?$/.test(said)
+                    ? 'thoughtful'
+                    : 'reply';
+            p.pauseMs = vary(TURN[kind], `${l.raw}|${next.raw}`, TURN.jitter);
+            p.turn = kind;
+          }
         } else if (next.block === l.block && who(next) !== who(l)) p.pauseMs += BEAT.voiceChange;
         if (
           !l.lastInBlock &&
@@ -237,6 +275,9 @@ export function perform(
         )
           p.pauseMs += BEAT.reveal;
       }
+      // Within one voice, the pauses breathe a little differently each time.
+      if (!p.turn && p.pauseMs >= 200 && p.pauseMs < SCENE_BREAK_MS)
+        p.pauseMs = vary(p.pauseMs, l.raw, CADENCE_JITTER);
     }
     // A breath needs room before it: the start of a paragraph or a change of speaker.
     const prev = i > 0 ? out[i - 1] : undefined;

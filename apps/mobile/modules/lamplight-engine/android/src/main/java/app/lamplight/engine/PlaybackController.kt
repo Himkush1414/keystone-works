@@ -596,7 +596,7 @@ class PlaybackController private constructor(private val context: Context) : Str
                 emitState()
             }
             // The model pads every render with silence; only speech (and the pauses we choose) is heard.
-            val trimmed = Chunks.trim(raw.samples, raw.sampleRate)
+            val trimmed = LineRender.edges(raw.samples, raw.sampleRate, last, style, seg.release)
             pacing.record(job.steps, workMs, trimmed.size * 1000L / raw.sampleRate, piece.text.length)
             val seed = Seed.forSentence(piece.text, voice.id, job.steps)
             val part = Part(LineRender.piece(trimmed, raw.sampleRate, k, last, style, seed, piece.gapMs, joiner), piece.gapMs)

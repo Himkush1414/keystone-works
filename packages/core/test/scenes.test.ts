@@ -88,7 +88,7 @@ describe('sample scenes', () => {
     expect(cut?.pauseMs).toBe(TURN.interrupt);
     const two = built['en-two']?.q ?? [];
     const again = two.findIndex((s) => s.text.includes('Again?'));
-    expect(two[again]?.pauseMs).toBe(TURN.quick);
+    expect(two[again]?.turn).toBe('quick');
   });
 
   it('in Natural mode (no emotion processing) sends no pitch shifts or shaped endings, only a clean cut', () => {
@@ -109,8 +109,19 @@ describe('sample scenes', () => {
   });
 
   it('matches the engine fixture', () => {
+    // Each scene twice: with emotion processing, and as most listeners hear it (Natural, the default).
     const scenes = Object.fromEntries(
-      Object.entries(built).map(([name, { q }]) => [name, q.map((s: QueueSegment) => ({ ...s }))]),
+      Object.entries(built).flatMap(([name, { q }]) => [
+        [name, q.map((s: QueueSegment) => ({ ...s }))],
+        [
+          `${name}~natural`,
+          queueOf(SCENES[name] ?? '', name.startsWith('en') ? 'en' : 'hi', false).q.map(
+            (s: QueueSegment) => ({
+              ...s,
+            }),
+          ),
+        ],
+      ]),
     );
     const json = `${JSON.stringify(scenes, null, 1)}\n`;
     if (process.env.UPDATE_SCENES) writeFileSync(fixture, json);

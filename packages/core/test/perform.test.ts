@@ -4,6 +4,7 @@ import { cueIn, cueInLine, type Emotion } from '../src/perform/cues';
 import {
   BEAT,
   TURN,
+  CADENCE_JITTER,
   BREATH_MS,
   deliveryOf,
   perform,
@@ -113,11 +114,10 @@ describe('delivery cues', () => {
     expect(cueInLine('“Fine.”').emotion).toBe('neutral');
   });
 
-  it('keeps the narrator composed', () => {
+  it('keeps the narrator calm and steady, even at an exclamation', () => {
     const text = 'The door burst open!';
     const d = deliveryOf(text, { start: 0, end: text.length, kind: 'narration' }, []);
-    expect(d.emotion).toBe('excited');
-    expect(d.intensity).toBeLessThan(0.3);
+    expect(d.emotion).toBe('neutral');
   });
 });
 
@@ -161,6 +161,10 @@ const line = (raw: string, extra: Partial<PlannedLine> = {}): PlannedLine => ({
   ...extra,
 });
 
+/** A pause within one voice: the planned length, varied by up to CADENCE_JITTER (rounded to 10 ms). */
+const cadence = (ms: number | undefined, planned: number) =>
+  expect(Math.abs((ms ?? 0) - planned)).toBeLessThanOrEqual(planned * CADENCE_JITTER + 5);
+
 describe('pauses and breaths', () => {
   it('lingers after an ellipsis and a dash, and a little after a question', () => {
     const p = perform([
@@ -169,9 +173,9 @@ describe('pauses and breaths', () => {
       line('Why?', { block: 2 }),
       line('Fine.', { block: 3 }),
     ]);
-    expect(p[0]?.pauseMs).toBe(140 + BEAT.ellipsis);
-    expect(p[1]?.pauseMs).toBe(140 + BEAT.dash);
-    expect(p[2]?.pauseMs).toBe(140 + BEAT.question);
+    cadence(p[0]?.pauseMs, 140 + BEAT.ellipsis);
+    cadence(p[1]?.pauseMs, 140 + BEAT.dash);
+    cadence(p[2]?.pauseMs, 140 + BEAT.question);
     expect(p[3]?.pauseMs).toBe(140);
   });
 
@@ -208,12 +212,53 @@ describe('pauses and breaths', () => {
         pauseMs: 760,
       }),
     ]);
-    expect(p[0]?.pauseMs).toBe(TURN.quick); // "Hi." is a quick reply
-    expect(p[1]?.pauseMs).toBe(370); // same speaker
-    expect(p[2]?.pauseMs).toBe(TURN.quick); // answering a question
-    expect(p[3]?.pauseMs).toBe(TURN.gap);
+    const near = (ms: number | undefined, base: number, k: number) =>
+      expect(Math.abs((ms ?? 0) - base)).toBeLessThanOrEqual(base * k + 5);
+    expect(p[0]?.turn).toBe('quick'); // "Hi." comes back at once
+    near(p[0]?.pauseMs, TURN.quick, TURN.jitter);
+    expect(p[1]?.turn).toBeUndefined(); // same speaker
+    near(p[1]?.pauseMs, 370, CADENCE_JITTER);
+    expect(p[2]?.turn).toBe('thoughtful'); // a question that gets a real answer
+    near(p[2]?.pauseMs, TURN.thoughtful, TURN.jitter);
+    expect(p[3]?.turn).toBe('reply');
+    near(p[3]?.pauseMs, TURN.reply, TURN.jitter);
+    expect(p[4]?.turn).toBe('interrupt');
     expect(p[4]?.pauseMs).toBe(TURN.interrupt);
     expect(p[4]?.ending).toBe('cut');
+  });
+
+  it('lets something heavy land before the reply, and never times two hand-overs alike', () => {
+    const turns = [
+      '“He’s gone!”',
+      '“Gone where, and since when?”',
+      '“I don’t know… he was here a moment ago…”',
+      '“We have to find him tonight.”',
+    ];
+    const p = perform(
+      turns.map((t, k) =>
+        line(t, { kind: 'dialogue', speaker: k % 2 ? 'b' : 'a', block: k, lastInBlock: true, pauseMs: 760 }),
+      ),
+    );
+    expect(p[0]?.turn).toBe('heavy');
+    expect(p[1]?.turn).toBe('thoughtful');
+    expect(p[2]?.turn).toBe('heavy');
+    expect(p[0]?.pauseMs ?? 0).toBeGreaterThan(TURN.thoughtful);
+    const gaps = p.slice(0, 3).map((x) => x.pauseMs);
+    expect(new Set(gaps).size).toBe(gaps.length);
+    // The same text is always timed the same (audio caches depend on it).
+    expect(
+      perform(
+        turns.map((t, k) =>
+          line(t, {
+            kind: 'dialogue',
+            speaker: k % 2 ? 'b' : 'a',
+            block: k,
+            lastInBlock: true,
+            pauseMs: 760,
+          }),
+        ),
+      ).map((x) => x.pauseMs),
+    ).toEqual(p.map((x) => x.pauseMs));
   });
 
   it('gives each character their own register, loudness, pauses and endings', () => {
@@ -236,7 +281,7 @@ describe('pauses and breaths', () => {
       { styles },
     );
     expect(p[0]?.pitch).toBeLessThan(-0.5);
-    expect(p[0]?.pauseMs).toBe(Math.round(760 * 1.2));
+    cadence(p[0]?.pauseMs, Math.round(760 * 1.2));
     expect(p[0]?.ending).toBe('trail');
     expect(p[2]?.pitch).toBeGreaterThan(1);
     expect(p[1]?.ending).toBeUndefined();
@@ -256,7 +301,7 @@ describe('pauses and breaths', () => {
       line('She opened the box slowly, hands shaking.'),
       line('It was empty.', { lastInBlock: true, pauseMs: 450 }),
     ]);
-    expect(p[0]?.pauseMs).toBe(140 + BEAT.reveal);
+    cadence(p[0]?.pauseMs, 140 + BEAT.reveal);
   });
 
   it('breathes before a long sentence after a paragraph break, not twice in a row', () => {
@@ -268,7 +313,7 @@ describe('pauses and breaths', () => {
     ]);
     expect(p.map((x) => x.breath)).toEqual([false, true, false]);
     // The breath takes its time from the pause before it.
-    expect(p[0]?.pauseMs).toBe(450 - BREATH_MS);
+    expect(Math.abs((p[0]?.pauseMs ?? 0) - (450 - BREATH_MS))).toBeLessThanOrEqual(450 * CADENCE_JITTER + 5);
   });
 
   it('breathes before an emotional beat, and never when breaths are off', () => {

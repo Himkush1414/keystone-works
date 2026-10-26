@@ -109,7 +109,7 @@ Each item says what to listen for and which value to change if it's off. All the
 - [ ] Two characters who share a voice are still easy to tell apart (`SHARED_RATE`). If the pace change is audible as "sped up", narrow it.
 - [ ] Every character keeps the same register all the way through, and characters of one gender sit at least 2 semitones apart (`MIN_APART`, `OFFSETS` in `cast/voices.ts`; the nudge is at most ±3 st). If a nudged voice sounds processed, lower `OFFSETS`' upper end.
 - [ ] Old and gentle characters trail off at the end of a line, and fiery ones stop short (`AGE_STYLE`, `TEMPERAMENT_STYLE`; `Performance.ending`). If a trail sounds like the audio slowing down, shorten it in `Performance.ending`.
-- [ ] **Sample scenes:** `gradle test --tests '*SceneRenderTest*' -PprobeOut=<dir>` in `engine-core-jvm` writes one WAV per scene to `<dir>/scenes`: an English two-person exchange, a three-person argument with an interruption, narrator plus one character, a whisper, a Hindi family scene and a Hinglish one. `npx vitest run test/scenes.test.ts --silent=false` in `packages/core` prints each line's voice, pace, pitch, loudness, ending and pause. Measured hand-overs: 590–620 ms, quick replies 380–390 ms, the interruption 80 ms.
+- [ ] **Sample scenes:** `gradle test --tests '*SceneRenderTest*' -PprobeOut=<dir>` in `engine-core-jvm` writes one WAV per scene to `<dir>/scenes`: an English two-person exchange, a three-person argument with an interruption, narrator plus one character, a whisper, a Hindi family scene and a Hinglish one. `npx vitest run test/scenes.test.ts --silent=false` in `packages/core` prints each line's voice, pace, pitch, loudness, ending and pause. Each scene is rendered twice: `<name>` with Emotion processing on, and `<name>~natural` as most listeners hear it.
 
 **Delivery (Expressive reading on).**
 
@@ -121,11 +121,24 @@ Each item says what to listen for and which value to change if it's off. All the
 
 **Pauses.**
 
-- [ ] One speaker handing over to another feels like a conversation, not two paragraphs (`TURN.gap` = 520 ms). A quick reply or an answer to a question comes sooner (`TURN.quick` = 300 ms). A line cut off with a dash is interrupted almost at once, its end cut short (`TURN.interrupt` = 40 ms).
+- [ ] See **Turn-taking** below for hand-overs between speakers.
 - [ ] An ellipsis trails off ("And then…"), and a dash breaks off (`BEAT.ellipsis` 260, `BEAT.dash` 160).
 - [ ] A short closing sentence lands ("It was empty."), with `BEAT.reveal` = 180 ms before it.
 - [ ] A scene break (`* * *`) is a clear change of scene without feeling like a stall (`SCENE_BREAK_MS` = 1.6 s).
 - [ ] Paragraph and chapter pauses still feel right at 1.5×.
+
+**Turn-taking (26 Oct).** Settings: Studio+, _Expressive reading_ **on** (turn it off for the old fixed timing), _Emotion processing_ **off** (Natural, the default), _Voices for each character_ on, 1.0×, headphones. Old and new clips side by side: `D:\_cache\probe\turns\side-by-side` (README there). Values are in `TURN` and `CADENCE_JITTER` (`packages/core/src/perform/plan.ts`) and `RELEASE_*` (`Chunks.kt`).
+
+- [ ] The next speaker never sounds like they rush in or cut the last one off: every line finishes its last word and breath first. Compare `release/*-trim.wav` with `*-release.wav` for single lines. If an end now sounds smeared or hissy, raise `RELEASE_FLOOR_DB` from −62 towards −56.
+- [ ] A few words back ("Again." "I can't,") come almost at once (`TURN.quick` 260 ms ±12%). Too abrupt? Raise it.
+- [ ] A question that gets a real answer has a thoughtful pause first (`TURN.thoughtful` 620 ms). An ordinary reply sits at `TURN.reply` 480 ms.
+- [ ] After something heavy or surprising ("Maya shouted.", a trailing "…", a sad line) there's a longer beat (`TURN.heavy` 820 ms). If it feels like the app stalled, lower it.
+- [ ] Only a line that ends with a dash is broken into (`TURN.interrupt` 40 ms, its end cut). Nothing else should sound interrupted.
+- [ ] The rhythm never ticks like a metronome: pauses within one voice vary ±10% (`CADENCE_JITTER`), hand-overs ±12% (`TURN.jitter`). If it starts to sound uneven or random, halve them.
+- [ ] The narrator is calm and steady, and stays so at "The door burst open!". The characters carry the feeling.
+- [ ] In the Pride and Prejudice and Alice samples, the narrator, Mrs./Mr. Bennet, Alice, the Hatter and the March Hare are each easy to tell apart. Two voices too alike: note the pair.
+- [ ] Optional, model takes: `D:\_cache\probe\turns\takes` has five takes of six lines (same words, another noise seed). Measured, their intonation range differs by 3–5 semitones. Is one take clearly more alive _and_ natural? If so, choosing takes is worth building (it costs extra rendering per line). Not shipped.
+- Not done, honestly: no overlap or "mm-hm" backchannel (the player plays one line at a time; overlapping would need mixing two renders and it risks clarity), and no speed change inside a sentence on the Natural path (only the model's own phrasing). Rises, drops and trailing ends come from the model's reading of the punctuation; with _Emotion processing_ on, old and gentle characters also trail off.
 
 **Breaths (Natural breaths on).**
 

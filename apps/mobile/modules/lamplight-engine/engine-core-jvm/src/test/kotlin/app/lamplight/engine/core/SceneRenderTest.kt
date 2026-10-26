@@ -41,7 +41,7 @@ class SceneRenderTest {
         if (::sessions.isInitialized) sessions.close()
     }
 
-    private class Line(val text: String, val lang: String, val voice: String, val kind: String, val pauseMs: Int, val rate: Float, val gainDb: Float, val pitch: Float, val ending: String?, val runs: List<Run>?)
+    private class Line(val text: String, val lang: String, val voice: String, val kind: String, val pauseMs: Int, val rate: Float, val gainDb: Float, val pitch: Float, val ending: String?, val runs: List<Run>?, val release: Boolean, val turn: String?)
 
     /** The same steps as PlaybackController.runJob, piece by piece. */
     private fun render(l: Line): FloatArray {
@@ -52,7 +52,7 @@ class SceneRenderTest {
         pieces.forEachIndexed { k, p ->
             val last = k == pieces.lastIndex
             val raw = engine.synthesize(p.text, p.lang, voices.getValue(l.voice), 8, style.modelRate(1.05f), LineRender.continues(last, style))
-            LineRender.piece(Chunks.trim(raw.samples, sr), sr, k, last, style, 0L, p.gapMs, joiner).forEach(out::add)
+            LineRender.piece(LineRender.edges(raw.samples, sr, last, style, l.release), sr, k, last, style, 0L, p.gapMs, joiner).forEach(out::add)
             if (!last) repeat(p.gapMs * sr / 1000) { out.add(0f) }
         }
         return out.toFloatArray()
@@ -70,6 +70,8 @@ class SceneRenderTest {
                     s.optDouble("rate", 1.0).toFloat(), s.optDouble("gainDb", 0.0).toFloat(), s.optDouble("pitch", 0.0).toFloat(),
                     s.optString("ending", "").ifEmpty { null },
                     s.optJSONArray("runs")?.let { r -> List(r.length()) { j -> r.getJSONObject(j).let { Run(it.getString("text"), it.getString("lang")) } } },
+                    s.optBoolean("release", false),
+                    s.optString("turn", "").ifEmpty { null },
                 )
             }
             val audio = lines.map(::render)
@@ -91,21 +93,24 @@ class SceneRenderTest {
                     val tail = Silences.edges(a, sr, Chunks.TRIM_FLOOR_DB).second
                     val onset = Silences.edges(audio[k + 1], sr, Chunks.TRIM_FLOOR_DB).first
                     val heard = tail + l.pauseMs + onset
-                    // TURN in perform/plan.ts: interrupt 40, quick 300, gap 520 (before a character's pause scale).
-                    val tag = when {
-                        l.ending == "cut" -> "interrupted"
-                        l.pauseMs == 300 -> "quick hand-over"
-                        l.pauseMs == 520 -> "hand-over"
-                        else -> ""
+                    // TURN in perform/plan.ts, varied ±12% per hand-over; what is heard adds the edges kept around speech.
+                    val range = when (l.turn) {
+                        "interrupt" -> 0..120
+                        "quick" -> 200..520
+                        "reply" -> 400..800
+                        "thoughtful" -> 520..950
+                        "heavy" -> 700..1200
+                        else -> null
                     }
-                    if (tag.isNotEmpty()) println("scene  %-16s %-16s %4d ms heard (tail %d + pause %d + onset %d)  after \"%s\"".format(
-                        name, tag, heard, tail, l.pauseMs, onset, l.text.takeLast(40),
-                    ))
-                    if (tag == "interrupted") assertTrue(heard <= 120, "$name: interruption heard as $heard ms")
-                    if (tag == "hand-over") assertTrue(heard in 520..720, "$name: hand-over heard as $heard ms")
-                    if (tag == "quick hand-over") assertTrue(heard in 300..500, "$name: quick hand-over heard as $heard ms")
+                    if (range != null) {
+                        println("scene  %-24s %-10s %4d ms heard (tail %d + pause %d + onset %d)  after \"%s\"".format(
+                            name, l.turn, heard, tail, l.pauseMs, onset, l.text.takeLast(40),
+                        ))
+                        assertTrue(heard in range, "$name: ${l.turn} hand-over heard as $heard ms")
+                    }
                 }
             }
+            println("scene  %-24s quality %s".format(name, Quality.measure(scene.toFloatArray(), sr)))
             val medians = pitchByVoice.mapValues { (_, v) -> v.sorted().let { if (it.isEmpty()) 0.0 else it[it.size / 2] } }
             println("scene  %-16s pitch by voice: %s".format(name, medians.entries.joinToString { "${it.key} ${it.value.toInt()} Hz" }))
             val ordered = medians.values.filter { it > 0 }.sorted()

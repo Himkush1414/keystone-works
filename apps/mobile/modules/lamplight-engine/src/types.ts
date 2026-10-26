@@ -142,6 +142,8 @@ export interface QueueFile {
     ending?: 'trail' | 'clip' | 'cut';
     /** A soft breath before the line. */
     breath?: boolean;
+    /** End the line as it dies away rather than at the trim floor (Chunks.release). */
+    release?: boolean;
     /** The line split by voice language when it mixes them; each run is rendered in its own language. */
     runs?: { text: string; lang: string }[];
     /** Not built yet: a placeholder in the app's copy, never sent to the player. */

@@ -78,6 +78,7 @@ function fileSegment(s: QueueSegment): FileSegment {
     ...(s.pitch !== undefined ? { pitch: s.pitch } : {}),
     ...(s.ending ? { ending: s.ending } : {}),
     ...(s.breath ? { breath: true } : {}),
+    ...(s.release ? { release: true } : {}),
     ...(s.runs ? { runs: s.runs.map((r) => ({ text: r.text, lang: r.lang })) } : {}),
   };
 }

@@ -2,7 +2,7 @@ import { analyseCast, castSteps, type Character, type FixedSpeaker } from './cas
 import { findDialogue } from './cast/dialogue';
 import { profileCharacters } from './cast/profile';
 import { NEUTRAL } from './perform/cues';
-import { deliveryOf, perform, type PlannedLine } from './perform/plan';
+import { deliveryOf, perform, type PlannedLine, type TurnKind } from './perform/plan';
 import { voiceFor, type CastAssignment, type CastMode } from './cast/voices';
 import {
   cleanReport,
@@ -236,6 +236,10 @@ export interface QueueSegment {
   ending?: 'trail' | 'clip' | 'cut';
   /** A soft breath before the line. */
   breath?: true;
+  /** Why the pause after this line is what it is, when it hands over to another speaker (tests, diagnostics). */
+  turn?: TurnKind;
+  /** Let the line die away (its last word's decay and breath) before the pause, instead of cutting it short. */
+  release?: true;
   /** The line split by voice language, when it mixes them (an English phrase in a Hindi line). */
   runs?: LanguageRun[];
 }
@@ -356,6 +360,9 @@ export function buildQueue(doc: QueueSource, opts: QueueOptions): QueueSegment[]
     } else if (p.ending === 'cut') seg.ending = 'cut'; // a clean stop, no processing
 
     if (p.breath) seg.breath = true;
+    if (p.turn) seg.turn = p.turn;
+    // Expressive reading lets every line finish as it dies away; a line cut off by the next speaker doesn't.
+    if ((opts.expressive ?? true) && seg.text && seg.ending !== 'cut') seg.release = true;
   });
   return out;
 }
