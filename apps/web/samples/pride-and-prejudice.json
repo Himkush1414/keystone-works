@@ -1,0 +1,252 @@
+{
+  "id": "pride-and-prejudice",
+  "lang": "en",
+  "title": "Pride and Prejudice",
+  "part": "From Chapter 1",
+  "author": "Jane Austen",
+  "year": 1813,
+  "source": "Project Gutenberg eBook #1342, the opening of Chapter 1.",
+  "narrator": "F1",
+  "durationMs": 87738,
+  "audio": "/samples/pride-and-prejudice.mp3",
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
+          "gap": "",
+          "start": 0,
+          "end": 6650,
+          "voice": "F1"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters.",
+          "gap": "",
+          "start": 7130,
+          "end": 22198,
+          "voice": "F1"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“My dear Mr. Bennet,”",
+          "gap": " ",
+          "start": 22958,
+          "end": 24196,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "said his lady to him one day,",
+          "gap": " ",
+          "start": 24446,
+          "end": 25889,
+          "voice": "F1"
+        },
+        {
+          "text": "“have you heard that Netherfield Park is let at last?”",
+          "gap": "",
+          "start": 26139,
+          "end": 28855,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "Mr. Bennet replied that he had not.",
+          "gap": "",
+          "start": 29675,
+          "end": 31549,
+          "voice": "F1"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“But it is,”",
+          "gap": " ",
+          "start": 32309,
+          "end": 33010,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "returned she;",
+          "gap": " ",
+          "start": 33260,
+          "end": 34072,
+          "voice": "F1"
+        },
+        {
+          "text": "“for Mrs. Long has just been here, and she told me all about it.”",
+          "gap": "",
+          "start": 34322,
+          "end": 37955,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "Mr. Bennet made no answer.",
+          "gap": "",
+          "start": 38715,
+          "end": 40323,
+          "voice": "F1"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“Do not you want to know who has taken it?”",
+          "gap": " ",
+          "start": 41083,
+          "end": 42927,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "cried his wife, impatiently.",
+          "gap": "",
+          "start": 43237,
+          "end": 44785,
+          "voice": "F1"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“You want to tell me, and I have no objection to hearing it.”",
+          "gap": "",
+          "start": 45085,
+          "end": 48022,
+          "voice": "M2",
+          "speaker": "Mr. Bennet"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "This was invitation enough.",
+          "gap": "",
+          "start": 48782,
+          "end": 50205,
+          "voice": "F1"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England;",
+          "gap": " ",
+          "start": 50965,
+          "end": 58672,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "that he came down on Monday in a chaise and four to see the place, and was so much delighted with it that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week.”",
+          "gap": "",
+          "start": 59042,
+          "end": 75398,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“What is his name?”",
+          "gap": "",
+          "start": 75698,
+          "end": 76575,
+          "voice": "M2",
+          "speaker": "Mr. Bennet"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“Bingley.”",
+          "gap": "",
+          "start": 76875,
+          "end": 77436,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“Is he married or single?”",
+          "gap": "",
+          "start": 77956,
+          "end": 79093,
+          "voice": "M2",
+          "speaker": "Mr. Bennet"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“Oh, single, my dear, to be sure!",
+          "gap": " ",
+          "start": 79393,
+          "end": 81142,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "A single man of large fortune; four or five thousand a year.",
+          "gap": " ",
+          "start": 81572,
+          "end": 84874,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "What a fine thing for our girls!”",
+          "gap": "",
+          "start": 85244,
+          "end": 86918,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        }
+      ]
+    }
+  ]
+}

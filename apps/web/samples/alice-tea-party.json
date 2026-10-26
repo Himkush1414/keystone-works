@@ -1,0 +1,288 @@
+{
+  "id": "alice-tea-party",
+  "lang": "en",
+  "title": "Alice’s Adventures in Wonderland",
+  "part": "From “A Mad Tea-Party”",
+  "author": "Lewis Carroll",
+  "year": 1865,
+  "source": "Project Gutenberg eBook #11, the opening of Chapter 7.",
+  "corrected": true,
+  "narrator": "F2",
+  "durationMs": 75287,
+  "audio": "/samples/alice-tea-party.mp3",
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "There was a table set out under a tree in front of the house, and the March Hare and the Hatter were having tea at it: a Dormouse was sitting between them, fast asleep, and the other two were using it as a cushion, resting their elbows on it, and talking over its head.",
+          "gap": " ",
+          "start": 0,
+          "end": 14281,
+          "voice": "F2"
+        },
+        {
+          "text": "“Very uncomfortable for the Dormouse,”",
+          "gap": " ",
+          "start": 14731,
+          "end": 16655,
+          "voice": "F5",
+          "speaker": "Alice"
+        },
+        {
+          "text": "thought Alice;",
+          "gap": " ",
+          "start": 16905,
+          "end": 17612,
+          "voice": "F2"
+        },
+        {
+          "text": "“only, as it’s asleep, I suppose it doesn’t mind.”",
+          "gap": "",
+          "start": 17862,
+          "end": 20417,
+          "voice": "F5",
+          "speaker": "Alice"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "The table was a large one, but the three were all crowded together at one corner of it:",
+          "gap": " ",
+          "start": 21177,
+          "end": 25291,
+          "voice": "F2"
+        },
+        {
+          "text": "“No room!",
+          "gap": " ",
+          "start": 25541,
+          "end": 25977,
+          "voice": "M2"
+        },
+        {
+          "text": "No room!”",
+          "gap": " ",
+          "start": 26407,
+          "end": 26958,
+          "voice": "M2"
+        },
+        {
+          "text": "they cried out when they saw Alice coming.",
+          "gap": " ",
+          "start": 27268,
+          "end": 28817,
+          "voice": "F2"
+        },
+        {
+          "text": "“There’s plenty of room!”",
+          "gap": " ",
+          "start": 29117,
+          "end": 30284,
+          "voice": "F5",
+          "speaker": "Alice"
+        },
+        {
+          "text": "said Alice indignantly, and she sat down in a large arm-chair at one end of the table.",
+          "gap": "",
+          "start": 30594,
+          "end": 35274,
+          "voice": "F2"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“Have some wine,”",
+          "gap": " ",
+          "start": 36034,
+          "end": 36831,
+          "voice": "M2",
+          "speaker": "March Hare"
+        },
+        {
+          "text": "the March Hare said in an encouraging tone.",
+          "gap": "",
+          "start": 37081,
+          "end": 38875,
+          "voice": "F2"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "Alice looked all round the table, but there was nothing on it but tea.",
+          "gap": " ",
+          "start": 39635,
+          "end": 42842,
+          "voice": "F2"
+        },
+        {
+          "text": "“I don’t see any wine,”",
+          "gap": " ",
+          "start": 43292,
+          "end": 44429,
+          "voice": "F5",
+          "speaker": "Alice"
+        },
+        {
+          "text": "she remarked.",
+          "gap": "",
+          "start": 44679,
+          "end": 45235,
+          "voice": "F2"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“There isn’t any,”",
+          "gap": " ",
+          "start": 45535,
+          "end": 46302,
+          "voice": "M2",
+          "speaker": "March Hare"
+        },
+        {
+          "text": "said the March Hare.",
+          "gap": "",
+          "start": 46552,
+          "end": 47489,
+          "voice": "F2"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“Then it wasn’t very civil of you to offer it,”",
+          "gap": " ",
+          "start": 47729,
+          "end": 49848,
+          "voice": "F5",
+          "speaker": "Alice"
+        },
+        {
+          "text": "said Alice angrily.",
+          "gap": "",
+          "start": 50098,
+          "end": 51105,
+          "voice": "F2"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“It wasn’t very civil of you to sit down without being invited,”",
+          "gap": " ",
+          "start": 51625,
+          "end": 54777,
+          "voice": "M2",
+          "speaker": "March Hare"
+        },
+        {
+          "text": "said the March Hare.",
+          "gap": "",
+          "start": 55027,
+          "end": 55964,
+          "voice": "F2"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“I didn’t know it was your table,”",
+          "gap": " ",
+          "start": 56484,
+          "end": 58003,
+          "voice": "F5",
+          "speaker": "Alice"
+        },
+        {
+          "text": "said Alice;",
+          "gap": " ",
+          "start": 58253,
+          "end": 58924,
+          "voice": "F2"
+        },
+        {
+          "text": "“it’s laid for a great many more than three.”",
+          "gap": "",
+          "start": 59174,
+          "end": 61183,
+          "voice": "F5",
+          "speaker": "Alice"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“Your hair wants cutting,”",
+          "gap": " ",
+          "start": 61483,
+          "end": 62550,
+          "voice": "M3",
+          "speaker": "Hatter"
+        },
+        {
+          "text": "said the Hatter.",
+          "gap": " ",
+          "start": 62800,
+          "end": 63512,
+          "voice": "F2"
+        },
+        {
+          "text": "He had been looking at Alice for some time with great curiosity, and this was his first speech.",
+          "gap": "",
+          "start": 63882,
+          "end": 68718,
+          "voice": "F2"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“You should learn not to make personal remarks,”",
+          "gap": " ",
+          "start": 69478,
+          "end": 71727,
+          "voice": "F5",
+          "speaker": "Alice"
+        },
+        {
+          "text": "Alice said with some severity;",
+          "gap": " ",
+          "start": 71977,
+          "end": 73325,
+          "voice": "F2"
+        },
+        {
+          "text": "“it’s very rude.”",
+          "gap": "",
+          "start": 73575,
+          "end": 74527,
+          "voice": "F5",
+          "speaker": "Alice"
+        }
+      ]
+    }
+  ]
+}
