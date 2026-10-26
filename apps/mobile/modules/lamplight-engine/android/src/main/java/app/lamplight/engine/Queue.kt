@@ -22,6 +22,8 @@ data class Segment(
     val ending: String? = null,
     /** A soft breath before the line. */
     val breath: Boolean = false,
+    /** End the line as it dies away ([app.lamplight.engine.core.Chunks.release]) instead of at the trim floor. */
+    val release: Boolean = false,
     /** The line split by voice language (a Hindi phrase in an English line, or the reverse); null for one language. */
     val runs: List<Run>? = null,
     /** Not built by the app yet (a long book is queued around where listening starts, then filled in). */
@@ -96,6 +98,7 @@ class QueueSpec(
                     pitch = s.optDouble("pitch", 0.0).toFloat().coerceIn(-4f, 4f),
                     ending = s.optString("ending", "").takeIf { it in Performance.ENDINGS },
                     breath = s.optBoolean("breath", false),
+                    release = s.optBoolean("release", false),
                     runs = s.optJSONArray("runs")?.let { r ->
                         List(r.length()) { j -> r.getJSONObject(j).let { Run(it.getString("text"), it.getString("lang")) } }
                     },

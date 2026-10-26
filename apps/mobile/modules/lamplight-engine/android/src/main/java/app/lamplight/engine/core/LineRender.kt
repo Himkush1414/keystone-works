@@ -22,6 +22,13 @@ object LineRender {
         fun modelRate(base: Float): Float = if (processed) base else base * rate
     }
 
+    /**
+     * A render without the model's padding: the line's last piece, when [release] is asked for and the line
+     * isn't cut off, keeps its decay ([Chunks.release]); everything else is trimmed ([Chunks.trim]).
+     */
+    fun edges(raw: FloatArray, sampleRate: Int, last: Boolean, style: Style, release: Boolean): FloatArray =
+        if (last && release && style.ending != "cut") Chunks.release(raw, sampleRate) else Chunks.trim(raw, sampleRate)
+
     /** The model renders this piece as continuing (no closing pitch) unless it ends the line normally. */
     fun continues(last: Boolean, style: Style): Boolean = !last || style.ending == "cut"
 
