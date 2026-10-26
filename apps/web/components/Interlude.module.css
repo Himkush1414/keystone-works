@@ -1,0 +1,47 @@
+.interlude {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(80px, 12vw, 180px) var(--gutter);
+  text-align: center;
+}
+
+.quote {
+  margin: 0;
+  font-family: var(--font-display), serif;
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(32px, 5.4vw, 76px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.word {
+  color: var(--color-ink);
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .word {
+      color: color-mix(in srgb, var(--color-ink) 22%, transparent);
+      animation: lit linear both;
+      animation-timeline: view();
+      animation-range: entry calc(40% + var(--i) * 40% / var(--n)) cover calc(40% + var(--i) * 30% / var(--n));
+    }
+  }
+}
+
+@keyframes lit {
+  to {
+    color: var(--color-ink);
+    text-shadow: 0 0 24px var(--color-glow);
+  }
+}
+
+.by {
+  margin-top: 24px;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}

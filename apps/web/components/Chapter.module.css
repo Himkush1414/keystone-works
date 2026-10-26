@@ -1,0 +1,107 @@
+.band {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Every other chapter sits on a slightly deeper page, so the story turns rather than scrolls. */
+.flip {
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--color-surface) 12%,
+    var(--color-surface) 88%,
+    transparent
+  );
+}
+
+.chapter {
+  max-width: var(--measure-page);
+  margin: 0 auto;
+  padding: clamp(64px, 10vw, 140px) var(--gutter);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(32px, 5vw, 72px);
+  align-items: center;
+}
+
+@media (min-width: 960px) {
+  .chapter {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  }
+  .flip .copy {
+    order: 2;
+  }
+  .flip .chapter {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  }
+  .wide {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wide .copy {
+    max-width: 760px;
+  }
+}
+
+.num {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0 0 18px;
+}
+
+.roman {
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-size: clamp(40px, 5vw, 64px);
+  line-height: 1;
+  color: var(--color-accent);
+  font-variation-settings: 'SOFT' 100;
+}
+
+.kicker {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-hairline);
+  flex: 1;
+}
+
+.title {
+  font-size: var(--t-4);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+}
+
+.title em {
+  font-style: italic;
+  color: var(--color-accent);
+}
+
+.body {
+  margin-top: 22px;
+  font-size: clamp(18px, 1.3vw + 12px, 20px);
+  color: var(--color-ink-soft);
+  max-width: 34em;
+}
+
+.body p {
+  margin: 0 0 14px;
+}
+
+.demo {
+  position: relative;
+  min-width: 0;
+}
+
+/* Lamplight falling on each demonstration. */
+.demo::before {
+  content: '';
+  position: absolute;
+  inset: -12% -8%;
+  z-index: -1;
+  background: radial-gradient(closest-side, var(--color-glow), transparent);
+  pointer-events: none;
+}

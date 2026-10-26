@@ -1,8 +1,40 @@
 :root {
   --gutter: clamp(16px, 4vw, 40px);
-  --measure-page: 1200px;
+  --measure-page: 1240px;
   --measure-text: 68ch;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* A damped spring (stiffness 180, damping 22), sampled: slight overshoot, settles softly. */
+  --spring: linear(
+    0,
+    0.011,
+    0.042 2.2%,
+    0.163 4.7%,
+    0.336 7.4%,
+    0.53 10.4%,
+    0.711 13.6%,
+    0.858 16.9%,
+    0.969 20.4%,
+    1.04 23.9%,
+    1.078 27.6%,
+    1.088 31.3%,
+    1.08 35.1%,
+    1.059 39.1%,
+    1.034 43.3%,
+    1.012 47.8%,
+    0.996 52.8%,
+    0.988 58.4%,
+    0.988 65%,
+    0.995 73.6%,
+    1
+  );
+  /* Type scale: 1.333 (perfect fourth) from 18 px body, fluid at the top. */
+  --t-0: 15px;
+  --t-1: 18px;
+  --t-2: clamp(20px, 1.6vw + 14px, 24px);
+  --t-3: clamp(26px, 2.4vw + 16px, 34px);
+  --t-4: clamp(34px, 4vw + 18px, 56px);
+  --t-5: clamp(44px, 7vw + 12px, 112px);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.4 0 0 0 0 0.3 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 *,
@@ -83,7 +115,96 @@ body:has([data-reader]) {
   top: 12px;
 }
 
+/* Speaker-name colours, the app's own (player/readAlong.ts): readable on paper and on night. */
+:root {
+  --label-0: #9d432e;
+  --label-1: #2d6592;
+  --label-2: #456b28;
+  --label-3: #764bb0;
+  --label-unknown: #606060;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --label-0: #f08a6e;
+    --label-1: #7db8e8;
+    --label-2: #9bcb72;
+    --label-3: #be9bf2;
+    --label-unknown: #a8a8a8;
+  }
+}
+
+.night {
+  --label-0: #f08a6e;
+  --label-1: #7db8e8;
+  --label-2: #9bcb72;
+  --label-3: #be9bf2;
+  --label-unknown: #a8a8a8;
+}
+
+/* Paper grain over everything, barely there: the page feels printed, not rendered. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background-image: var(--grain);
+  opacity: 0.07;
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) body::after {
+    mix-blend-mode: screen;
+    opacity: 0.05;
+  }
+}
+
+/* Scroll reveals (components/Reveal.tsx): hidden only when script can show them again. */
+@media (scripting: enabled) {
+  [data-reveal]:not([data-in]) {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  [data-reveal='stagger']:not([data-in]) > * {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+}
+
+[data-reveal] {
+  transition:
+    opacity 700ms var(--ease-out),
+    transform 900ms var(--spring);
+}
+
+[data-reveal='stagger'] {
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+[data-reveal='stagger'] > * {
+  transition:
+    opacity 600ms var(--ease-out) calc(var(--i, 0) * 70ms),
+    transform 900ms var(--spring) calc(var(--i, 0) * 70ms);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  [data-reveal] > * {
+    opacity: 1 !important;
+    transform: none !important;
+  }
   html {
     scroll-behavior: auto;
   }

@@ -1,5 +1,4 @@
 .footer {
-  margin-top: var(--space-x5);
   border-top: 1px solid var(--color-hairline);
   background: var(--color-surface);
 }

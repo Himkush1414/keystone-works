@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { cssVariables } from '@lamplight/tokens';
 import { SiteFooter } from '../components/SiteFooter';
 import { SiteHeader } from '../components/SiteHeader';
+import { nightClass } from '../lib/night';
 import { fontVariables } from './fonts';
 import './globals.css';
 
@@ -37,7 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={fontVariables}>
       <body>
         <style href="lamplight-tokens" precedence="default">
-          {cssVariables()}
+          {`${cssVariables()}\n${nightClass()}`}
         </style>
         <a className="skip" href="#main">
           Skip to content

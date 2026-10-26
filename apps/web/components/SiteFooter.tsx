@@ -4,7 +4,7 @@ import styles from './SiteFooter.module.css';
 
 export function SiteFooter() {
   return (
-    <footer className={styles.footer}>
+    <footer className={`night ${styles.footer}`}>
       <div className={styles.inner}>
         <div className={styles.brand}>
           <Mark size={24} />
