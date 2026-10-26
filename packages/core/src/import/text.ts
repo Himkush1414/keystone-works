@@ -106,6 +106,31 @@ function chaptersFromHeadings(blocks: readonly Block[]): Chapter[] {
   return heads.map(({ b, i }, k) => ({ title: b.text, level: 1, blockStart: k === 0 ? 0 : i }));
 }
 
+/**
+ * Takes plain-text emphasis markers out of a line: `_word_` (Project Gutenberg's italics) and `*word*`. The
+ * markers are neither shown nor spoken; the stretches they marked are returned as offsets into the new text.
+ * An underscore inside a word (snake_case) or one without a partner is left alone.
+ */
+export function takeEmphasis(text: string): { text: string; emphasis: [number, number][] } {
+  const re = /(?<![\p{L}\p{N}_*])([_*])(?![\s_*])([^_*\n]*?[^\s_*])\1(?![\p{L}\p{N}_*])/gu;
+  const emphasis: [number, number][] = [];
+  let out = '';
+  let last = 0;
+  for (const m of text.matchAll(re)) {
+    out += text.slice(last, m.index);
+    const inner = m[2] ?? '';
+    emphasis.push([out.length, out.length + inner.length]);
+    out += inner;
+    last = m.index + m[0].length;
+  }
+  return { text: out + text.slice(last), emphasis };
+}
+
+const withEmphasis = (b: Block): Block => {
+  const { text, emphasis } = takeEmphasis(b.text);
+  return emphasis.length ? { ...b, text, emphasis } : b;
+};
+
 /** Plain text: paragraphs at blank lines; chapter headings recognised; hard-wrapped lines rejoined. */
 export function parsePlainText(
   input: string,
@@ -119,9 +144,11 @@ export function parsePlainText(
     .filter(Boolean);
   if (!paras.length) throw new ImportError('empty');
   const blocks: Block[] = paras.map((p) =>
-    isHeadingLine(p)
-      ? { kind: 'heading', text: p.replace(/\s+/g, ' '), level: 1, skips: [] }
-      : { kind: 'paragraph', text: p.replace(/\s*\n\s*/g, ' '), skips: [] },
+    withEmphasis(
+      isHeadingLine(p)
+        ? { kind: 'heading', text: p.replace(/\s+/g, ' '), level: 1, skips: [] }
+        : { kind: 'paragraph', text: p.replace(/\s*\n\s*/g, ' '), skips: [] },
+    ),
   );
   const firstLine = paras[0]?.split('\n')[0]?.trim() ?? '';
   return {

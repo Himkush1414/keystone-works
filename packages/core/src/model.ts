@@ -36,6 +36,8 @@ export interface Block {
   skips: Skip[];
   /** Source page for PDFs (1-based). */
   page?: number;
+  /** Emphasised stretches (italics in the source) as [start, end) offsets into `text`. */
+  emphasis?: [number, number][];
 }
 
 export interface Chapter {
