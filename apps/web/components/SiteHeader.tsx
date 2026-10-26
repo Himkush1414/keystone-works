@@ -4,7 +4,7 @@ import styles from './SiteHeader.module.css';
 
 export function SiteHeader() {
   return (
-    <header className={styles.header}>
+    <header className={`night ${styles.header}`}>
       <div className={styles.inner}>
         <Link href="/" className={styles.brand} aria-label="Lamplight home">
           <Mark size={28} />
