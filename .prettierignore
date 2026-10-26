@@ -3,6 +3,7 @@ dist
 build
 .expo
 .next
+.vercel
 coverage
 _private
 *.min.js
