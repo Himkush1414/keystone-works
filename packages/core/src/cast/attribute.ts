@@ -311,7 +311,7 @@ const CONVERSATION_GAP = 3;
  * unquoted Hindi, "said the Hatter", turns by name and by the first-person narrator). 3: lines said by several
  * people go to no one, things and verbs are never speakers, Hindi genders from a speaker's own words.
  */
-export const CAST_VERSION = 2;
+export const CAST_VERSION = 3;
 
 /** A line whose speaker the listener has set: the quotation starting at `start` in paragraph `block`. */
 export interface FixedSpeaker {
