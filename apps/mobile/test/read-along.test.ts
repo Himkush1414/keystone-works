@@ -39,6 +39,16 @@ describe('readAlongBlocks', () => {
     expect(show(at(kept, 0))).toEqual(['0:Readers agree [12] on this.']);
   });
 
+  it('marks emphasised text as its own run, without the underscores', () => {
+    const { blocks, sentences } = doc('He _may_ fall in love. Then _you_ must go.');
+    const read = readAlongBlocks(blocks, sentences, CLEAN);
+    const b = at(read, 0);
+    expect(b.text).toBe('He may fall in love. Then you must go.');
+    expect(
+      b.runs.filter((r) => r.emphasis).map((r) => `${r.sentence}:${b.text.slice(r.start, r.end)}`),
+    ).toEqual(['0:may', '1:you']);
+  });
+
   it('covers every character of every block exactly once', () => {
     const { blocks, sentences } = doc('A [1] b. C d.\n\nE (Smith, 2020) f.');
     for (const b of readAlongBlocks(blocks, sentences, { ...CLEAN, citation: true })) {

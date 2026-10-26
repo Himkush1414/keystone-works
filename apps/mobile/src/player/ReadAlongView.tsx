@@ -168,6 +168,7 @@ const BlockText = memo(function BlockText({
                 current={run.sentence !== null && run.sentence === current}
                 word={word}
                 theme={theme}
+                italicFamily={heading ? FONT.displayItalic : READER_FONTS[font].italic}
                 showSkipped={showSkipped}
                 onSentencePress={onSentencePress}
                 onSentenceLongPress={onSentenceLongPress}
@@ -186,11 +187,14 @@ function RunText({
   current,
   word,
   theme,
+  italicFamily,
   showSkipped,
   onSentencePress,
   onSentenceLongPress,
 }: {
   text: string;
+  /** The italic face of the block's font, for emphasised runs (custom fonts don't synthesise italics). */
+  italicFamily: string;
   run: Run;
   current: boolean;
   word: { start: number; end: number } | null;
@@ -203,6 +207,7 @@ function RunText({
   const style: TextStyle = {
     ...(current ? { backgroundColor: theme.glow } : null),
     ...(run.skipped ? { color: theme.inkSoft, opacity: 0.6 } : null),
+    ...(run.emphasis ? { fontFamily: italicFamily, fontStyle: 'italic' } : null),
   };
   const press = run.sentence === null ? undefined : () => onSentencePress(run.sentence as number);
   const longPress =

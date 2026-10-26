@@ -24,8 +24,9 @@ export interface DocumentSettings {
  * produces: a file opened again with an older version's text is then imported afresh, in place.
  * 1: Hindi PDFs read through ActualText (#64), no more paragraphs cut at the first unmapped glyph.
  * 2: stories that aren't books (a short story saved as a PDF) get Cast, so their dialogue has speakers.
+ * 3: plain-text italics (`_may_`) become emphasis instead of underscores shown in the text.
  */
-export const IMPORT_VERSION = 2;
+export const IMPORT_VERSION = 3;
 
 export interface LibraryItem {
   id: string;
@@ -224,7 +225,7 @@ export function saveContent(
     db.run('DELETE FROM blocks_fts WHERE document_id = ?', [id]);
     draft.blocks.forEach((b: Block, ord: number) => {
       db.run(
-        'INSERT INTO blocks (document_id, ord, kind, level, page, text, skips_json) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO blocks (document_id, ord, kind, level, page, text, skips_json, emphasis_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [
           id,
           ord,
@@ -233,6 +234,7 @@ export function saveContent(
           b.page ?? null,
           b.text,
           b.skips.length ? JSON.stringify(b.skips.map((s) => [s.start, s.end, s.reason])) : null,
+          b.emphasis?.length ? JSON.stringify(b.emphasis) : null,
         ],
       );
       if (b.kind !== 'code' && b.text.trim()) {
