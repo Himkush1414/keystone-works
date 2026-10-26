@@ -1,6 +1,8 @@
 .band {
   position: relative;
   isolation: isolate;
+  /* The glow behind each demo reaches past the screen's sides; clip it there (not a scroll container). */
+  overflow-x: clip;
 }
 
 /* Every other chapter sits on a slightly deeper page, so the story turns rather than scrolls. */
