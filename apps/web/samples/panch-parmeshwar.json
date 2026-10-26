@@ -6,9 +6,8 @@
   "author": "प्रेमचंद",
   "year": 1916,
   "source": "Wikisource, Saptasaroj. Abridged; spelling modernised and the dialogue punctuated with quotation marks.",
-  "corrected": true,
   "narrator": "M1",
-  "durationMs": 43190,
+  "durationMs": 44362,
   "audio": "/samples/panch-parmeshwar.mp3",
   "blocks": [
     {
@@ -18,28 +17,28 @@
           "text": "जुम्मन शेख़ और अलगू चौधरी में गाढ़ी मित्रता थी।",
           "gap": " ",
           "start": 0,
-          "end": 3037,
+          "end": 3097,
           "voice": "M1"
         },
         {
           "text": "साझे में खेती होती थी।",
           "gap": " ",
-          "start": 3407,
-          "end": 4739,
+          "start": 3497,
+          "end": 5005,
           "voice": "M1"
         },
         {
           "text": "कुछ लेन-देन में भी साझा था।",
           "gap": " ",
-          "start": 5109,
-          "end": 6543,
+          "start": 5355,
+          "end": 6813,
           "voice": "M1"
         },
         {
           "text": "एक को दूसरे पर अटल विश्वास था।",
           "gap": "",
-          "start": 6913,
-          "end": 8837,
+          "start": 7203,
+          "end": 9132,
           "voice": "M1"
         }
       ]
@@ -50,22 +49,22 @@
         {
           "text": "चारों ओर से घूम-घामकर बेचारी खाला अलगू चौधरी के पास आई।",
           "gap": " ",
-          "start": 9597,
-          "end": 13485,
+          "start": 9962,
+          "end": 13931,
           "voice": "M1"
         },
         {
           "text": "लाठी पटक दी और दम लेकर बोली,",
           "gap": " ",
-          "start": 13855,
-          "end": 15429,
+          "start": 14311,
+          "end": 15980,
           "voice": "M1"
         },
         {
           "text": "“बेटा, तुम भी दम भर के लिए मेरी पंचायत में चले आना।”",
           "gap": "",
-          "start": 15679,
-          "end": 18304,
+          "start": 16220,
+          "end": 18861,
           "voice": "F4",
           "dialogue": true,
           "speaker": "खाला"
@@ -78,15 +77,15 @@
         {
           "text": "अलगू ने कहा,",
           "gap": " ",
-          "start": 18604,
-          "end": 19451,
+          "start": 19121,
+          "end": 20013,
           "voice": "M1"
         },
         {
           "text": "“मुझे बुलाकर क्या करोगी?",
           "gap": " ",
-          "start": 19701,
-          "end": 20879,
+          "start": 20253,
+          "end": 21430,
           "voice": "M2",
           "dialogue": true,
           "speaker": "अलगू"
@@ -94,8 +93,8 @@
         {
           "text": "कई गाँव के आदमी तो आवेंगे ही।”",
           "gap": "",
-          "start": 21309,
-          "end": 22897,
+          "start": 21860,
+          "end": 23484,
           "voice": "M2",
           "dialogue": true,
           "speaker": "अलगू"
@@ -108,15 +107,15 @@
         {
           "text": "खाला बोली,",
           "gap": " ",
-          "start": 23417,
-          "end": 24068,
+          "start": 23924,
+          "end": 24650,
           "voice": "M1"
         },
         {
           "text": "“अपनी विपद तो सबके आगे रो आई हूँ।",
           "gap": " ",
-          "start": 24318,
-          "end": 26002,
+          "start": 24910,
+          "end": 26659,
           "voice": "F4",
           "dialogue": true,
           "speaker": "खाला"
@@ -124,8 +123,8 @@
         {
           "text": "आने न आने का अख़्तियार उनको है।”",
           "gap": "",
-          "start": 26372,
-          "end": 27925,
+          "start": 27029,
+          "end": 28612,
           "voice": "F4",
           "dialogue": true,
           "speaker": "खाला"
@@ -138,8 +137,8 @@
         {
           "text": "“यों आने को मैं आ जाऊँगा, मगर पंचायत में मुँह न खोलूँगा,”",
           "gap": " ",
-          "start": 28445,
-          "end": 31321,
+          "start": 29102,
+          "end": 31979,
           "voice": "M2",
           "dialogue": true,
           "speaker": "अलगू"
@@ -147,8 +146,8 @@
         {
           "text": "अलगू ने कहा।",
           "gap": "",
-          "start": 31571,
-          "end": 32473,
+          "start": 32209,
+          "end": 33156,
           "voice": "M1"
         }
       ]
@@ -159,8 +158,8 @@
         {
           "text": "“क्यों बेटा?”",
           "gap": "",
-          "start": 32773,
-          "end": 33319,
+          "start": 33426,
+          "end": 33992,
           "voice": "F4",
           "dialogue": true,
           "speaker": "खाला"
@@ -173,8 +172,8 @@
         {
           "text": "“अब इसका क्या जवाब दूँ?",
           "gap": " ",
-          "start": 33619,
-          "end": 34671,
+          "start": 34582,
+          "end": 35634,
           "voice": "M2",
           "dialogue": true,
           "speaker": "अलगू"
@@ -182,8 +181,8 @@
         {
           "text": "जुम्मन मेरे पुराने मित्र हैं।",
           "gap": " ",
-          "start": 35101,
-          "end": 36670,
+          "start": 36024,
+          "end": 37592,
           "voice": "M2",
           "dialogue": true,
           "speaker": "अलगू"
@@ -191,8 +190,8 @@
         {
           "text": "उनसे बिगाड़ नहीं कर सकता।”",
           "gap": "",
-          "start": 37040,
-          "end": 38413,
+          "start": 37952,
+          "end": 39325,
           "voice": "M2",
           "dialogue": true,
           "speaker": "अलगू"
@@ -205,15 +204,15 @@
         {
           "text": "खाला ने पूछा,",
           "gap": " ",
-          "start": 38933,
-          "end": 39644,
+          "start": 39855,
+          "end": 40566,
           "voice": "M1"
         },
         {
           "text": "“बेटा, क्या बिगाड़ के डर से ईमान की बात न कहोगे?”",
           "gap": "",
-          "start": 39894,
-          "end": 42370,
+          "start": 40826,
+          "end": 43492,
           "voice": "F4",
           "dialogue": true,
           "speaker": "खाला"

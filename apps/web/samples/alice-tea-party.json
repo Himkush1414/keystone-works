@@ -6,9 +6,8 @@
   "author": "Lewis Carroll",
   "year": 1865,
   "source": "Project Gutenberg eBook #11, the opening of Chapter 7.",
-  "corrected": true,
   "narrator": "F2",
-  "durationMs": 75287,
+  "durationMs": 76133,
   "audio": "/samples/alice-tea-party.mp3",
   "blocks": [
     {
@@ -24,8 +23,8 @@
         {
           "text": "“Very uncomfortable for the Dormouse,”",
           "gap": " ",
-          "start": 14731,
-          "end": 16655,
+          "start": 14711,
+          "end": 16640,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Alice"
@@ -33,15 +32,15 @@
         {
           "text": "thought Alice;",
           "gap": " ",
-          "start": 16905,
-          "end": 17612,
+          "start": 16900,
+          "end": 17607,
           "voice": "F2"
         },
         {
           "text": "“only, as it’s asleep, I suppose it doesn’t mind.”",
           "gap": "",
-          "start": 17862,
-          "end": 20417,
+          "start": 17857,
+          "end": 20443,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Alice"
@@ -54,38 +53,38 @@
         {
           "text": "The table was a large one, but the three were all crowded together at one corner of it:",
           "gap": " ",
-          "start": 21177,
-          "end": 25291,
+          "start": 21243,
+          "end": 25357,
           "voice": "F2"
         },
         {
           "text": "“No room!",
           "gap": " ",
-          "start": 25541,
-          "end": 25977,
+          "start": 25607,
+          "end": 26042,
           "voice": "M2",
           "dialogue": true
         },
         {
           "text": "No room!”",
           "gap": " ",
-          "start": 26407,
-          "end": 26958,
+          "start": 26512,
+          "end": 27063,
           "voice": "M2",
           "dialogue": true
         },
         {
           "text": "they cried out when they saw Alice coming.",
           "gap": " ",
-          "start": 27268,
-          "end": 28817,
+          "start": 27373,
+          "end": 28922,
           "voice": "F2"
         },
         {
           "text": "“There’s plenty of room!”",
           "gap": " ",
-          "start": 29117,
-          "end": 30284,
+          "start": 29802,
+          "end": 30974,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Alice"
@@ -93,8 +92,8 @@
         {
           "text": "said Alice indignantly, and she sat down in a large arm-chair at one end of the table.",
           "gap": "",
-          "start": 30594,
-          "end": 35274,
+          "start": 31264,
+          "end": 35945,
           "voice": "F2"
         }
       ]
@@ -105,8 +104,8 @@
         {
           "text": "“Have some wine,”",
           "gap": " ",
-          "start": 36034,
-          "end": 36831,
+          "start": 36655,
+          "end": 37451,
           "voice": "M2",
           "dialogue": true,
           "speaker": "March Hare"
@@ -114,8 +113,8 @@
         {
           "text": "the March Hare said in an encouraging tone.",
           "gap": "",
-          "start": 37081,
-          "end": 38875,
+          "start": 37681,
+          "end": 39475,
           "voice": "F2"
         }
       ]
@@ -126,15 +125,15 @@
         {
           "text": "Alice looked all round the table, but there was nothing on it but tea.",
           "gap": " ",
-          "start": 39635,
-          "end": 42842,
+          "start": 40175,
+          "end": 43382,
           "voice": "F2"
         },
         {
           "text": "“I don’t see any wine,”",
           "gap": " ",
-          "start": 43292,
-          "end": 44429,
+          "start": 43802,
+          "end": 44940,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Alice"
@@ -142,8 +141,8 @@
         {
           "text": "she remarked.",
           "gap": "",
-          "start": 44679,
-          "end": 45235,
+          "start": 45200,
+          "end": 45756,
           "voice": "F2"
         }
       ]
@@ -154,8 +153,8 @@
         {
           "text": "“There isn’t any,”",
           "gap": " ",
-          "start": 45535,
-          "end": 46302,
+          "start": 46036,
+          "end": 46802,
           "voice": "M2",
           "dialogue": true,
           "speaker": "March Hare"
@@ -163,8 +162,8 @@
         {
           "text": "said the March Hare.",
           "gap": "",
-          "start": 46552,
-          "end": 47489,
+          "start": 47072,
+          "end": 48009,
           "voice": "F2"
         }
       ]
@@ -175,8 +174,8 @@
         {
           "text": "“Then it wasn’t very civil of you to offer it,”",
           "gap": " ",
-          "start": 47729,
-          "end": 49848,
+          "start": 48209,
+          "end": 50374,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Alice"
@@ -184,8 +183,8 @@
         {
           "text": "said Alice angrily.",
           "gap": "",
-          "start": 50098,
-          "end": 51105,
+          "start": 50624,
+          "end": 51631,
           "voice": "F2"
         }
       ]
@@ -196,8 +195,8 @@
         {
           "text": "“It wasn’t very civil of you to sit down without being invited,”",
           "gap": " ",
-          "start": 51625,
-          "end": 54777,
+          "start": 52551,
+          "end": 55703,
           "voice": "M2",
           "dialogue": true,
           "speaker": "March Hare"
@@ -205,8 +204,8 @@
         {
           "text": "said the March Hare.",
           "gap": "",
-          "start": 55027,
-          "end": 55964,
+          "start": 55973,
+          "end": 56910,
           "voice": "F2"
         }
       ]
@@ -217,8 +216,8 @@
         {
           "text": "“I didn’t know it was your table,”",
           "gap": " ",
-          "start": 56484,
-          "end": 58003,
+          "start": 57340,
+          "end": 58863,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Alice"
@@ -226,15 +225,15 @@
         {
           "text": "said Alice;",
           "gap": " ",
-          "start": 58253,
-          "end": 58924,
+          "start": 59133,
+          "end": 59804,
           "voice": "F2"
         },
         {
           "text": "“it’s laid for a great many more than three.”",
           "gap": "",
-          "start": 59174,
-          "end": 61183,
+          "start": 60074,
+          "end": 62089,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Alice"
@@ -247,8 +246,8 @@
         {
           "text": "“Your hair wants cutting,”",
           "gap": " ",
-          "start": 61483,
-          "end": 62550,
+          "start": 62329,
+          "end": 63406,
           "voice": "M3",
           "dialogue": true,
           "speaker": "Hatter"
@@ -256,15 +255,15 @@
         {
           "text": "said the Hatter.",
           "gap": " ",
-          "start": 62800,
-          "end": 63512,
+          "start": 63636,
+          "end": 64347,
           "voice": "F2"
         },
         {
           "text": "He had been looking at Alice for some time with great curiosity, and this was his first speech.",
           "gap": "",
-          "start": 63882,
-          "end": 68718,
+          "start": 64697,
+          "end": 69533,
           "voice": "F2"
         }
       ]
@@ -275,8 +274,8 @@
         {
           "text": "“You should learn not to make personal remarks,”",
           "gap": " ",
-          "start": 69478,
-          "end": 71727,
+          "start": 70273,
+          "end": 72573,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Alice"
@@ -284,15 +283,15 @@
         {
           "text": "Alice said with some severity;",
           "gap": " ",
-          "start": 71977,
-          "end": 73325,
+          "start": 72843,
+          "end": 74196,
           "voice": "F2"
         },
         {
           "text": "“it’s very rude.”",
           "gap": "",
-          "start": 73575,
-          "end": 74527,
+          "start": 74446,
+          "end": 75413,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Alice"
