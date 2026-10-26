@@ -1,0 +1,622 @@
+{
+  "languages": [
+    {
+      "code": "en",
+      "name": "English",
+      "text": "Good evening. Shall I read you a story?",
+      "voice": "F1",
+      "audio": "/demos/lang-en.mp3"
+    },
+    {
+      "code": "hi",
+      "name": "हिन्दी",
+      "text": "शुभ संध्या। क्या मैं आपको एक कहानी सुनाऊँ?",
+      "voice": "M2",
+      "audio": "/demos/lang-hi.mp3"
+    },
+    {
+      "code": "es",
+      "name": "Español",
+      "text": "Buenas noches. ¿Te leo un cuento?",
+      "voice": "F5",
+      "audio": "/demos/lang-es.mp3"
+    },
+    {
+      "code": "fr",
+      "name": "Français",
+      "text": "Bonsoir. Je vous lis une histoire ?",
+      "voice": "M1",
+      "audio": "/demos/lang-fr.mp3"
+    },
+    {
+      "code": "de",
+      "name": "Deutsch",
+      "text": "Guten Abend. Soll ich dir eine Geschichte vorlesen?",
+      "voice": "F2",
+      "audio": "/demos/lang-de.mp3"
+    },
+    {
+      "code": "pt",
+      "name": "Português",
+      "text": "Boa noite. Quer que eu leia uma história?",
+      "voice": "M3",
+      "audio": "/demos/lang-pt.mp3"
+    },
+    {
+      "code": "it",
+      "name": "Italiano",
+      "text": "Buonasera. Ti leggo una storia?",
+      "voice": "F3",
+      "audio": "/demos/lang-it.mp3"
+    },
+    {
+      "code": "nl",
+      "name": "Nederlands",
+      "text": "Goedenavond. Zal ik je een verhaal voorlezen?",
+      "voice": "M4",
+      "audio": "/demos/lang-nl.mp3"
+    },
+    {
+      "code": "pl",
+      "name": "Polski",
+      "text": "Dobry wieczór. Czy przeczytać ci opowieść?",
+      "voice": "F4",
+      "audio": "/demos/lang-pl.mp3"
+    },
+    {
+      "code": "ru",
+      "name": "Русский",
+      "text": "Добрый вечер. Прочитать вам историю?",
+      "voice": "M5",
+      "audio": "/demos/lang-ru.mp3"
+    },
+    {
+      "code": "uk",
+      "name": "Українська",
+      "text": "Добрий вечір. Прочитати вам історію?",
+      "voice": "F1",
+      "audio": "/demos/lang-uk.mp3"
+    },
+    {
+      "code": "tr",
+      "name": "Türkçe",
+      "text": "İyi akşamlar. Size bir hikâye okuyayım mı?",
+      "voice": "M2",
+      "audio": "/demos/lang-tr.mp3"
+    },
+    {
+      "code": "ar",
+      "name": "العربية",
+      "text": "مساء الخير. هل أقرأ لك قصة؟",
+      "voice": "F5",
+      "audio": "/demos/lang-ar.mp3"
+    },
+    {
+      "code": "ja",
+      "name": "日本語",
+      "text": "こんばんは。お話をひとつ読みましょうか？",
+      "voice": "M1",
+      "audio": "/demos/lang-ja.mp3"
+    },
+    {
+      "code": "ko",
+      "name": "한국어",
+      "text": "좋은 저녁이에요. 이야기 하나 읽어 드릴까요?",
+      "voice": "F2",
+      "audio": "/demos/lang-ko.mp3"
+    },
+    {
+      "code": "vi",
+      "name": "Tiếng Việt",
+      "text": "Chào buổi tối. Tôi đọc cho bạn một câu chuyện nhé?",
+      "voice": "M3",
+      "audio": "/demos/lang-vi.mp3"
+    },
+    {
+      "code": "id",
+      "name": "Bahasa Indonesia",
+      "text": "Selamat malam. Mau saya bacakan sebuah cerita?",
+      "voice": "F3",
+      "audio": "/demos/lang-id.mp3"
+    },
+    {
+      "code": "sv",
+      "name": "Svenska",
+      "text": "God kväll. Ska jag läsa en berättelse för dig?",
+      "voice": "M4",
+      "audio": "/demos/lang-sv.mp3"
+    },
+    {
+      "code": "da",
+      "name": "Dansk",
+      "text": "God aften. Skal jeg læse en historie for dig?",
+      "voice": "F4",
+      "audio": "/demos/lang-da.mp3"
+    },
+    {
+      "code": "fi",
+      "name": "Suomi",
+      "text": "Hyvää iltaa. Luenko sinulle tarinan?",
+      "voice": "M5",
+      "audio": "/demos/lang-fi.mp3"
+    },
+    {
+      "code": "cs",
+      "name": "Čeština",
+      "text": "Dobrý večer. Mám vám přečíst příběh?",
+      "voice": "F1",
+      "audio": "/demos/lang-cs.mp3"
+    },
+    {
+      "code": "sk",
+      "name": "Slovenčina",
+      "text": "Dobrý večer. Mám vám prečítať príbeh?",
+      "voice": "M2",
+      "audio": "/demos/lang-sk.mp3"
+    },
+    {
+      "code": "sl",
+      "name": "Slovenščina",
+      "text": "Dober večer. Vam preberem zgodbo?",
+      "voice": "F5",
+      "audio": "/demos/lang-sl.mp3"
+    },
+    {
+      "code": "hr",
+      "name": "Hrvatski",
+      "text": "Dobra večer. Da vam pročitam priču?",
+      "voice": "M1",
+      "audio": "/demos/lang-hr.mp3"
+    },
+    {
+      "code": "hu",
+      "name": "Magyar",
+      "text": "Jó estét. Felolvassak egy történetet?",
+      "voice": "F2",
+      "audio": "/demos/lang-hu.mp3"
+    },
+    {
+      "code": "ro",
+      "name": "Română",
+      "text": "Bună seara. Să vă citesc o poveste?",
+      "voice": "M3",
+      "audio": "/demos/lang-ro.mp3"
+    },
+    {
+      "code": "bg",
+      "name": "Български",
+      "text": "Добър вечер. Да ви прочета ли една история?",
+      "voice": "F3",
+      "audio": "/demos/lang-bg.mp3"
+    },
+    {
+      "code": "el",
+      "name": "Ελληνικά",
+      "text": "Καλησπέρα. Να σου διαβάσω μια ιστορία;",
+      "voice": "M4",
+      "audio": "/demos/lang-el.mp3"
+    },
+    {
+      "code": "et",
+      "name": "Eesti",
+      "text": "Tere õhtust. Kas ma loen sulle ühe loo ette?",
+      "voice": "F4",
+      "audio": "/demos/lang-et.mp3"
+    },
+    {
+      "code": "lv",
+      "name": "Latviešu",
+      "text": "Labvakar. Vai lai es jums izlasu stāstu?",
+      "voice": "M5",
+      "audio": "/demos/lang-lv.mp3"
+    },
+    {
+      "code": "lt",
+      "name": "Lietuvių",
+      "text": "Labas vakaras. Ar paskaityti jums istoriją?",
+      "voice": "F1",
+      "audio": "/demos/lang-lt.mp3"
+    }
+  ],
+  "quality": [
+    {
+      "level": "live",
+      "steps": 6,
+      "audio": "/demos/quality-live.mp3"
+    },
+    {
+      "level": "studio",
+      "steps": 8,
+      "audio": "/demos/quality-studio.mp3"
+    },
+    {
+      "level": "studioPlus",
+      "steps": 16,
+      "audio": "/demos/quality-studioPlus.mp3"
+    }
+  ],
+  "qualityText": "The lamp was still burning when she turned the last page, and the rain had stopped.",
+  "cleanRead": {
+    "on": {
+      "audio": "/demos/clean-on.mp3",
+      "spoken": [
+        "Reading aloud changes how we remember a text. Listeners in the study recalled more of what they heard when the voice paused at the ends of sentences.",
+        "Most of them said they would listen again.",
+        "The effect was strongest for long and difficult texts."
+      ]
+    },
+    "off": {
+      "audio": "/demos/clean-off.mp3",
+      "spoken": [
+        "JOURNAL OF EVERYDAY READING · VOL. twelve",
+        "Reading aloud changes how we remember a text.fourteen Listeners in the study recalled more of what they heard when the voice paused at the ends of sentences (Ortiz and Rao, twenty nineteen).",
+        "Most of them said they would listen again (Ortiz and Rao, twenty nineteen).",
+        "The effect was strongest for long and difficult texts.",
+        "thirty-seven",
+        "JOURNAL OF EVERYDAY READING · VOL. twelve",
+        "thirty-eight",
+        "JOURNAL OF EVERYDAY READING · VOL. twelve",
+        "thirty-nine"
+      ]
+    },
+    "page": [
+      "JOURNAL OF EVERYDAY READING · VOL. 12",
+      "Reading aloud changes how we remember a text.14 Listeners in the study recalled more of what they",
+      "heard when the voice paused at the ends of sen-",
+      "tences (Ortiz and Rao, 2019).",
+      "37"
+    ]
+  },
+  "pronunciation": {
+    "text": "Hermione waited for Siobhan at the station in Leicester.",
+    "rules": [
+      {
+        "match": "Hermione",
+        "sayAs": "Her-my-oh-nee"
+      },
+      {
+        "match": "Siobhan",
+        "sayAs": "Shi-vawn"
+      },
+      {
+        "match": "Leicester",
+        "sayAs": "Lester"
+      }
+    ],
+    "before": "/demos/pron-before.mp3",
+    "after": "/demos/pron-after.mp3"
+  },
+  "cast": {
+    "off": {
+      "audio": "/demos/cast-off.mp3",
+      "lines": [
+        {
+          "text": "“My dear Mr. Bennet,”",
+          "start": 0,
+          "end": 1208,
+          "voice": "F1",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "said his lady to him one day,",
+          "start": 1468,
+          "end": 2911,
+          "voice": "F1"
+        },
+        {
+          "text": "“have you heard that Netherfield Park is let at last?”",
+          "start": 3151,
+          "end": 5897,
+          "voice": "F1",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "Mr. Bennet replied that he had not.",
+          "start": 6737,
+          "end": 8611,
+          "voice": "F1"
+        },
+        {
+          "text": "“But it is,”",
+          "start": 9431,
+          "end": 10147,
+          "voice": "F1",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "returned she;",
+          "start": 10387,
+          "end": 11199,
+          "voice": "F1"
+        },
+        {
+          "text": "“for Mrs. Long has just been here, and she told me all about it.”",
+          "start": 11439,
+          "end": 15162,
+          "voice": "F1",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "Mr. Bennet made no answer.",
+          "start": 15992,
+          "end": 17600,
+          "voice": "F1"
+        },
+        {
+          "text": "“Do you not want to know who has taken it?”",
+          "start": 18320,
+          "end": 20159,
+          "voice": "F1",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "cried his wife impatiently.",
+          "start": 20449,
+          "end": 21892,
+          "voice": "F1"
+        },
+        {
+          "text": "“You want to tell me, and I have no objection to hearing it.”",
+          "start": 22692,
+          "end": 25869,
+          "voice": "F1",
+          "speaker": "Mr. Bennet"
+        }
+      ]
+    },
+    "on": {
+      "audio": "/demos/cast-on.mp3",
+      "lines": [
+        {
+          "text": "“My dear Mr. Bennet,”",
+          "start": 0,
+          "end": 1293,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "said his lady to him one day,",
+          "start": 1553,
+          "end": 2996,
+          "voice": "F1"
+        },
+        {
+          "text": "“have you heard that Netherfield Park is let at last?”",
+          "start": 3236,
+          "end": 5962,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "Mr. Bennet replied that he had not.",
+          "start": 6802,
+          "end": 8676,
+          "voice": "F1"
+        },
+        {
+          "text": "“But it is,”",
+          "start": 9496,
+          "end": 10197,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "returned she;",
+          "start": 10437,
+          "end": 11249,
+          "voice": "F1"
+        },
+        {
+          "text": "“for Mrs. Long has just been here, and she told me all about it.”",
+          "start": 11489,
+          "end": 15167,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "Mr. Bennet made no answer.",
+          "start": 15997,
+          "end": 17605,
+          "voice": "F1"
+        },
+        {
+          "text": "“Do you not want to know who has taken it?”",
+          "start": 18325,
+          "end": 20270,
+          "voice": "F5",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "cried his wife impatiently.",
+          "start": 20560,
+          "end": 22003,
+          "voice": "F1"
+        },
+        {
+          "text": "“You want to tell me, and I have no objection to hearing it.”",
+          "start": 22643,
+          "end": 25579,
+          "voice": "M2",
+          "speaker": "Mr. Bennet"
+        }
+      ]
+    },
+    "yours": {
+      "audio": "/demos/cast-yours.mp3",
+      "lines": [
+        {
+          "text": "“My dear Mr. Bennet,”",
+          "start": 0,
+          "end": 1383,
+          "voice": "F3",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "said his lady to him one day,",
+          "start": 1643,
+          "end": 3086,
+          "voice": "F1"
+        },
+        {
+          "text": "“have you heard that Netherfield Park is let at last?”",
+          "start": 3326,
+          "end": 6177,
+          "voice": "F3",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "Mr. Bennet replied that he had not.",
+          "start": 7017,
+          "end": 8891,
+          "voice": "F1"
+        },
+        {
+          "text": "“But it is,”",
+          "start": 9711,
+          "end": 10398,
+          "voice": "F3",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "returned she;",
+          "start": 10638,
+          "end": 11449,
+          "voice": "F1"
+        },
+        {
+          "text": "“for Mrs. Long has just been here, and she told me all about it.”",
+          "start": 11689,
+          "end": 15488,
+          "voice": "F3",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "Mr. Bennet made no answer.",
+          "start": 16318,
+          "end": 17926,
+          "voice": "F1"
+        },
+        {
+          "text": "“Do you not want to know who has taken it?”",
+          "start": 18646,
+          "end": 20610,
+          "voice": "F3",
+          "speaker": "Mrs. Bennet"
+        },
+        {
+          "text": "cried his wife impatiently.",
+          "start": 20900,
+          "end": 22344,
+          "voice": "F1"
+        },
+        {
+          "text": "“You want to tell me, and I have no objection to hearing it.”",
+          "start": 22984,
+          "end": 26030,
+          "voice": "M4",
+          "speaker": "Mr. Bennet"
+        }
+      ]
+    }
+  },
+  "fixLine": "Your hair wants cutting.",
+  "fix": [
+    {
+      "speaker": "Alice",
+      "voice": "F5",
+      "audio": "/demos/fix-F5.mp3"
+    },
+    {
+      "speaker": "the Hatter",
+      "voice": "M3",
+      "audio": "/demos/fix-M3.mp3"
+    },
+    {
+      "speaker": "the March Hare",
+      "voice": "M2",
+      "audio": "/demos/fix-M2.mp3"
+    }
+  ],
+  "emotion": {
+    "text": [
+      "“You promised me you would be there,” said Maya.",
+      "“I said I would try,” Ravi said. “That is not the same thing, and you know—”",
+      "“It is exactly the same thing!” Maya shouted.",
+      "“Both of you, stop it,” said Grandmother quietly. “Sit down, both of you.”"
+    ],
+    "natural": "/demos/emotion-natural.mp3",
+    "processed": "/demos/emotion-processed.mp3"
+  },
+  "meanings": [
+    {
+      "lang": "en",
+      "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
+      "words": ["truth", "universally", "acknowledged", "possession"],
+      "meanings": {
+        "truth": {
+          "lemma": "truth",
+          "pos": "noun",
+          "definition": "a fact that has been verified",
+          "hindi": ["सत", "तथ्य"],
+          "roman": null
+        },
+        "universally": {
+          "lemma": "universally",
+          "pos": "adverb",
+          "definition": "everywhere",
+          "hindi": [],
+          "roman": null
+        },
+        "acknowledged": {
+          "lemma": "acknowledged",
+          "pos": "adjective",
+          "definition": "recognized or made known or admitted",
+          "hindi": [],
+          "roman": null
+        },
+        "possession": {
+          "lemma": "possession",
+          "pos": "noun",
+          "definition": "the act of having and controlling property",
+          "hindi": ["मिल्कियत"],
+          "roman": null
+        }
+      }
+    },
+    {
+      "lang": "hi",
+      "text": "कितना मनोहर, कितना सुहावना प्रभात है। वृक्षों पर कुछ अजीब हरियाली है। आज का सूर्य कितना शीतल है।",
+      "words": ["मनोहर", "प्रभात", "हरियाली", "शीतल"],
+      "meanings": {
+        "मनोहर": {
+          "lemma": "मनोहर",
+          "pos": "adjective",
+          "definition": "charming, beautiful, lovely",
+          "hindi": ["आकर्षक", "मोहक", "मदिर"],
+          "roman": "manohar"
+        },
+        "प्रभात": {
+          "lemma": "प्रभात",
+          "pos": "noun",
+          "definition": "morning, dawn",
+          "hindi": ["भोर", "तड़का", "उषाकाल"],
+          "roman": "prabhāt"
+        },
+        "हरियाली": {
+          "lemma": "हरियाली",
+          "pos": "noun",
+          "definition": "vegetation, flora; greenery",
+          "hindi": ["पेड़-पौधे"],
+          "roman": "hariyālī"
+        },
+        "शीतल": {
+          "lemma": "शीतल",
+          "pos": "adjective",
+          "definition": "cold, cool",
+          "hindi": [],
+          "roman": "śītal"
+        }
+      }
+    }
+  ]
+}
