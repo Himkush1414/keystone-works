@@ -8,6 +8,8 @@ import { useLocale, useT } from '@/i18n/useLocale';
 import { formatSpeed, SPEED_STOPS } from '@/player/speed';
 import { useServices } from '@/services/context';
 import type { CastModePreference, QualityPreference } from '@/state/settings';
+import { READER_FONTS, type ReaderFont } from '@/theme/fonts';
+import { nearest, READER_LINE_HEIGHTS, READER_SIZES } from './reading';
 import { useTheme } from '@/theme/theme';
 import { IconButton } from '@/ui/IconButton';
 import { OptionRow } from '@/ui/OptionRow';
@@ -17,6 +19,15 @@ import { ChoiceRow, SwitchRow } from '@/ui/SettingRows';
 import { Text } from '@/ui/Text';
 
 const TIERS: LanguageTier[] = ['best', 'good', 'basic'];
+const READER_THEMES = ['auto', 'paper', 'sepia', 'dusk', 'night'] as const;
+const THEME_KEY = {
+  auto: 'settings.readerThemeAuto',
+  paper: 'settings.readerThemePaper',
+  sepia: 'settings.readerThemeSepia',
+  dusk: 'settings.readerThemeDusk',
+  night: 'settings.readerThemeNight',
+} as const;
+
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   const { colors, space, radius } = useTheme();
   return (
@@ -100,6 +111,60 @@ export function SettingsScreen({
             value={s.motion === 'reduce'}
             onChange={(on) => update({ motion: on ? 'reduce' : 'system' })}
           />
+        </Section>
+
+        <Section title={t('player.appearance')}>
+          <Text variant="callout" tone="soft">
+            {t('settings.readerTheme')}
+          </Text>
+          {READER_THEMES.map((v) => (
+            <ChoiceRow
+              key={v}
+              label={t(THEME_KEY[v])}
+              selected={s.readerTheme === v}
+              onPress={() => update({ readerTheme: v })}
+            />
+          ))}
+          <Text variant="callout" tone="soft">
+            {t('settings.readerSize')}
+          </Text>
+          <Segmented
+            label={t('settings.readerSize')}
+            value={String(
+              nearest(
+                READER_SIZES.map((x) => x.value),
+                s.readerSize,
+              ),
+            )}
+            onChange={(v) => update({ readerSize: Number(v) })}
+            options={READER_SIZES.map((x) => ({ value: String(x.value), label: t(x.key) }))}
+          />
+          <Text variant="callout" tone="soft">
+            {t('settings.readerLineHeight')}
+          </Text>
+          <Segmented
+            label={t('settings.readerLineHeight')}
+            value={String(
+              nearest(
+                READER_LINE_HEIGHTS.map((x) => x.value),
+                s.readerLineHeight,
+              ),
+            )}
+            onChange={(v) => update({ readerLineHeight: Number(v) })}
+            options={READER_LINE_HEIGHTS.map((x) => ({ value: String(x.value), label: t(x.key) }))}
+          />
+          <Text variant="callout" tone="soft">
+            {t('settings.readerFont')}
+          </Text>
+          {(Object.keys(READER_FONTS) as ReaderFont[]).map((f) => (
+            <ChoiceRow
+              key={f}
+              label={READER_FONTS[f].label}
+              {...(f === 'opendyslexic' ? { description: t('settings.readerFontDyslexic') } : {})}
+              selected={s.readerFont === f}
+              onPress={() => update({ readerFont: f })}
+            />
+          ))}
         </Section>
 
         <Section title={t('settings.playback')}>
