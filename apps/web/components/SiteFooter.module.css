@@ -1,0 +1,47 @@
+.footer {
+  margin-top: var(--space-x5);
+  border-top: 1px solid var(--color-hairline);
+  background: var(--color-surface);
+}
+
+.inner {
+  max-width: var(--measure-page);
+  margin: 0 auto;
+  padding: 40px var(--gutter) 48px;
+  display: grid;
+  gap: 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-ink-soft);
+}
+
+.brand p {
+  margin: 0;
+}
+
+.brand strong {
+  color: var(--color-ink);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+
+.links a {
+  color: var(--color-ink);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.fine {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-ink-faint);
+}
