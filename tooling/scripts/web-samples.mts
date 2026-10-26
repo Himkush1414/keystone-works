@@ -9,8 +9,6 @@
 // same audio (the model's noise is seeded from the text).
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Mp3Encoder } from '@breezystack/lamejs';
-import * as ort from 'onnxruntime-node';
 import {
   assignVoices,
   buildQueue,
@@ -22,13 +20,8 @@ import {
   VOICE_CATALOG,
   type FixedSpeaker,
 } from '../../packages/core/src/index.ts';
-import {
-  configFromJson,
-  SupertonicEngine,
-  unpackIndexer,
-  unpackVoices,
-  type OrtModule,
-} from '../../packages/engine-web/src/index.ts';
+import type { SupertonicEngine, unpackVoices } from '../../packages/engine-web/src/index.ts';
+import { encodeMp3, loadEngine, splitLong, trim } from './lib/render.mts';
 
 interface SampleSpec {
   id: string;
@@ -67,8 +60,6 @@ const SAMPLES: SampleSpec[] = [
     year: 1865,
     narrator: 'F2',
     source: 'Project Gutenberg eBook #11, the opening of Chapter 7.',
-    // “No room! No room!” they cried out: the Hatter and the March Hare together, not the sleeping Dormouse.
-    fixes: { lines: { 'No room!': null } },
   },
   {
     id: 'idgah',
@@ -90,9 +81,6 @@ const SAMPLES: SampleSpec[] = [
     narrator: 'M1',
     source:
       'Wikisource, Saptasaroj. Abridged; spelling modernised and the dialogue punctuated with quotation marks.',
-    // Cast takes the stick (लाठी) for the speaker of "लाठी पटक दी और दम लेकर बोली" and has no gender for
-    // अलगू, whose verbs here all take ने; both corrected as a listener would.
-    fixes: { lines: { 'बेटा, तुम भी': 'खाला' }, voices: { अलगू: 'M2' } },
   },
 ];
 
@@ -100,11 +88,6 @@ const SAMPLES: SampleSpec[] = [
 const STEPS = 16;
 /** The model's own pace at 1× (PlaybackController.BASE_RATE). */
 const BASE_RATE = 1.05;
-/** Longest piece the model is given (Chunks.MAX); longer sentences are split at a comma or clause. */
-const MAX_PIECE = 240;
-const COMMA_GAP_MS = 190;
-const CLAUSE_GAP_MS = 290;
-const KBPS = 56;
 
 const [engineDir, ...only] = process.argv.slice(2);
 if (!engineDir) {
@@ -112,99 +95,6 @@ if (!engineDir) {
   process.exit(2);
 }
 const root = new URL('../../', import.meta.url).pathname;
-
-async function loadEngine(dir: string) {
-  const opts = { intraOpNumThreads: 4, interOpNumThreads: 1, graphOptimizationLevel: 'all' as const };
-  const load = (n: string) => ort.InferenceSession.create(join(dir, `${n}.onnx`), opts);
-  const [durationPredictor, textEncoder, vectorEstimator, vocoder] = await Promise.all([
-    load('duration_predictor'),
-    load('text_encoder'),
-    load('vector_estimator'),
-    load('vocoder'),
-  ]);
-  const engine = new SupertonicEngine(
-    ort as unknown as OrtModule,
-    { durationPredictor, textEncoder, vectorEstimator, vocoder },
-    configFromJson(JSON.parse(readFileSync(join(dir, 'tts.json'), 'utf8'))),
-    unpackIndexer(new Uint8Array(readFileSync(join(dir, 'indexer.bin')))),
-  );
-  const voices = unpackVoices(new Uint8Array(readFileSync(join(dir, 'voices.bin'))));
-  return { engine, voices };
-}
-
-/** Splits a long sentence at the comma or clause break nearest its middle, as the app's chunker does. */
-export function splitLong(text: string): { text: string; gapMs: number }[] {
-  if (text.length <= MAX_PIECE) return [{ text, gapMs: 0 }];
-  const breaks = [...text.matchAll(/[,;:—](?=\s)/g)].map((m) => m.index + 1);
-  const mid = text.length / 2;
-  const at = breaks.sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid))[0];
-  if (!at) return [{ text, gapMs: 0 }];
-  const head = text.slice(0, at).trim();
-  const gapMs = /[,—]$/.test(head) ? COMMA_GAP_MS : CLAUSE_GAP_MS;
-  const left = splitLong(head);
-  const last = left.at(-1);
-  if (last) last.gapMs = gapMs;
-  return [...left, ...splitLong(text.slice(at).trim())];
-}
-
-/**
- * Cuts the model's silent padding: keeps speech from the first to the last 5 ms frame within 30 dB of the
- * loudest (walked out through sound above -50 dB), plus 30 ms before and 60 ms after, faded (Chunks.trim).
- */
-export function trim(samples: Float32Array, rate: number): Float32Array {
-  const n = Math.round((rate * 5) / 1000);
-  const frames = Math.floor(samples.length / n);
-  if (!frames) return samples;
-  const energy = Array.from({ length: frames }, (_, f) => {
-    let e = 0;
-    for (let i = f * n; i < (f + 1) * n; i++) e += (samples[i] ?? 0) ** 2;
-    return e / n;
-  });
-  const floor = 10 ** (-50 / 10);
-  const peak = Math.max(...energy);
-  const strong = Math.max(peak * 10 ** (-30 / 10), 10 ** (-40 / 10));
-  const firstStrong = energy.findIndex((e) => e >= strong);
-  if (firstStrong < 0) return samples;
-  const lastStrong = energy.findLastIndex((e) => e >= strong);
-  const walk = (from: number, step: number) => {
-    let edge = from;
-    let quiet = 0;
-    for (let f = from + step; f >= 0 && f < frames; f += step) {
-      if ((energy[f] ?? 0) > floor) {
-        edge = f;
-        quiet = 0;
-      } else if (++quiet > 2) break;
-    }
-    return edge;
-  };
-  const first = walk(firstStrong, -1);
-  const last = walk(lastStrong, 1);
-  const from = Math.max(0, first * n - Math.round(rate * 0.03));
-  const to = Math.min(samples.length, (last + 1) * n + Math.round(rate * 0.06));
-  const out = samples.slice(from, to);
-  const fadeIn = first * n - from;
-  for (let i = 0; i < fadeIn; i++) out[i] = (out[i] ?? 0) * (i / fadeIn);
-  const fadeOut = to - (last + 1) * n;
-  for (let i = 0; i < fadeOut; i++) out[out.length - 1 - i] = (out[out.length - 1 - i] ?? 0) * (i / fadeOut);
-  return out;
-}
-
-function encodeMp3(samples: Float32Array, rate: number): Uint8Array {
-  const enc = new Mp3Encoder(1, rate, KBPS);
-  const pcm = new Int16Array(samples.length);
-  for (let i = 0; i < samples.length; i++)
-    pcm[i] = Math.max(-32768, Math.min(32767, Math.round((samples[i] ?? 0) * 32767)));
-  const parts: Uint8Array[] = [];
-  for (let i = 0; i < pcm.length; i += 1152) parts.push(enc.encodeBuffer(pcm.subarray(i, i + 1152)));
-  parts.push(enc.flush());
-  const out = new Uint8Array(parts.reduce((s, p) => s + p.length, 0));
-  let at = 0;
-  for (const p of parts) {
-    out.set(p, at);
-    at += p.length;
-  }
-  return out;
-}
 
 async function render(spec: SampleSpec, engine: SupertonicEngine, voices: ReturnType<typeof unpackVoices>) {
   const text = readFileSync(join(root, 'apps/web/samples', `${spec.id}.txt`), 'utf8');
@@ -260,7 +150,8 @@ async function render(spec: SampleSpec, engine: SupertonicEngine, voices: Return
     const start = (length / rate) * 1000;
     if (seg.text.trim()) {
       const gain = 10 ** ((seg.gainDb ?? 0) / 20);
-      for (const piece of splitLong(seg.text)) {
+      const pieces = splitLong(seg.text);
+      for (const [k, piece] of pieces.entries()) {
         const r = await engine.synthesize({
           text: piece.text,
           lang: seg.lang,
@@ -270,7 +161,8 @@ async function render(spec: SampleSpec, engine: SupertonicEngine, voices: Return
         });
         rate = r.sampleRate;
         if (r.dropped.length) console.warn(`  ${spec.id}: dropped ${r.dropped.join('')}`);
-        const audio = trim(r.samples, rate);
+        // As the player does: the line's last piece ends as it dies away when the queue asks for it.
+        const audio = trim(r.samples, rate, !!seg.release && k === pieces.length - 1);
         if (gain !== 1) for (let i = 0; i < audio.length; i++) audio[i] = (audio[i] ?? 0) * gain;
         push(audio);
         if (piece.gapMs) silence(piece.gapMs);

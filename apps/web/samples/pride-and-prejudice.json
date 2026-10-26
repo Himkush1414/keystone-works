@@ -7,7 +7,7 @@
   "year": 1813,
   "source": "Project Gutenberg eBook #1342, the opening of Chapter 1.",
   "narrator": "F1",
-  "durationMs": 87738,
+  "durationMs": 88544,
   "audio": "/samples/pride-and-prejudice.mp3",
   "blocks": [
     {
@@ -28,8 +28,8 @@
         {
           "text": "However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters.",
           "gap": "",
-          "start": 7130,
-          "end": 22198,
+          "start": 7190,
+          "end": 22258,
           "voice": "F1"
         }
       ]
@@ -41,7 +41,7 @@
           "text": "“My dear Mr. Bennet,”",
           "gap": " ",
           "start": 22958,
-          "end": 24196,
+          "end": 24251,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Mrs. Bennet"
@@ -49,15 +49,15 @@
         {
           "text": "said his lady to him one day,",
           "gap": " ",
-          "start": 24446,
-          "end": 25889,
+          "start": 24511,
+          "end": 25954,
           "voice": "F1"
         },
         {
           "text": "“have you heard that Netherfield Park is let at last?”",
           "gap": "",
-          "start": 26139,
-          "end": 28855,
+          "start": 26194,
+          "end": 28920,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Mrs. Bennet"
@@ -70,8 +70,8 @@
         {
           "text": "Mr. Bennet replied that he had not.",
           "gap": "",
-          "start": 29675,
-          "end": 31549,
+          "start": 29760,
+          "end": 31634,
           "voice": "F1"
         }
       ]
@@ -82,8 +82,8 @@
         {
           "text": "“But it is,”",
           "gap": " ",
-          "start": 32309,
-          "end": 33010,
+          "start": 32454,
+          "end": 33155,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Mrs. Bennet"
@@ -91,15 +91,15 @@
         {
           "text": "returned she;",
           "gap": " ",
-          "start": 33260,
-          "end": 34072,
+          "start": 33395,
+          "end": 34207,
           "voice": "F1"
         },
         {
           "text": "“for Mrs. Long has just been here, and she told me all about it.”",
           "gap": "",
-          "start": 34322,
-          "end": 37955,
+          "start": 34447,
+          "end": 38125,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Mrs. Bennet"
@@ -112,8 +112,8 @@
         {
           "text": "Mr. Bennet made no answer.",
           "gap": "",
-          "start": 38715,
-          "end": 40323,
+          "start": 38955,
+          "end": 40564,
           "voice": "F1"
         }
       ]
@@ -124,8 +124,8 @@
         {
           "text": "“Do not you want to know who has taken it?”",
           "gap": " ",
-          "start": 41083,
-          "end": 42927,
+          "start": 41284,
+          "end": 43153,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Mrs. Bennet"
@@ -133,8 +133,8 @@
         {
           "text": "cried his wife, impatiently.",
           "gap": "",
-          "start": 43237,
-          "end": 44785,
+          "start": 43463,
+          "end": 45021,
           "voice": "F1"
         }
       ]
@@ -145,8 +145,8 @@
         {
           "text": "“You want to tell me, and I have no objection to hearing it.”",
           "gap": "",
-          "start": 45085,
-          "end": 48022,
+          "start": 45691,
+          "end": 48627,
           "voice": "M2",
           "dialogue": true,
           "speaker": "Mr. Bennet"
@@ -159,8 +159,8 @@
         {
           "text": "This was invitation enough.",
           "gap": "",
-          "start": 48782,
-          "end": 50205,
+          "start": 49447,
+          "end": 50886,
           "voice": "F1"
         }
       ]
@@ -171,8 +171,8 @@
         {
           "text": "“Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England;",
           "gap": " ",
-          "start": 50965,
-          "end": 58672,
+          "start": 51686,
+          "end": 59398,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Mrs. Bennet"
@@ -180,8 +180,8 @@
         {
           "text": "that he came down on Monday in a chaise and four to see the place, and was so much delighted with it that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week.”",
           "gap": "",
-          "start": 59042,
-          "end": 75398,
+          "start": 59738,
+          "end": 76124,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Mrs. Bennet"
@@ -194,8 +194,8 @@
         {
           "text": "“What is his name?”",
           "gap": "",
-          "start": 75698,
-          "end": 76575,
+          "start": 76364,
+          "end": 77241,
           "voice": "M2",
           "dialogue": true,
           "speaker": "Mr. Bennet"
@@ -208,8 +208,8 @@
         {
           "text": "“Bingley.”",
           "gap": "",
-          "start": 76875,
-          "end": 77436,
+          "start": 77521,
+          "end": 78082,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Mrs. Bennet"
@@ -222,8 +222,8 @@
         {
           "text": "“Is he married or single?”",
           "gap": "",
-          "start": 77956,
-          "end": 79093,
+          "start": 78512,
+          "end": 79649,
           "voice": "M2",
           "dialogue": true,
           "speaker": "Mr. Bennet"
@@ -236,8 +236,8 @@
         {
           "text": "“Oh, single, my dear, to be sure!",
           "gap": " ",
-          "start": 79393,
-          "end": 81142,
+          "start": 80239,
+          "end": 82003,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Mrs. Bennet"
@@ -245,8 +245,8 @@
         {
           "text": "A single man of large fortune; four or five thousand a year.",
           "gap": " ",
-          "start": 81572,
-          "end": 84874,
+          "start": 82413,
+          "end": 85720,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Mrs. Bennet"
@@ -254,8 +254,8 @@
         {
           "text": "What a fine thing for our girls!”",
           "gap": "",
-          "start": 85244,
-          "end": 86918,
+          "start": 86080,
+          "end": 87804,
           "voice": "F5",
           "dialogue": true,
           "speaker": "Mrs. Bennet"
