@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { readerThemes, type ReaderThemeName } from '@lamplight/tokens';
-import { clock, LANGUAGE_NAMES, type Sample } from '../../lib/samples';
+import { clock, LANGUAGE_NAMES } from '../../lib/format';
+import type { Sample } from '../../lib/samples';
 import { flatten, LABEL_COLORS, sentenceAt, speakerLabels } from '../../lib/timeline';
 import { PlayButton } from '../PlayButton';
 import styles from './Reader.module.css';
