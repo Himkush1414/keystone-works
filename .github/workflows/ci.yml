@@ -32,6 +32,10 @@ jobs:
       - run: npx eslint . --max-warnings=0
       - run: npx prettier --check . --log-level warn
       - run: npm run -s test
+      - name: Build the website
+        run: npm run -s build -w @lamplight/web
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
 
   engine:
     name: Kotlin engine (JVM, real model)
