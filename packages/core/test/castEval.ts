@@ -71,6 +71,14 @@ export interface BookScore {
   voiced: number;
   /** Dialogue Cast found where no labelled line is: narration it would read as someone speaking. */
   spurious: number;
+  /** Lines that are no one character's (a group, words not said), and how many Cast left without a speaker. */
+  nobody: number;
+  nobodyRight: number;
+  /** Characters matched to a labelled speaker, and how many Cast gave the right gender (unknown counts wrong). */
+  genders: number;
+  gendersRight: number;
+  /** Characters Cast invented: given lines but matching no labelled speaker (a stick, a sleeping dormouse's lines). */
+  phantoms: string[];
 }
 
 /** Runs Cast on a book excerpt and checks the speaker of every gold line (found by its snippet, in order). */
@@ -84,7 +92,19 @@ export function scoreBook(book: BookExcerpt): BookScore {
   }
   const { characters, attributions } = analyseCast(paragraphs, book.lang);
   const byId = new Map(characters.map((c) => [c.id, c]));
-  const score: BookScore = { id: book.id, lines: 0, detected: 0, named: 0, voiced: 0, spurious: 0 };
+  const score: BookScore = {
+    id: book.id,
+    lines: 0,
+    detected: 0,
+    named: 0,
+    voiced: 0,
+    spurious: 0,
+    nobody: 0,
+    nobodyRight: 0,
+    genders: 0,
+    gendersRight: 0,
+    phantoms: [],
+  };
   const anchors: number[] = [];
   let pos = 0;
   for (const [anchor, gold] of book.lines) {
@@ -92,12 +112,16 @@ export function scoreBook(book: BookExcerpt): BookScore {
     if (i < 0) throw new Error(`${book.id}: snippet not found: ${anchor}`);
     pos = i + anchor.length;
     anchors.push(i);
-    if (!gold) continue;
-    score.lines++;
     let block = starts.length - 1;
     while (block > 0 && (starts[block] ?? 0) > i) block--;
     const local = i - (starts[block] ?? 0);
     const a = attributions.find((x) => x.block === block && x.span.start <= local + 1 && local < x.span.end);
+    if (!gold) {
+      score.nobody++;
+      if (!a?.speaker) score.nobodyRight++;
+      continue;
+    }
+    score.lines++;
     if (!a) continue;
     score.detected++;
     const c = a.speaker ? byId.get(a.speaker) : undefined;
@@ -106,6 +130,19 @@ export function scoreBook(book: BookExcerpt): BookScore {
       score.named++;
       if (a.confidence >= NAMED_VOICE_CONFIDENCE) score.voiced++;
     }
+  }
+  const goldOf = (c: { name: string; aliases: string[] }) =>
+    Object.values(book.speakers).find((g) =>
+      c.aliases.concat(c.name).some((n) => g.names.some((x) => norm(x) === norm(n))),
+    );
+  for (const c of characters) {
+    const g = goldOf(c);
+    if (!g) {
+      if (attributions.some((a) => a.speaker === c.id)) score.phantoms.push(c.name);
+      continue;
+    }
+    score.genders++;
+    if (c.gender === g.gender) score.gendersRight++;
   }
   for (const a of attributions) {
     const from = (starts[a.block] ?? 0) + a.span.start - 1;

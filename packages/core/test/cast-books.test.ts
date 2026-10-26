@@ -12,7 +12,7 @@ describe('Cast on real books', () => {
       (s) =>
         `${s.id.padEnd(22)} lines ${String(s.lines).padStart(3)}  found ${pct(s.detected, s.lines)}  named ${pct(s.named, s.lines)}  voiced ${pct(s.voiced, s.lines)}  spurious ${s.spurious}`,
     );
-    const sum = (k: keyof Omit<BookScore, 'id'>, lang?: string) =>
+    const sum = (k: keyof Omit<BookScore, 'id' | 'phantoms'>, lang?: string) =>
       scores.filter((s) => !lang || s.id.startsWith(lang)).reduce((n, s) => n + s[k], 0);
     for (const lang of ['en', 'hi']) {
       rows.push(
@@ -21,6 +21,15 @@ describe('Cast on real books', () => {
     }
     process.stdout.write(`\n${rows.join('\n')}\n`);
     expect(sum('lines')).toBe(204);
+  });
+
+  it('reports group lines left to no one, genders, and invented characters', () => {
+    const rows = scores.map(
+      (s) =>
+        `${s.id.padEnd(22)} no-one lines ${s.nobodyRight}/${s.nobody}  gender ${s.gendersRight}/${s.genders}  invented ${s.phantoms.length ? s.phantoms.join(', ') : '-'}`,
+    );
+    process.stdout.write(`\n${rows.join('\n')}\n`);
+    expect(scores.length).toBe(5);
   });
 
   it('fixes most of the rest with fewer taps than wrong lines, as a correction flips the guesses after it', () => {
