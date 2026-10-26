@@ -43,6 +43,7 @@
           "start": 22958,
           "end": 24196,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Mrs. Bennet"
         },
         {
@@ -58,6 +59,7 @@
           "start": 26139,
           "end": 28855,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Mrs. Bennet"
         }
       ]
@@ -83,6 +85,7 @@
           "start": 32309,
           "end": 33010,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Mrs. Bennet"
         },
         {
@@ -98,6 +101,7 @@
           "start": 34322,
           "end": 37955,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Mrs. Bennet"
         }
       ]
@@ -123,6 +127,7 @@
           "start": 41083,
           "end": 42927,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Mrs. Bennet"
         },
         {
@@ -143,6 +148,7 @@
           "start": 45085,
           "end": 48022,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "Mr. Bennet"
         }
       ]
@@ -168,6 +174,7 @@
           "start": 50965,
           "end": 58672,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Mrs. Bennet"
         },
         {
@@ -176,6 +183,7 @@
           "start": 59042,
           "end": 75398,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Mrs. Bennet"
         }
       ]
@@ -189,6 +197,7 @@
           "start": 75698,
           "end": 76575,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "Mr. Bennet"
         }
       ]
@@ -202,6 +211,7 @@
           "start": 76875,
           "end": 77436,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Mrs. Bennet"
         }
       ]
@@ -215,6 +225,7 @@
           "start": 77956,
           "end": 79093,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "Mr. Bennet"
         }
       ]
@@ -228,6 +239,7 @@
           "start": 79393,
           "end": 81142,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Mrs. Bennet"
         },
         {
@@ -236,6 +248,7 @@
           "start": 81572,
           "end": 84874,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Mrs. Bennet"
         },
         {
@@ -244,6 +257,7 @@
           "start": 85244,
           "end": 86918,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Mrs. Bennet"
         }
       ]

@@ -27,6 +27,7 @@
           "start": 14731,
           "end": 16655,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Alice"
         },
         {
@@ -42,6 +43,7 @@
           "start": 17862,
           "end": 20417,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Alice"
         }
       ]
@@ -61,14 +63,16 @@
           "gap": " ",
           "start": 25541,
           "end": 25977,
-          "voice": "M2"
+          "voice": "M2",
+          "dialogue": true
         },
         {
           "text": "No room!”",
           "gap": " ",
           "start": 26407,
           "end": 26958,
-          "voice": "M2"
+          "voice": "M2",
+          "dialogue": true
         },
         {
           "text": "they cried out when they saw Alice coming.",
@@ -83,6 +87,7 @@
           "start": 29117,
           "end": 30284,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Alice"
         },
         {
@@ -103,6 +108,7 @@
           "start": 36034,
           "end": 36831,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "March Hare"
         },
         {
@@ -130,6 +136,7 @@
           "start": 43292,
           "end": 44429,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Alice"
         },
         {
@@ -150,6 +157,7 @@
           "start": 45535,
           "end": 46302,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "March Hare"
         },
         {
@@ -170,6 +178,7 @@
           "start": 47729,
           "end": 49848,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Alice"
         },
         {
@@ -190,6 +199,7 @@
           "start": 51625,
           "end": 54777,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "March Hare"
         },
         {
@@ -210,6 +220,7 @@
           "start": 56484,
           "end": 58003,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Alice"
         },
         {
@@ -225,6 +236,7 @@
           "start": 59174,
           "end": 61183,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Alice"
         }
       ]
@@ -238,6 +250,7 @@
           "start": 61483,
           "end": 62550,
           "voice": "M3",
+          "dialogue": true,
           "speaker": "Hatter"
         },
         {
@@ -265,6 +278,7 @@
           "start": 69478,
           "end": 71727,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Alice"
         },
         {
@@ -280,6 +294,7 @@
           "start": 73575,
           "end": 74527,
           "voice": "F5",
+          "dialogue": true,
           "speaker": "Alice"
         }
       ]

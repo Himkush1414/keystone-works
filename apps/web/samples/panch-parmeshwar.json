@@ -67,6 +67,7 @@
           "start": 15679,
           "end": 18304,
           "voice": "F4",
+          "dialogue": true,
           "speaker": "खाला"
         }
       ]
@@ -87,6 +88,7 @@
           "start": 19701,
           "end": 20879,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "अलगू"
         },
         {
@@ -95,6 +97,7 @@
           "start": 21309,
           "end": 22897,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "अलगू"
         }
       ]
@@ -115,6 +118,7 @@
           "start": 24318,
           "end": 26002,
           "voice": "F4",
+          "dialogue": true,
           "speaker": "खाला"
         },
         {
@@ -123,6 +127,7 @@
           "start": 26372,
           "end": 27925,
           "voice": "F4",
+          "dialogue": true,
           "speaker": "खाला"
         }
       ]
@@ -136,6 +141,7 @@
           "start": 28445,
           "end": 31321,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "अलगू"
         },
         {
@@ -156,6 +162,7 @@
           "start": 32773,
           "end": 33319,
           "voice": "F4",
+          "dialogue": true,
           "speaker": "खाला"
         }
       ]
@@ -169,6 +176,7 @@
           "start": 33619,
           "end": 34671,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "अलगू"
         },
         {
@@ -177,6 +185,7 @@
           "start": 35101,
           "end": 36670,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "अलगू"
         },
         {
@@ -185,6 +194,7 @@
           "start": 37040,
           "end": 38413,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "अलगू"
         }
       ]
@@ -205,6 +215,7 @@
           "start": 39894,
           "end": 42370,
           "voice": "F4",
+          "dialogue": true,
           "speaker": "खाला"
         }
       ]

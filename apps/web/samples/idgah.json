@@ -125,6 +125,7 @@
           "start": 49210,
           "end": 51300,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "हामिद"
         },
         {
@@ -133,6 +134,7 @@
           "start": 51670,
           "end": 52607,
           "voice": "M2",
+          "dialogue": true,
           "speaker": "हामिद"
         }
       ]
