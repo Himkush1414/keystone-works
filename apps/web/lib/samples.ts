@@ -40,10 +40,4 @@ export const SAMPLES = [pride, alice, idgah, panch] as Sample[];
 
 export const sampleById = (id: string): Sample | undefined => SAMPLES.find((s) => s.id === id);
 
-export const LANGUAGE_NAMES: Record<Sample['lang'], string> = { en: 'English', hi: 'हिन्दी' };
-
-/** "1:28" */
-export function clock(ms: number): string {
-  const s = Math.max(0, Math.round(ms / 1000));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
+export { clock, LANGUAGE_NAMES } from './format';
