@@ -1,0 +1,213 @@
+{
+  "id": "panch-parmeshwar",
+  "lang": "hi",
+  "title": "पंच परमेश्वर",
+  "part": "Panch Parmeshwar · अंश",
+  "author": "प्रेमचंद",
+  "year": 1916,
+  "source": "Wikisource, Saptasaroj. Abridged; spelling modernised and the dialogue punctuated with quotation marks.",
+  "corrected": true,
+  "narrator": "M1",
+  "durationMs": 43190,
+  "audio": "/samples/panch-parmeshwar.mp3",
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "जुम्मन शेख़ और अलगू चौधरी में गाढ़ी मित्रता थी।",
+          "gap": " ",
+          "start": 0,
+          "end": 3037,
+          "voice": "M1"
+        },
+        {
+          "text": "साझे में खेती होती थी।",
+          "gap": " ",
+          "start": 3407,
+          "end": 4739,
+          "voice": "M1"
+        },
+        {
+          "text": "कुछ लेन-देन में भी साझा था।",
+          "gap": " ",
+          "start": 5109,
+          "end": 6543,
+          "voice": "M1"
+        },
+        {
+          "text": "एक को दूसरे पर अटल विश्वास था।",
+          "gap": "",
+          "start": 6913,
+          "end": 8837,
+          "voice": "M1"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "चारों ओर से घूम-घामकर बेचारी खाला अलगू चौधरी के पास आई।",
+          "gap": " ",
+          "start": 9597,
+          "end": 13485,
+          "voice": "M1"
+        },
+        {
+          "text": "लाठी पटक दी और दम लेकर बोली,",
+          "gap": " ",
+          "start": 13855,
+          "end": 15429,
+          "voice": "M1"
+        },
+        {
+          "text": "“बेटा, तुम भी दम भर के लिए मेरी पंचायत में चले आना।”",
+          "gap": "",
+          "start": 15679,
+          "end": 18304,
+          "voice": "F4",
+          "speaker": "खाला"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "अलगू ने कहा,",
+          "gap": " ",
+          "start": 18604,
+          "end": 19451,
+          "voice": "M1"
+        },
+        {
+          "text": "“मुझे बुलाकर क्या करोगी?",
+          "gap": " ",
+          "start": 19701,
+          "end": 20879,
+          "voice": "M2",
+          "speaker": "अलगू"
+        },
+        {
+          "text": "कई गाँव के आदमी तो आवेंगे ही।”",
+          "gap": "",
+          "start": 21309,
+          "end": 22897,
+          "voice": "M2",
+          "speaker": "अलगू"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "खाला बोली,",
+          "gap": " ",
+          "start": 23417,
+          "end": 24068,
+          "voice": "M1"
+        },
+        {
+          "text": "“अपनी विपद तो सबके आगे रो आई हूँ।",
+          "gap": " ",
+          "start": 24318,
+          "end": 26002,
+          "voice": "F4",
+          "speaker": "खाला"
+        },
+        {
+          "text": "आने न आने का अख़्तियार उनको है।”",
+          "gap": "",
+          "start": 26372,
+          "end": 27925,
+          "voice": "F4",
+          "speaker": "खाला"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“यों आने को मैं आ जाऊँगा, मगर पंचायत में मुँह न खोलूँगा,”",
+          "gap": " ",
+          "start": 28445,
+          "end": 31321,
+          "voice": "M2",
+          "speaker": "अलगू"
+        },
+        {
+          "text": "अलगू ने कहा।",
+          "gap": "",
+          "start": 31571,
+          "end": 32473,
+          "voice": "M1"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“क्यों बेटा?”",
+          "gap": "",
+          "start": 32773,
+          "end": 33319,
+          "voice": "F4",
+          "speaker": "खाला"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "“अब इसका क्या जवाब दूँ?",
+          "gap": " ",
+          "start": 33619,
+          "end": 34671,
+          "voice": "M2",
+          "speaker": "अलगू"
+        },
+        {
+          "text": "जुम्मन मेरे पुराने मित्र हैं।",
+          "gap": " ",
+          "start": 35101,
+          "end": 36670,
+          "voice": "M2",
+          "speaker": "अलगू"
+        },
+        {
+          "text": "उनसे बिगाड़ नहीं कर सकता।”",
+          "gap": "",
+          "start": 37040,
+          "end": 38413,
+          "voice": "M2",
+          "speaker": "अलगू"
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "sentences": [
+        {
+          "text": "खाला ने पूछा,",
+          "gap": " ",
+          "start": 38933,
+          "end": 39644,
+          "voice": "M1"
+        },
+        {
+          "text": "“बेटा, क्या बिगाड़ के डर से ईमान की बात न कहोगे?”",
+          "gap": "",
+          "start": 39894,
+          "end": 42370,
+          "voice": "F4",
+          "speaker": "खाला"
+        }
+      ]
+    }
+  ]
+}
