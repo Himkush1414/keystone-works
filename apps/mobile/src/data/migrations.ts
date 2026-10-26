@@ -201,6 +201,14 @@ export const migrations: Migration[] = [
       db.exec('ALTER TABLE documents ADD COLUMN import_version INTEGER NOT NULL DEFAULT 0;');
     },
   },
+  {
+    id: 5,
+    name: 'emphasis',
+    up(db) {
+      // Italic stretches of a block ([[start, end], …] as JSON), drawn in italics by the reader.
+      db.exec('ALTER TABLE blocks ADD COLUMN emphasis_json TEXT;');
+    },
+  },
 ];
 
 /** Applies pending migrations in one transaction each. Returns the resulting schema version. */

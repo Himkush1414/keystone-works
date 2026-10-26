@@ -74,9 +74,11 @@ export function loadContent(db: Db, documentId: string): DocumentContent {
       page: number | null;
       text: string;
       skips_json: string | null;
-    }>('SELECT kind, level, page, text, skips_json FROM blocks WHERE document_id = ? ORDER BY ord', [
-      documentId,
-    ])
+      emphasis_json: string | null;
+    }>(
+      'SELECT kind, level, page, text, skips_json, emphasis_json FROM blocks WHERE document_id = ? ORDER BY ord',
+      [documentId],
+    )
     .map((r): Block => {
       const skips: Skip[] = r.skips_json
         ? (JSON.parse(r.skips_json) as [number, number, SkipReason][]).map(([start, end, reason]) => ({
@@ -88,6 +90,7 @@ export function loadContent(db: Db, documentId: string): DocumentContent {
       const b: Block = { kind: r.kind, text: r.text, skips };
       if (r.level !== null) b.level = r.level;
       if (r.page !== null) b.page = r.page;
+      if (r.emphasis_json) b.emphasis = JSON.parse(r.emphasis_json) as [number, number][];
       return b;
     });
   const rows = db.all<{
