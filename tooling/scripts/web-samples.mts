@@ -316,6 +316,7 @@ async function render(spec: SampleSpec, engine: SupertonicEngine, voices: Return
           start: Math.round(t?.start ?? 0),
           end: Math.round(t?.end ?? 0),
           voice: t?.voice ?? spec.narrator,
+          ...(s.kind === 'dialogue' ? { dialogue: true } : {}),
           ...(s.kind === 'dialogue' && speaker ? { speaker } : {}),
         };
       }),
