@@ -5,6 +5,7 @@ import {
   Noto_Sans_Devanagari,
   Noto_Serif_Devanagari,
 } from 'next/font/google';
+import localFont from 'next/font/local';
 
 /** The app's three families (display, interface, reader), self-hosted and subset at build time. */
 export const display = Fraunces({
@@ -49,4 +50,12 @@ export const uiHi = Noto_Sans_Devanagari({
   preload: false,
 });
 
-export const fontVariables = [display, ui, reader, readerHi, uiHi].map((f) => f.variable).join(' ');
+/** The app's dyslexia-friendly reading font, for the reading-appearance demo only. */
+export const dyslexic = localFont({
+  src: './fonts/OpenDyslexic-Regular.otf',
+  variable: '--font-dyslexic',
+  display: 'swap',
+  preload: false,
+});
+
+export const fontVariables = [display, ui, reader, readerHi, uiHi, dyslexic].map((f) => f.variable).join(' ');
