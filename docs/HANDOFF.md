@@ -40,6 +40,17 @@ sudo usermod -aG kvm "$USER"
 
 The GitHub, Supabase, Expo and Vercel credentials were shared in a chat. Rotate them when convenient and update `.env.local` (never commit it).
 
+### 2.4 Website
+
+The website (`apps/web`) ships only through `tooling/scripts/deploy-web.sh`: it builds on this machine, deploys the prebuilt output to Vercel production, then checks every page on https://keystone-works-three.vercel.app. `--preview` makes a preview deployment instead. Git deployments are off in `vercel.json`.
+
+Before launch, these need you:
+
+1. **Support email.** Play requires a contact address. Add it to `apps/web/app/support/page.tsx`; it replaces the GitHub issues link there.
+2. **Governing law.** `/terms` says the laws "of the country where the developer is established". Name the country.
+3. **Play badge.** At launch, replace the "Coming soon" button (`apps/web/components/PlayButton.tsx`) with Google's official "Get it on Google Play" badge, linking to `https://play.google.com/store/apps/details?id=app.lamplight.reader`. Google's badge rules allow the artwork only once the listing is live.
+4. **Store listing vs app.** The listing draft promises audio export, bookmarks, line focus, OpenDyslexic and 0.5–3× speed. None of these are in the app's UI yet (speed is 0.75–2×). The website leaves them out. Either build them or trim the listing.
+
 ## 3. Translations to review
 
 The interface ships in English (source), Spanish, German, French and Brazilian Portuguese. The non-English catalogs (`apps/mobile/src/i18n/catalogs/{es,de,fr,pt}.ts`) were written without a native speaker, so please have each reviewed before launch in its market. Things to check:
