@@ -40,9 +40,9 @@ const HONORIFIC =
 
 /** Family words used as names in Hindi stories ("दादी ने कहा", "Dadi bola"), with their gender. */
 // prettier-ignore
-const KIN_F = new Set('दादी नानी माँ मां मम्मी अम्मा दीदी बहन चाची मौसी बुआ भाभी dadi nani maa ma mummy amma didi behen behan chachi mausi bua bhabhi grandmother grandma granny mother mom mum mommy auntie'.split(' '));
+const KIN_F = new Set('दादी नानी माँ मां मम्मी अम्मा अम्माँ दीदी बहन चाची मौसी बुआ भाभी खाला खालाजान फूफी मामी काकी ताई dadi nani maa ma mummy amma didi behen behan chachi mausi bua bhabhi grandmother grandma granny mother mom mum mommy auntie'.split(' '));
 // prettier-ignore
-const KIN_M = new Set('दादा नाना पापा पिताजी बाबा भैया भाई चाचा मामा dada nana papa pitaji baba bhaiya bhai chacha mama grandfather grandpa father dad daddy'.split(' '));
+const KIN_M = new Set('दादा नाना पापा पिताजी बाबा भैया भाई चाचा मामा ताऊ फूफा काका मौसा खालू dada nana papa pitaji baba bhaiya bhai chacha mama grandfather grandpa father dad daddy'.split(' '));
 
 /** Relations that tell a named person's gender: "his sister Maya", "Tom, her brother", "बहन मीरा", "bhai Rohan". */
 const REL_F =
@@ -82,6 +82,35 @@ const NOT_NAMES = new Set('the a an and but or then there this that these those 
 /** Words that open a Hindi clause without being its speaker: adverbs, conjunctions, postpositions, time words. */
 // prettier-ignore
 const HI_NOT_SUBJECT = new Set('अन्तमें अंतमें अन्त अंत में फिर तब अब इतने इतनेमें उसके बाद सहसा अचानक आखिर अंततः परन्तु लेकिन किन्तु मगर और तो भी ही यह वह इस उस एक दिन रात सुबह शाम आज कल को से पर का की के ने जो जब जैसे अपने सामने उनसे उससे उन्हें उसे'.split(' '));
+/**
+ * Hindi words a clause can open with that are never a speaker: possessive pronouns and speech verbs
+ * themselves ("मेरे पास …", "बोली, …").
+ */
+// prettier-ignore
+const HI_NOT_PERSON = new Set('मेरा मेरे मेरी तेरा तेरे तेरी हमारा हमारे हमारी तुम्हारा तुम्हारे तुम्हारी आपका आपके आपकी उसका उसकी उनका उनकी इसका इसके इसकी अपना अपनी कहते कहता कहती कहा कही बोला बोली बोले पूछा पूछी कहकर बोलकर'.split(' '));
+/** Several people speaking at once: "सब बोले", "दोनों ने कहा", "लड़के चिल्लाए". */
+// prettier-ignore
+const HI_GROUP = new Set('सब सबने सभी सभीने दोनों दोनोंने लोग लोगोंने बच्चे बच्चोंने लड़के लड़कोंने'.split(' '));
+/** A perfective transitive verb: with no ने in the clause, the noun before it is its object, not the speaker. */
+const HI_TRANSITIVE_PERFECT =
+  /(?:^|\s)(?:दी|दिया|दिये|दिए|ली|लिया|लिये|लिए|की|किया|डाली|डाला|उठाई|उठाया|रखी|रखा)(?=[\s,।]|$)/u;
+/**
+ * First-person verb forms that agree with the speaker ("मैं आ जाऊँगा", "मैं जा रही हूँ"): a character's own lines
+ * tell their gender when every tag about them takes ने (whose verb agrees with the object).
+ */
+// The ending alone isn't trusted (transcriptions write "कहूँगी" for "कहेंगी"): मैं must come first in the sentence.
+const HI_SELF_M =
+  /(?:^|[\s“"])(?:मैं|मै)\s[^।?!]{0,60}?(?:ऊँगा|ऊंगा|ूँगा|ूंगा|(?:\S+ता|रहा|सकता|चुका|गया|आया)\s(?:हूँ|हूं|था))(?=[\s,।?!”"]|$)/u;
+const HI_SELF_F =
+  /(?:^|[\s“"])(?:मैं|मै)\s[^।?!]{0,60}?(?:ऊँगी|ऊंगी|ूँगी|ूंगी|(?:\S+ती|रही|सकती|चुकी|गई|गयी|आई|आयी)\s(?:हूँ|हूं|थी))(?=[\s,।?!”"]|$)/u;
+/**
+ * A Hindi title for a woman by her husband's rank: चौधराइन, ठकुराइन, पंडिताइन. (Not -िन: मोहसिन is a man.)
+ */
+const HI_FEMININE_TITLE = /(?:ाइन|ाईन)$/u;
+/** Hindi words for people by trade that say their gender: दुकानदार, चौकीदार, सब्ज़ीवाला / सब्ज़ीवाली. */
+const HI_TRADE_M = /(?:दार|वाला|वाले)$/u;
+const HI_TRADE_F = /वाली$/u;
+
 /** A word before these starts a participle phrase ("प्रभावित होकर", "मुस्कुराते हुए"), not the speaker. */
 // prettier-ignore
 const HI_PARTICIPLE_NEXT = new Set('होकर हुए होते करके कर'.split(' '));
@@ -265,7 +294,9 @@ type Tag =
   | { kind: 'name'; text: string; gender?: Gender; confidence: number }
   | { kind: 'pronoun'; text: string; gender?: Gender }
   | { kind: 'descriptor'; owner: string; noun: string; adjective?: string }
-  | { kind: 'first-person' };
+  | { kind: 'first-person' }
+  /** Several people at once ("they cried out", "सब बोले"): a line that is no one character's. */
+  | { kind: 'group' };
 
 /** Conversation memory survives this many narration paragraphs ("This was invitation enough."). */
 const CONVERSATION_GAP = 3;
@@ -277,7 +308,8 @@ const CONVERSATION_GAP = 3;
 /**
  * Cast's version: raise it when attribution improves, so books analysed before are analysed again the next
  * time they play (the listener's corrections held fixed). 2: dialogue measured on real books (Premchand's
- * unquoted Hindi, "said the Hatter", turns by name and by the first-person narrator).
+ * unquoted Hindi, "said the Hatter", turns by name and by the first-person narrator). 3: lines said by several
+ * people go to no one, things and verbs are never speakers, Hindi genders from a speaker's own words.
  */
 export const CAST_VERSION = 2;
 
@@ -348,7 +380,14 @@ export function* castSteps(
       .replace(/['’]s?$/u, '');
     const words = raw.trim().split(/\s+/);
     const lower = raw.trim().toLowerCase();
-    if (words.length === 1 && (NOT_NAMES.has(lower) || HI_PRONOUNS.has(lower) || HI_FIRST_PERSON.has(lower)))
+    if (
+      words.length === 1 &&
+      (NOT_NAMES.has(lower) ||
+        HI_PRONOUNS.has(lower) ||
+        HI_FIRST_PERSON.has(lower) ||
+        HI_NOT_PERSON.has(lower) ||
+        HI_GROUP.has(lower))
+    )
       return undefined;
     // A function word can't start a name, but a month can ("March Hare", "May Bennet").
     const first = (words[0] ?? '').toLowerCase();
@@ -518,6 +557,8 @@ export function* castSteps(
         return register(tag.text, tag.gender);
       case 'first-person':
         return register('Narrator-I');
+      case 'group':
+        return undefined;
       case 'pronoun': {
         const lower = tag.text.toLowerCase();
         const want =
@@ -612,6 +653,7 @@ export function* castSteps(
       const lower = word.toLowerCase();
       const gender = verb ? verbGender(verb) : undefined;
       if (HI_FIRST_PERSON.has(lower)) return { tag: { kind: 'first-person' } as Tag, confidence };
+      if (HI_GROUP.has(lower) || HI_GROUP.has(raw)) return { tag: { kind: 'group' } as Tag, confidence };
       if (HI_PRONOUNS.has(lower) || ['वे', 'उन्होंने', 've'].includes(lower)) {
         // "चौधराइन ने … दोषारोपण किया। उसने कहा, …": the pronoun is whoever was just named, if the verb allows.
         const ref = lastAgentIn(before) ?? lastNamedIn(before);
@@ -630,7 +672,7 @@ export function* castSteps(
           tag: { kind: 'pronoun', text: word, ...(gender ? { gender } : {}) } as Tag,
           confidence: confidence - 0.1,
         };
-      if (NOT_NAMES.has(lower)) return undefined;
+      if (NOT_NAMES.has(lower) || HI_NOT_PERSON.has(lower)) return undefined;
       return {
         tag: { kind: 'name', text: word, ...(gender ? { gender } : {}), confidence } as Tag,
         confidence,
@@ -640,9 +682,11 @@ export function* castSteps(
     if (say?.[2]) {
       const who = hiSubject(clauseOf(before), say[2]);
       if (who) return asTag(who, say[2], 0.9);
-      // The person named just before: a known character, or the agent of the previous sentence ("सम्मी ने
-      // खेजरी ली थी। प्रभावित होकर बोला---…").
-      const named = lastNamedIn(before) ?? lastAgentIn(before);
+      // The person named just before: a known character whose gender the verb allows ("बेचारी खाला अलगू चौधरी के
+      // पास आई। लाठी पटक दी और … बोली"), or the agent of the previous sentence ("सम्मी ने खेजरी ली थी।
+      // प्रभावित होकर बोला---…").
+      const g = verbGender(say[2]);
+      const named = lastNamedIn(before, g) ?? lastKinIn(before, g) ?? lastAgentIn(before);
       if (named) return asTag(named, say[2], 0.8);
       const gender = verbGender(say[2]);
       return { tag: { kind: 'pronoun', text: 'वह', ...(gender ? { gender } : {}) }, confidence: 0.7 };
@@ -679,10 +723,15 @@ export function* castSteps(
           return w.slice(0, -2);
       }
     }
+    // "लाठी पटक दी और दम लेकर बोली": a perfective transitive verb with no ने has no agent in the clause, so
+    // its first noun is the object and the speaker was named in an earlier sentence.
+    if (!words.some((w) => w === 'ने' || /ने$/u.test(w)) && HI_TRANSITIVE_PERFECT.test(clause))
+      return undefined;
     for (let i = 0; i < words.length; i++) {
       const w = words[i] ?? '';
       const next = words[i + 1] ?? '';
       if (HI_NOT_SUBJECT.has(w) || /कर$/u.test(w) || HI_PARTICIPLE_NEXT.has(next)) continue;
+      if (HI_GROUP.has(w)) return w;
       if (/[—―–-]/u.test(w) || /\p{Nd}/u.test(w)) return undefined;
       return w;
     }
@@ -693,11 +742,18 @@ export function* castSteps(
     const agents = [...text.matchAll(/([\p{L}\p{M}]+)\s+ने\s/gu)].map((m) => m[1] ?? '');
     return agents.reverse().find((w) => w && !HI_PRONOUNS.has(w) && !HI_NOT_SUBJECT.has(w));
   };
-  /** The last known character named in `text`. */
-  const lastNamedIn = (text: string): string | undefined => {
+  /** The last family word in `text` that can be of `gender` ("बेचारी खाला … आई"), for a speaker not yet known. */
+  const lastKinIn = (text: string, gender?: Gender): string | undefined => {
+    const words = text.match(/[\p{L}\p{M}]+/gu) ?? [];
+    return words.reverse().find((w) => (gender !== 'm' && KIN_F.has(w)) || (gender !== 'f' && KIN_M.has(w)));
+  };
+  /** The last known character named in `text` (of `gender`, when given: one known to be otherwise is skipped). */
+  const lastNamedIn = (text: string, gender?: Gender): string | undefined => {
     let best: { at: number; name: string } | undefined;
     for (const c of chars.values()) {
       if (c.id === 'narrator-i') continue;
+      const g = gender ? (genderOf(c.id) ?? givenNameGender(c.name)) : undefined;
+      if (g && g !== gender) continue;
       for (const a of c.aliases) {
         const at = text.lastIndexOf(a);
         if (at >= 0 && (!best || at > best.at)) best = { at, name: a };
@@ -737,6 +793,7 @@ export function* castSteps(
     }
     const pron = pat.pronounVerb.exec(after) ?? pat.verbPronoun.exec(after);
     if (pron?.[1]) {
+      if (/^they$/i.test(pron[1])) return { tag: { kind: 'group' }, confidence: 0.9 };
       if (/^(?:i|we)$/i.test(pron[1])) return { tag: { kind: 'first-person' }, confidence: 0.9 };
       return { tag: { kind: 'pronoun', text: pron[1] }, confidence: 0.8 };
     }
@@ -858,7 +915,7 @@ export function* castSteps(
 
     const lastSpeaker = lastSpeakers[lastSpeakers.length - 1];
     let paragraphSpeaker: { id: string; confidence: number } | undefined;
-    const local: { span: DialogueSpan; id?: string; confidence: number; fixed?: true }[] = [];
+    const local: { span: DialogueSpan; id?: string; confidence: number; fixed?: true; group?: true }[] = [];
     spans.forEach((span, k) => {
       const after = text.slice(span.end, spans[k + 1]?.start ?? text.length).slice(0, 80);
       const before = text.slice(spans[k - 1]?.end ?? 0, span.start).slice(-80);
@@ -876,6 +933,11 @@ export function* castSteps(
         local.push(id ? { span, id, confidence: 1, fixed: true } : { span, confidence: 1, fixed: true });
         return;
       }
+      if (found?.tag.kind === 'group') {
+        // Said by several at once: no one character's voice, and no guess fills it in later.
+        local.push({ span, confidence: found.confidence, group: true });
+        return;
+      }
       const id = found ? resolve(found.tag, quote, lastSpeaker, namedHere) : undefined;
       // "she asked" with two women in the scene: keep the guess, but below the threshold for a named voice.
       const confidence = ambiguous ? 0.6 : (found?.confidence ?? 0.8);
@@ -890,7 +952,7 @@ export function* castSteps(
     if (paragraphSpeaker) {
       // One tag in a paragraph usually covers every quote in it.
       for (const l of local) {
-        if (!l.id && !l.fixed) {
+        if (!l.id && !l.fixed && !l.group) {
           l.id = paragraphSpeaker.id;
           l.confidence = Math.min(0.85, paragraphSpeaker.confidence);
         }
@@ -918,7 +980,7 @@ export function* castSteps(
         // Two people taking turns is the commonest pattern in fiction; confident enough for their own voices.
         const confidence = previous === other || called.length === 1 ? 0.75 : 0.7;
         for (const l of local) {
-          if (l.fixed) continue;
+          if (l.fixed || l.group) continue;
           l.id = other;
           l.confidence = confidence;
         }
@@ -931,7 +993,7 @@ export function* castSteps(
       attributions.push(
         l.id
           ? { block, span: l.span, speaker: l.id, confidence: l.confidence }
-          : { block, span: l.span, confidence: l.fixed ? 1 : 0 },
+          : { block, span: l.span, confidence: l.fixed ? 1 : l.group ? l.confidence : 0 },
       );
       if (l.id) {
         const c = chars.get(l.id);
@@ -957,6 +1019,21 @@ export function* castSteps(
     }
   }
 
+  // Hindi: what each character says of themselves in their own lines ("मैं आ जाऊँगा"), and feminine titles.
+  if (base === 'hi') {
+    for (const a of attributions) {
+      if (!a.speaker) continue;
+      const quote = (blocks[a.block] ?? '').slice(a.span.start, a.span.end);
+      const m = HI_SELF_M.test(quote);
+      const f = HI_SELF_F.test(quote);
+      if (m !== f) vote(a.speaker, m ? 'm' : 'f', 2);
+    }
+    for (const c of chars.values()) {
+      if (c.name.length <= 3) continue;
+      if (HI_FEMININE_TITLE.test(c.name) || HI_TRADE_F.test(c.name)) vote(c.id, 'f', 3);
+      else if (HI_TRADE_M.test(c.name)) vote(c.id, 'm', 2);
+    }
+  }
   for (const c of chars.values()) {
     const g = genderOf(c.id);
     if (g) c.gender = g;
