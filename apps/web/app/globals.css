@@ -63,6 +63,11 @@ svg {
   max-width: 100%;
 }
 
+/* The reader's player bar is fixed to the bottom; keep the footer clear of it. */
+body:has([data-reader]) {
+  padding-bottom: 120px;
+}
+
 .skip {
   position: absolute;
   left: 12px;
