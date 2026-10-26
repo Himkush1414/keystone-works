@@ -16,6 +16,8 @@ export interface Run {
   /** Sentence index, or null for the space between sentences. */
   sentence: number | null;
   skipped: boolean;
+  /** Italic in the source. */
+  emphasis: boolean;
 }
 
 export interface ReadBlock {
@@ -51,6 +53,8 @@ export function readAlongBlocks(
     const cuts = new Set<number>([0, block.text.length]);
     for (const { s } of spoken) cuts.add(s.start).add(s.end);
     for (const k of skips) cuts.add(k.start).add(k.end);
+    const emphasis = block.emphasis ?? [];
+    for (const [a, b] of emphasis) cuts.add(a).add(b);
     const points = [...cuts].filter((p) => p >= 0 && p <= block.text.length).sort((a, b) => a - b);
     const runs: Run[] = [];
     for (let k = 0; k + 1 < points.length; k++) {
@@ -59,9 +63,16 @@ export function readAlongBlocks(
       if (end <= start) continue;
       const owner = spoken.find(({ s }) => start >= s.start && end <= s.end);
       const skipped = skips.some((x) => start >= x.start && end <= x.end);
-      const run = { start, end, sentence: owner?.i ?? null, skipped };
+      const emphasised = emphasis.some(([a, b]) => start >= a && end <= b);
+      const run = { start, end, sentence: owner?.i ?? null, skipped, emphasis: emphasised };
       const prev = runs[runs.length - 1];
-      if (prev && prev.sentence === run.sentence && prev.skipped === run.skipped && prev.end === start)
+      if (
+        prev &&
+        prev.sentence === run.sentence &&
+        prev.skipped === run.skipped &&
+        prev.emphasis === run.emphasis &&
+        prev.end === start
+      )
         prev.end = end;
       else runs.push(run);
     }
