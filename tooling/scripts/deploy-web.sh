@@ -38,7 +38,8 @@ fi
 # files are traced into the root node_modules (npm workspaces), which must be inside the uploaded tree.
 vercel pull --yes --environment="$target"
 vercel build "${prod[@]}"
-url="$(vercel deploy --prebuilt "${prod[@]}" | tail -1)"
+url="$(vercel deploy --prebuilt "${prod[@]}" 2>&1 | grep -o 'https://[a-z0-9.-]*\.vercel\.app' | tail -1)"
+[ -n "$url" ] || { echo "deploy-web: the deploy printed no URL" >&2; exit 1; }
 echo "deploy-web: deployed $(git rev-parse --short HEAD) to $url"
 
 [ "$target" = production ] || exit 0
