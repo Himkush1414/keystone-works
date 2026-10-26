@@ -1,0 +1,99 @@
+.screen {
+  padding: 0 18px 22px;
+  gap: 16px;
+}
+
+.status {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 14px 6px 0;
+}
+
+.icons {
+  display: inline-flex;
+  color: var(--color-accent);
+}
+
+.bars {
+  letter-spacing: -2px;
+  font-size: 11px;
+}
+
+.toggle {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.knob {
+  margin-left: auto;
+  width: 46px;
+  height: 28px;
+  border-radius: 14px;
+  background: var(--color-hairline);
+  position: relative;
+  transition: background-color 250ms var(--ease-out);
+}
+
+.knob::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 450ms var(--spring);
+}
+
+[data-plane='true'] .knob {
+  background: var(--color-accent);
+}
+
+[data-plane='true'] .knob::after {
+  transform: translateX(18px);
+}
+
+.card {
+  border-radius: 18px;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 20% 0%, var(--color-glow), transparent 70%), var(--color-surface-sunk);
+}
+
+.big {
+  font-family: var(--font-display), serif;
+  font-size: 30px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.never {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.never li::before {
+  content: '✕';
+  color: var(--color-accent);
+  font-weight: 700;
+  margin-right: 10px;
+}
