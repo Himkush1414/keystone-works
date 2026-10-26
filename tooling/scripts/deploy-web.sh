@@ -3,7 +3,8 @@
 # uploads the prebuilt output. Git deployments stay off (vercel.json), so this script is the only way to ship.
 #
 # Usage: tooling/scripts/deploy-web.sh [--preview]
-# Needs in .env.local (never committed): VERCEL_TOKEN, VERCEL_TEAM_ID, VERCEL_PROJECT_ID.
+# Needs in .env.local (never committed): VERCEL_TOKEN, VERCEL_TEAM_ID, VERCEL_PROJECT_ID. The Vercel project's
+# Root Directory must be apps/web (Project Settings → Build and Deployment).
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -33,10 +34,12 @@ if [ -n "$(git status --porcelain -- apps/web packages)" ]; then
   exit 1
 fi
 
-cd "$root/apps/web"
+# The Vercel project's Root Directory is apps/web, so the CLI runs from the repository root: the site's server
+# files are traced into the root node_modules (npm workspaces), which must be inside the uploaded tree.
 vercel pull --yes --environment="$target"
 vercel build "${prod[@]}"
-url="$(vercel deploy --prebuilt "${prod[@]}" | tail -1)"
+url="$(vercel deploy --prebuilt "${prod[@]}" 2>&1 | grep -o 'https://[a-z0-9.-]*\.vercel\.app' | tail -1)"
+[ -n "$url" ] || { echo "deploy-web: the deploy printed no URL" >&2; exit 1; }
 echo "deploy-web: deployed $(git rev-parse --short HEAD) to $url"
 
 [ "$target" = production ] || exit 0

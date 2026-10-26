@@ -10,6 +10,7 @@ export default tseslint.config(
       '**/build/**',
       '**/.expo/**',
       '**/.next/**',
+      '**/.vercel/**',
       '**/coverage/**',
       'apps/mobile/android/**',
       'apps/mobile/ios/**',
