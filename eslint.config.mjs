@@ -33,7 +33,7 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser } },
   },
   {
-    files: ['tooling/**/*.mjs'],
+    files: ['tooling/**/*.{mjs,mts}'],
     rules: { 'no-console': 'off' },
   },
   {
