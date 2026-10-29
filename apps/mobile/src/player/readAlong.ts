@@ -8,6 +8,8 @@ import {
   type Sentence,
   type WordTime,
 } from '@lamplight/core';
+import type { ReaderTheme } from '@lamplight/tokens';
+import { mixColor } from '../theme/color';
 
 /** A stretch of a block's text with one look: which sentence it belongs to, and whether narration skips it. */
 export interface Run {
@@ -164,4 +166,12 @@ export function speakerLabels(
     prev = { block: s.block, speaker };
   });
   return out;
+}
+
+/** How far line focus moves the other sentences' ink toward the page: every theme stays at 3:1 or more. */
+const FOCUS_FADE = 0.4;
+
+/** The ink for text outside the current sentence when line focus is on. */
+export function focusInk(theme: Pick<ReaderTheme, 'ink' | 'bg'>): string {
+  return mixColor(theme.ink, theme.bg, FOCUS_FADE);
 }
