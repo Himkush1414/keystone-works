@@ -551,7 +551,7 @@
     {
       "lang": "en",
       "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
-      "words": ["truth", "universally", "acknowledged", "possession"],
+      "words": ["truth", "universally", "acknowledged", "possession", "fortune", "want"],
       "meanings": {
         "truth": {
           "lemma": "truth",
@@ -580,13 +580,27 @@
           "definition": "the act of having and controlling property",
           "hindi": ["मिल्कियत"],
           "roman": null
+        },
+        "fortune": {
+          "lemma": "fortune",
+          "pos": "noun",
+          "definition": "a large amount of wealth or prosperity",
+          "hindi": ["लक्ष्मी"],
+          "roman": null
+        },
+        "want": {
+          "lemma": "want",
+          "pos": "noun",
+          "definition": "the state of needing something that is absent or unavailable",
+          "hindi": ["कमी"],
+          "roman": null
         }
       }
     },
     {
       "lang": "hi",
       "text": "कितना मनोहर, कितना सुहावना प्रभात है। वृक्षों पर कुछ अजीब हरियाली है। आज का सूर्य कितना शीतल है।",
-      "words": ["मनोहर", "प्रभात", "हरियाली", "शीतल"],
+      "words": ["मनोहर", "प्रभात", "हरियाली", "सूर्य", "शीतल"],
       "meanings": {
         "मनोहर": {
           "lemma": "मनोहर",
@@ -608,6 +622,13 @@
           "definition": "vegetation, flora; greenery",
           "hindi": ["पेड़-पौधे"],
           "roman": "hariyālī"
+        },
+        "सूर्य": {
+          "lemma": "सूर्य",
+          "pos": "name",
+          "definition": "Sun",
+          "hindi": [],
+          "roman": "sūrya"
         },
         "शीतल": {
           "lemma": "शीतल",
