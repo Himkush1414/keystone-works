@@ -13,6 +13,7 @@ import {
   CastSheet,
   CleanReadSheet,
   ContentsSheet,
+  SpeedSheet,
   SleepSheet,
   VoiceSheet,
   SpeakerSheet,
@@ -105,9 +106,9 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
   const locale = useLocale();
   const t = useT();
 
-  const [sheet, setSheet] = useState<'sleep' | 'contents' | 'voice' | 'cast' | 'clean' | 'meaning' | null>(
-    null,
-  );
+  const [sheet, setSheet] = useState<
+    'sleep' | 'speed' | 'contents' | 'voice' | 'cast' | 'clean' | 'meaning' | null
+  >(null);
   // The sentence the listener is asking about (narration pauses while they do).
   const [asking, setAsking] = useState<number | null>(null);
   const [cleanRows, setCleanRows] = useState<CleanReadRow[]>([]);
@@ -307,6 +308,10 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
         <View style={styles.row}>
           <Tappable
             onPress={() => actions.setSpeed(nextSpeed(speed))}
+            onLongPress={() => setSheet('speed')}
+            accessibilityHint={t('player.speedHint')}
+            accessibilityActions={[{ name: 'longpress', label: t('player.speedMore') }]}
+            onAccessibilityAction={(e) => e.nativeEvent.actionName === 'longpress' && setSheet('speed')}
             accessibilityRole="button"
             accessibilityLabel={`${t('player.speed')}: ${t('a11y.speedValue', { speed: formatSpeed(locale, speed) })}`}
             style={styles.speed}
@@ -345,6 +350,12 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
           </View>
         </View>
       </View>
+      <SpeedSheet
+        visible={sheet === 'speed'}
+        speed={speed}
+        onClose={() => setSheet(null)}
+        onSet={actions.setSpeed}
+      />
       <SleepSheet
         visible={sheet === 'sleep'}
         status={sleep}

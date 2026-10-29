@@ -187,6 +187,8 @@ export const fr: Catalog = {
     nextChapter: 'Chapitre suivant',
     backToVoice: 'Revenir à la voix',
     speed: 'Vitesse',
+    speedHint: 'Appui long pour toutes les vitesses',
+    speedMore: 'Plus de vitesses',
     voice: 'Voix',
     quality: 'Qualité',
     sleep: 'Minuterie de sommeil',

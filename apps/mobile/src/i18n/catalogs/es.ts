@@ -183,6 +183,8 @@ export const es: Catalog = {
     nextChapter: 'Capítulo siguiente',
     backToVoice: 'Volver a la voz',
     speed: 'Velocidad',
+    speedHint: 'Mantén pulsado para todas las velocidades',
+    speedMore: 'Más velocidades',
     voice: 'Voz',
     quality: 'Calidad',
     sleep: 'Temporizador',

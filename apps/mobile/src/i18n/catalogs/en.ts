@@ -183,6 +183,8 @@ export const en = {
     nextChapter: 'Next chapter',
     backToVoice: 'Back to voice',
     speed: 'Speed',
+    speedHint: 'Long press for every speed',
+    speedMore: 'More speeds',
     voice: 'Voice',
     quality: 'Quality',
     sleep: 'Sleep timer',
