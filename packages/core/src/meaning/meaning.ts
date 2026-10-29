@@ -242,6 +242,23 @@ function posHint(context: string, word: string): string | null {
   return null;
 }
 
+/**
+ * Fixed expressions that settle a sense the other words in the sentence can't: a fortune someone possesses,
+ * makes or inherits is wealth, not luck; "in want of" and "for want of" are lack, not poverty.
+ */
+const EXPRESSIONS: { lemma: string; around: RegExp; gloss: RegExp }[] = [
+  {
+    lemma: 'fortune',
+    around:
+      /\b(?:possess\w*\s+of|ma[dk]e|making|inherit\w*|amass\w*|spen[dt]|worth|cost)\s+(?:[\p{L}']+\s+){0,2}fortunes?\b/iu,
+    gloss: /\bwealth\b/,
+  },
+  { lemma: 'want', around: /\b(?:in|for)\s+want\s+of\b/i, gloss: /\bneeding\b/ },
+];
+
+/** A Hindi sense that names a god or a person: "सूर्य" in a sentence is the sun unless the text says otherwise. */
+const HI_PROPER = /\b(?:god|goddess|deity|given name)\b/i;
+
 function list(s: string | null | undefined): string[] {
   return s ? s.split('|').filter(Boolean) : [];
 }
@@ -262,11 +279,17 @@ export function explain(raw: string, context: string, rows: LookupRows): Meaning
   const lemma = lemmas.find((l) => rows.en.some((r) => r.word === l)) ?? rows.en[0]?.word ?? word;
   const senses = rows.en.filter((r) => r.word === lemma);
   const hint = posHint(context, word);
+  const fixed = EXPRESSIONS.filter((e) => e.lemma === lemma && e.around.test(context));
   const scored = senses.map((s) => {
     const words = `${s.gloss} ${s.example ?? ''} ${list(s.syn).join(' ')}`;
     const hinted = hint !== null && (hint === 'va' ? s.pos !== 'n' : s.pos === hint);
+    const expression = fixed.some((e) => e.gloss.test(s.gloss));
     const score =
-      overlap(ctx, words) * 2 + (hinted ? 1.5 : 0) + ((s.tagged ?? 0) > 0 ? 0.75 : 0) - s.rank * 0.25;
+      overlap(ctx, words) * 2 +
+      (hinted ? 1.5 : 0) +
+      (expression ? 3 : 0) +
+      ((s.tagged ?? 0) > 0 ? 0.75 : 0) -
+      s.rank * 0.25;
     return { s, score };
   });
   scored.sort((a, b) => b.score - a.score || a.s.rank - b.s.rank);
@@ -320,8 +343,15 @@ function explainHindi(word: string, ctx: Set<string>, lookup: LookupRows): Meani
     rows[0]?.word ??
     word;
   const senses = rows.filter((r) => r.word === lemma);
+  const common = senses.some((s) => !HI_PROPER.test(s.gloss));
   const best = senses
-    .map((s) => ({ s, score: overlap(ctx, `${s.gloss} ${s.exampleEn ?? ''}`) * 2 - s.rank * 0.25 }))
+    .map((s) => ({
+      s,
+      score:
+        overlap(ctx, `${s.gloss} ${s.exampleEn ?? ''}`) * 2 -
+        s.rank * 0.25 -
+        (common && HI_PROPER.test(s.gloss) ? 0.6 : 0),
+    }))
     .sort((a, b) => b.score - a.score || a.s.rank - b.s.rank)[0]?.s;
   if (!best) return null;
   return {
