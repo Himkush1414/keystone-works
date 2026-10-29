@@ -39,6 +39,18 @@ describe('settings store', () => {
     expect(Object.keys(backend.saved.at(-1) ?? {})).not.toContain('hydrated');
   });
 
+  it('keeps line focus off until turned on, then remembers it', () => {
+    const backend = memory();
+    const store = createSettingsStore(backend);
+    store.getState().hydrate();
+    expect(store.getState().lineFocus).toBe(false);
+    store.getState().update({ lineFocus: true });
+    const again = createSettingsStore(memory(backend.saved.at(-1)));
+    again.getState().hydrate();
+    expect(again.getState().lineFocus).toBe(true);
+    expect(sanitize({ lineFocus: 'yes' })).toEqual({});
+  });
+
   it('rounds speed to the 0.05 detents', () => {
     const store = createSettingsStore(memory());
     store.getState().update({ defaultSpeed: 1.333 });

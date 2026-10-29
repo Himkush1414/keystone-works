@@ -5,7 +5,7 @@ import { StyleSheet, Text as RNText, View, type TextStyle } from 'react-native';
 import { READER_FONTS, FONT, type ReaderFont } from '@/theme/fonts';
 import { useTheme } from '@/theme/theme';
 import { Button } from '@/ui/Button';
-import type { ReadBlock, Run, SpeakerLabel } from './readAlong';
+import { focusInk, type ReadBlock, type Run, type SpeakerLabel } from './readAlong';
 
 export interface ReadAlongProps {
   blocks: ReadBlock[];
@@ -21,6 +21,8 @@ export interface ReadAlongProps {
   lineHeight: number;
   /** Skipped text dimmed (true) or hidden (false). */
   showSkipped: boolean;
+  /** Line focus: everything but the current sentence is faded. */
+  lineFocus: boolean;
   onSentencePress(index: number): void;
   /** Long press on a sentence: ask what one of its words means. */
   onSentenceLongPress?(index: number): void;
@@ -58,6 +60,7 @@ export function ReadAlong(props: ReadAlongProps) {
         size={props.size}
         lineHeight={props.lineHeight}
         showSkipped={props.showSkipped}
+        lineFocus={props.lineFocus}
         onSentencePress={props.onSentencePress}
         onSentenceLongPress={props.onSentenceLongPress}
         labels={props.labels}
@@ -73,6 +76,7 @@ export function ReadAlong(props: ReadAlongProps) {
       props.size,
       props.lineHeight,
       props.showSkipped,
+      props.lineFocus,
       props.onSentencePress,
       props.onSentenceLongPress,
       props.labels,
@@ -111,6 +115,7 @@ const BlockText = memo(function BlockText({
   size,
   lineHeight,
   showSkipped,
+  lineFocus,
   onSentencePress,
   onSentenceLongPress,
   labels,
@@ -170,6 +175,7 @@ const BlockText = memo(function BlockText({
                 theme={theme}
                 italicFamily={heading ? FONT.displayItalic : READER_FONTS[font].italic}
                 showSkipped={showSkipped}
+                faded={lineFocus && run.sentence !== current}
                 onSentencePress={onSentencePress}
                 onSentenceLongPress={onSentenceLongPress}
               />
@@ -189,6 +195,7 @@ function RunText({
   theme,
   italicFamily,
   showSkipped,
+  faded,
   onSentencePress,
   onSentenceLongPress,
 }: {
@@ -200,12 +207,15 @@ function RunText({
   word: { start: number; end: number } | null;
   theme: ReaderTheme;
   showSkipped: boolean;
+  /** Outside the current sentence while line focus is on. */
+  faded: boolean;
   onSentencePress(index: number): void;
   onSentenceLongPress?(index: number): void;
 }) {
   if (run.skipped && !showSkipped) return null;
   const style: TextStyle = {
     ...(current ? { backgroundColor: theme.glow } : null),
+    ...(faded ? { color: focusInk(theme) } : null),
     ...(run.skipped ? { color: theme.inkSoft, opacity: 0.6 } : null),
     ...(run.emphasis ? { fontFamily: italicFamily, fontStyle: 'italic' } : null),
   };

@@ -366,6 +366,8 @@ export const de: Catalog = {
     readerSizeLarge: 'Groß',
     readerSizeLarger: 'Größer',
     readerLineHeight: 'Zeilenabstand',
+    lineFocus: 'Zeilenfokus',
+    lineFocusDesc: 'Alles außer dem gelesenen Satz abblenden',
     readerLineCompact: 'Kompakt',
     readerLineComfortable: 'Angenehm',
     readerLineRelaxed: 'Weit',

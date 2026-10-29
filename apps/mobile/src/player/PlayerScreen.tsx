@@ -235,6 +235,7 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
         size={reader.readerSize}
         lineHeight={reader.readerLineHeight}
         showSkipped={reader.showSkipped}
+        lineFocus={reader.lineFocus}
         onSentencePress={actions.playFrom}
         onSentenceLongPress={ask}
         labels={labels}

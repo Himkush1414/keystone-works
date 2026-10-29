@@ -362,6 +362,8 @@ export const en = {
     readerSizeLarge: 'Large',
     readerSizeLarger: 'Larger',
     readerLineHeight: 'Line spacing',
+    lineFocus: 'Line focus',
+    lineFocusDesc: 'Fade everything but the sentence being read',
     readerLineCompact: 'Compact',
     readerLineComfortable: 'Comfortable',
     readerLineRelaxed: 'Relaxed',

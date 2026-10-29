@@ -153,6 +153,12 @@ export function SettingsScreen({
             onChange={(v) => update({ readerLineHeight: Number(v) })}
             options={READER_LINE_HEIGHTS.map((x) => ({ value: String(x.value), label: t(x.key) }))}
           />
+          <SwitchRow
+            label={t('settings.lineFocus')}
+            description={t('settings.lineFocusDesc')}
+            value={s.lineFocus}
+            onChange={(v) => update({ lineFocus: v })}
+          />
           <Text variant="callout" tone="soft">
             {t('settings.readerFont')}
           </Text>
