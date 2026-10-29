@@ -49,6 +49,20 @@ describe('htmlInfo', () => {
       language: 'en-gb',
     });
   });
+
+  it("drops the site's name from a page title (#111)", () => {
+    const title = (head: string, body = '') =>
+      htmlInfo(parseHtml(`<html><head>${head}</head><body>${body}</body></html>`)).title;
+    expect(title('<title>ईदगाह - विकिस्रोत</title>', '<h1>ईदगाह</h1>')).toBe('ईदगाह');
+    expect(
+      title('<title>The Lamp Hour | Night Paper</title><meta property="og:site_name" content="Night Paper">'),
+    ).toBe('The Lamp Hour');
+    // A dash or bar that belongs to the title stays.
+    expect(title('<title>Spider-Man – A Life</title>', '<h1>Spider-Man – A Life</h1>')).toBe(
+      'Spider-Man – A Life',
+    );
+    expect(title('<title>Night | Day</title>')).toBe('Night | Day');
+  });
 });
 
 describe('findMainContent', () => {
