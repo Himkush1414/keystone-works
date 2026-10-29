@@ -7,12 +7,12 @@ const PASSAGES = [
   {
     lang: 'en',
     text: 'It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.',
-    words: ['truth', 'universally', 'acknowledged', 'possession'],
+    words: ['truth', 'universally', 'acknowledged', 'possession', 'fortune', 'want'],
   },
   {
     lang: 'hi',
     text: 'कितना मनोहर, कितना सुहावना प्रभात है। वृक्षों पर कुछ अजीब हरियाली है। आज का सूर्य कितना शीतल है।',
-    words: ['मनोहर', 'प्रभात', 'हरियाली', 'शीतल'],
+    words: ['मनोहर', 'प्रभात', 'हरियाली', 'सूर्य', 'शीतल'],
   },
 ];
 
