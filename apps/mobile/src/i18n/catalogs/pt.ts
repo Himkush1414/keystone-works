@@ -369,6 +369,8 @@ export const pt: Catalog = {
     readerSizeLarge: 'Grande',
     readerSizeLarger: 'Maior',
     readerLineHeight: 'Espaçamento entre linhas',
+    lineFocus: 'Foco na linha',
+    lineFocusDesc: 'Esmaece tudo menos a frase que está sendo lida',
     readerLineCompact: 'Compacto',
     readerLineComfortable: 'Confortável',
     readerLineRelaxed: 'Amplo',

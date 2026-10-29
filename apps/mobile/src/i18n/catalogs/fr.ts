@@ -373,6 +373,8 @@ export const fr: Catalog = {
     readerSizeLarge: 'Grande',
     readerSizeLarger: 'Très grande',
     readerLineHeight: 'Interligne',
+    lineFocus: 'Focus sur la ligne',
+    lineFocusDesc: 'Estompe tout sauf la phrase en cours de lecture',
     readerLineCompact: 'Serré',
     readerLineComfortable: 'Confortable',
     readerLineRelaxed: 'Aéré',
