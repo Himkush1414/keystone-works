@@ -48,6 +48,8 @@ const config: ExpoConfig = {
       backgroundColor: NIGHT,
     },
     predictiveBackGestureEnabled: true,
+    // Documents and the library stay on the phone (privacy policy): no Android Auto Backup to Google.
+    allowBackup: false,
     permissions: [
       'android.permission.FOREGROUND_SERVICE',
       'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',

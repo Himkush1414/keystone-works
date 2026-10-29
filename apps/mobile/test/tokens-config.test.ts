@@ -11,3 +11,10 @@ describe('app.config colours', () => {
     expect(config).toContain(`const ACCENT = '${palettes.light.accent}'`);
   });
 });
+
+describe('app.config privacy', () => {
+  const config = readFileSync(new URL('../app.config.ts', import.meta.url), 'utf8');
+  it('keeps Android Auto Backup off, as the privacy policy says documents stay on the phone (#113)', () => {
+    expect(config).toMatch(/^\s*allowBackup: false,$/m);
+  });
+});
