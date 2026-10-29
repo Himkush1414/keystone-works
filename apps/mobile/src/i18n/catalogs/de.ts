@@ -180,6 +180,8 @@ export const de: Catalog = {
     pause: 'Pause',
     prevSentence: 'Vorheriger Satz',
     nextSentence: 'Nächster Satz',
+    prevParagraph: 'Vorheriger Absatz',
+    nextParagraph: 'Nächster Absatz',
     prevChapter: 'Vorheriges Kapitel',
     nextChapter: 'Nächstes Kapitel',
     backToVoice: 'Zurück zur Stimme',
