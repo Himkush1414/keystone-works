@@ -66,6 +66,13 @@ const HI_KIN_BEFORE = new RegExp(
   String.raw`(?:^|\s)(${[...HI_REL_F, ...HI_REL_M].join('|')})\s+([\p{L}\p{M}]+)`,
   'giu',
 );
+/** Hindi titles that come with a name, before or after it ("शेख जुम्मन", "जुम्मन मियाँ"), with their gender. */
+// prettier-ignore
+const HI_TITLE_M = 'शेख मियाँ मियां पंडित ठाकुर लाला मौलवी मुंशी सेठ'.split(' ');
+const HI_TITLE_F = 'बेगम बीबी'.split(' ');
+const HI_TITLES = [...HI_TITLE_M, ...HI_TITLE_F].join('|');
+const HI_TITLE_BEFORE = new RegExp(String.raw`(?:^|\s)(${HI_TITLES})\s+([\p{L}\p{M}]+)`, 'gu');
+const HI_TITLE_AFTER = new RegExp(String.raw`([\p{L}\p{M}]+)\s+(${HI_TITLES})(?![\p{L}\p{M}])`, 'gu');
 /**
  * Verbs in narration agree with their subject in Hindi ("रोहन बाज़ार गया।", "Neha school gayi."), unless the
  * subject takes ने, when they agree with the object.
@@ -309,9 +316,10 @@ const CONVERSATION_GAP = 3;
  * Cast's version: raise it when attribution improves, so books analysed before are analysed again the next
  * time they play (the listener's corrections held fixed). 2: dialogue measured on real books (Premchand's
  * unquoted Hindi, "said the Hatter", turns by name and by the first-person narrator). 3: lines said by several
- * people go to no one, things and verbs are never speakers, Hindi genders from a speaker's own words.
+ * people go to no one, things and verbs are never speakers, Hindi genders from a speaker's own words. 4: Hindi
+ * titles beside a speaker's name (शेख जुम्मन, जुम्मन मियाँ, बेगम) give their gender.
  */
-export const CAST_VERSION = 3;
+export const CAST_VERSION = 4;
 
 /** A line whose speaker the listener has set: the quotation starting at `start` in paragraph `block`. */
 export interface FixedSpeaker {
@@ -445,6 +453,13 @@ export function* castSteps(
       const g = relation(m[1] ?? '');
       if (g && m[2] && named(m[2]) && !HI_FIRST_PERSON.has(m[2].toLowerCase())) vote(idFor(m[2]), g, 2);
     }
+    // A title says the gender of someone already speaking; it never makes a new character.
+    const titled = (title: string, name: string) => {
+      const known = named(name) ? findKnown(name) : undefined;
+      if (known) vote(known.id, HI_TITLE_F.includes(title) ? 'f' : 'm', 2);
+    };
+    for (const m of narration.matchAll(HI_TITLE_BEFORE)) titled(m[1] ?? '', m[2] ?? '');
+    for (const m of narration.matchAll(HI_TITLE_AFTER)) titled(m[2] ?? '', m[1] ?? '');
     for (const sentence of narration.split(/[।.!?]+/u)) {
       const words = sentence.match(/[\p{L}\p{M}]+/gu) ?? [];
       const subject = words[0];

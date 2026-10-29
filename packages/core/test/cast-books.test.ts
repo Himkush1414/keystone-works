@@ -30,6 +30,9 @@ describe('Cast on real books', () => {
     );
     process.stdout.write(`\n${rows.join('\n')}\n`);
     expect(scores.length).toBe(5);
+    // 18/22 before Hindi titles (#99); Watson (first-person "I") and नूरे have no clue in the text.
+    expect(scores.reduce((n, s) => n + s.gendersRight, 0)).toBeGreaterThanOrEqual(20);
+    expect(scores.flatMap((s) => s.phantoms).length).toBeLessThanOrEqual(1);
   });
 
   it('fixes most of the rest with fewer taps than wrong lines, as a correction flips the guesses after it', () => {
