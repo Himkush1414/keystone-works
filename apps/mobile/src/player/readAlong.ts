@@ -175,3 +175,28 @@ const FOCUS_FADE = 0.4;
 export function focusInk(theme: Pick<ReaderTheme, 'ink' | 'bg'>): string {
   return mixColor(theme.ink, theme.bg, FOCUS_FADE);
 }
+
+/**
+ * Where a long press on previous or next sentence goes (R-PL-2): forward, to the next paragraph's first
+ * sentence; back, to the start of this paragraph, or from its start to the start of the one before.
+ */
+export function paragraphJump(
+  sentences: readonly Pick<Sentence, 'block'>[],
+  index: number,
+  delta: 1 | -1,
+): number {
+  if (!sentences.length) return 0;
+  const i = Math.max(0, Math.min(index, sentences.length - 1));
+  const startOf = (k: number) => {
+    const block = sentences[k]?.block;
+    while (k > 0 && sentences[k - 1]?.block === block) k--;
+    return k;
+  };
+  if (delta > 0) {
+    const block = sentences[i]?.block;
+    const next = sentences.findIndex((s, k) => k > i && s.block !== block);
+    return next < 0 ? i : next;
+  }
+  const start = startOf(i);
+  return start < i || start === 0 ? start : startOf(start - 1);
+}
