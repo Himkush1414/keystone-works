@@ -188,7 +188,8 @@ export default function Home() {
       >
         <p>
           The sentence being read glows. Tap any other to jump there. Change speed from 0.75× to 2× without
-          the chipmunk effect, open the contents, or set a sleep timer that fades out at the end of a chapter.
+          the chipmunk effect, bookmark a sentence to come back to, or set a sleep timer that fades out at the
+          end of a chapter.
         </p>
         <p>Lock-screen and headphone controls work as you’d expect.</p>
       </Chapter>
@@ -387,7 +388,7 @@ export default function Home() {
       >
         <p>
           Four reading themes, three fonts including Atkinson Hyperlegible and OpenDyslexic, and the size and
-          spacing that suit your eyes.
+          spacing that suit your eyes. Line focus fades everything but the sentence being read.
         </p>
       </Chapter>
 
