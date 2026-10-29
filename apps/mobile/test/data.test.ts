@@ -216,6 +216,28 @@ describe('positions and listening time', () => {
 });
 
 describe('annotations, collections and settings', () => {
+  it('keeps each bookmark on its words when the text is saved again in a new layout (#117)', () => {
+    const db = testDb();
+    const id = createDocument(db, { kind: 'book', title: 'tale.txt', source: 'file', sha256: 'tale' }, 1000);
+    const story = 'The lamp was lit.\n\nShe opened the book. It smelled of rain.\n\nNobody came that night.';
+    saveContent(db, id, prepareDocument(parsePlainText(story, 'Tale', 'book')));
+    const words = () => {
+      const c = loadContent(db, id);
+      return listBookmarks(db, id).map((b) => {
+        const s = c.sentences[b.sentenceOrd];
+        return s ? c.blocks[s.block]?.text.slice(s.start, s.end) : undefined;
+      });
+    };
+    addBookmark(db, id, 2);
+    expect(words()).toEqual(['It smelled of rain.']);
+    saveContent(
+      db,
+      id,
+      prepareDocument(parsePlainText(`A preface. Two lines of it.\n\n${story}`, 'Tale', 'book')),
+    );
+    expect(words()).toEqual(['It smelled of rain.']);
+  });
+
   it('stores bookmarks and highlights in reading order', () => {
     const { db, id } = seed();
     addBookmark(db, id, 3, 'here');

@@ -2,6 +2,7 @@ import { CAST_VERSION } from '@lamplight/core';
 import type { Block, Chapter, Character, DocumentKind, PreparedDocument, Sentence } from '@lamplight/core';
 import type { Db } from './db';
 import { newId } from './ids';
+import { relocateSentence } from '../player/relocate';
 
 export type DocumentSource = 'file' | 'share' | 'url' | 'paste' | 'sample';
 export type DocumentStatus = 'importing' | 'ready' | 'failed';
@@ -218,6 +219,22 @@ export function saveContent(
 ): void {
   const { draft, sentences } = doc;
   db.transaction(() => {
+    // Bookmarks name a sentence by number: read the old layout so each can find its words in the new one.
+    const marks = db.all<{ id: string; sentence_ord: number }>(
+      'SELECT id, sentence_ord FROM bookmarks WHERE document_id = ?',
+      [id],
+    );
+    const before = marks.length
+      ? {
+          blocks: db.all<{ text: string }>('SELECT text FROM blocks WHERE document_id = ? ORDER BY ord', [
+            id,
+          ]),
+          sentences: db.all<{ block: number; start: number; end: number }>(
+            'SELECT block_ord AS block, start, end FROM sentences WHERE document_id = ? ORDER BY ord',
+            [id],
+          ),
+        }
+      : null;
     db.run('DELETE FROM blocks WHERE document_id = ?', [id]);
     db.run('DELETE FROM sentences WHERE document_id = ?', [id]);
     db.run('DELETE FROM chapters WHERE document_id = ?', [id]);
@@ -289,6 +306,12 @@ export function saveContent(
         id,
       ],
     );
+    if (before?.sentences.length) {
+      for (const m of marks) {
+        const at = relocateSentence(before, { blocks: draft.blocks, sentences }, m.sentence_ord);
+        db.run('UPDATE bookmarks SET sentence_ord = ? WHERE id = ?', [at, m.id]);
+      }
+    }
     // This text's dialogue was just attributed by the current Cast.
     updateSettings(db, id, { castVersion: CAST_VERSION });
   });
