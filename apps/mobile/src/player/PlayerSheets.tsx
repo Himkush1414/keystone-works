@@ -8,12 +8,61 @@ import type { CastCharacter } from '@/data/content';
 import { Button } from '@/ui/Button';
 import { OptionRow } from '@/ui/OptionRow';
 import { Text } from '@/ui/Text';
-import { useT } from '@/i18n/useLocale';
+import { useLocale, useT } from '@/i18n/useLocale';
 import { ChoiceRow, SwitchRow } from '@/ui/SettingRows';
 import { Sheet } from '@/ui/Sheet';
 import { useTheme } from '@/theme/theme';
 import type { CleanReadRow } from './session';
 import { contentsEntries, SLEEP_MINUTES, type BookmarkEntry } from './sheets';
+import { formatSpeed, SPEED_PRESETS, stepSpeed } from './speed';
+
+/** Every speed (R-PL-4): 0.05 steps either way, or a preset; it takes effect at once. */
+export function SpeedSheet({
+  visible,
+  speed,
+  onClose,
+  onSet,
+}: {
+  visible: boolean;
+  speed: number;
+  onClose(): void;
+  onSet(speed: number): void;
+}) {
+  const t = useT();
+  const locale = useLocale();
+  const { colors, space } = useTheme();
+  const step = formatSpeed(locale, 0.05);
+  return (
+    <Sheet visible={visible} title={t('player.speed')} onClose={onClose} closeLabel={t('common.close')}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.md }}>
+        <Button label={`−${step}`} kind="secondary" onPress={() => onSet(stepSpeed(speed, -1))} />
+        <Text
+          variant="title2"
+          numeric
+          align="center"
+          style={{ flex: 1, color: colors.ink }}
+          accessibilityLiveRegion="polite"
+        >
+          {formatSpeed(locale, speed)}
+        </Text>
+        <Button label={`+${step}`} kind="secondary" onPress={() => onSet(stepSpeed(speed, 1))} />
+      </View>
+      <ScrollView style={{ maxHeight: 360 }}>
+        {SPEED_PRESETS.map((p) => (
+          <ChoiceRow
+            key={p}
+            label={formatSpeed(locale, p)}
+            selected={Math.abs(p - speed) < 0.001}
+            onPress={() => {
+              onSet(p);
+              onClose();
+            }}
+          />
+        ))}
+      </ScrollView>
+    </Sheet>
+  );
+}
 
 /** Sleep timer (R-PL-6): a number of minutes or the end of the chapter, with a gentle fade from the engine. */
 export function SleepSheet({
