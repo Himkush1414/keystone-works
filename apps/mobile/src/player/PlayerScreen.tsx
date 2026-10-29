@@ -19,10 +19,11 @@ import {
 } from './PlayerSheets';
 import { MeaningSheet } from './MeaningSheet';
 import type { CleanReadRow } from './session';
-import { sleepStatus } from './sheets';
+import { bookmarkEntries, sleepStatus } from './sheets';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useStore } from 'zustand';
 import type { CastCharacter, DocumentContent } from '@/data/content';
+import type { Bookmark } from '@/data/userdata';
 import type { LibraryItem } from '@/data/library';
 import { formatDuration } from '@/i18n/translate';
 import { useLocale, useT } from '@/i18n/useLocale';
@@ -66,6 +67,9 @@ export interface PlayerActions {
   speak(text: string, lang: AnswerLanguage): void;
   /** A tapped sentence: narration moves there and plays from it, paused or not. */
   playFrom(index: number): void;
+  listBookmarks(): Bookmark[];
+  addBookmark(index: number): void;
+  removeBookmark(id: string): void;
   close(): void;
   /** Settings › Diagnostics, from the failure banner. */
   openDiagnostics(): void;
@@ -93,7 +97,7 @@ function useNow(active: boolean): number {
 
 /** The full player: the text lit as it is read, where you are, and the controls. */
 export function PlayerScreen({ item, content, clean, customSkips, dictionary, actions }: PlayerScreenProps) {
-  const { player, settings } = useServices();
+  const { player, settings, toast } = useServices();
   const mirror = useStore(player);
   const reader = useStore(settings);
   const { name, space, colors } = useTheme();
@@ -108,6 +112,7 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
   const [asking, setAsking] = useState<number | null>(null);
   const [cleanRows, setCleanRows] = useState<CleanReadRow[]>([]);
   const [characters, setCharacters] = useState<CastCharacter[]>([]);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   // This document's own choices, shown in the voice sheet and updated as the listener changes them.
   const [voice, setVoice] = useState(
     () => item.settings.voice ?? settings.getState().voices[item.language] ?? DEFAULT_NARRATOR,
@@ -123,6 +128,10 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
     [content, clean, customSkips],
   );
   const sentence = content.sentences[index];
+  const marks = useMemo(
+    () => bookmarkEntries(bookmarks, content.blocks, content.sentences),
+    [bookmarks, content],
+  );
   const currentBlock = sentence ? blockOfSentence(content.sentences, index) : -1;
   const speechMs = mirror.timeline?.speechMs(index) ?? 0;
   const times = useMemo(() => {
@@ -207,7 +216,10 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
         <IconButton
           icon="chapters"
           label={t('player.contents')}
-          onPress={() => setSheet('contents')}
+          onPress={() => {
+            setBookmarks(actions.listBookmarks());
+            setSheet('contents');
+          }}
           color={theme.ink}
         />
       </View>
@@ -408,8 +420,16 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
         visible={sheet === 'contents'}
         queue={mirror.queue}
         index={index}
+        bookmarks={marks}
         onClose={() => setSheet(null)}
         onJump={actions.seekTo}
+        onToggleBookmark={() => {
+          const here = marks.find((b) => b.start === index);
+          if (here) actions.removeBookmark(here.id);
+          else actions.addBookmark(index);
+          toast.getState().show({ message: t(here ? 'player.bookmarkRemoved' : 'player.bookmarkAdded') });
+          setBookmarks(actions.listBookmarks());
+        }}
       />
     </Screen>
   );
