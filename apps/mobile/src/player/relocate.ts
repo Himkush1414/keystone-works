@@ -1,8 +1,8 @@
 import type { Block, Sentence } from '@lamplight/core';
 
 interface Doc {
-  blocks: readonly Block[];
-  sentences: readonly Sentence[];
+  blocks: readonly Pick<Block, 'text'>[];
+  sentences: readonly Pick<Sentence, 'block' | 'start' | 'end'>[];
 }
 
 /**
