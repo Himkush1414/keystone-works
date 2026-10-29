@@ -4,7 +4,7 @@ import { useStore } from 'zustand';
 import LamplightEngine from '../../../modules/lamplight-engine';
 import { listCharacters, loadContent, loadSpeakers } from '@/data/content';
 import { getItem } from '@/data/library';
-import { rulesFor } from '@/data/userdata';
+import { addBookmark, listBookmarks, removeBookmark, rulesFor } from '@/data/userdata';
 import { useT } from '@/i18n/useLocale';
 import { PlayerScreen, type PlayerActions } from '@/player/PlayerScreen';
 import {
@@ -59,6 +59,11 @@ export default function PlayerRoute() {
             ? LamplightEngine.play()
             : playDocument(services, id, { autoplay: true }),
         ),
+      listBookmarks: () => (id ? listBookmarks(services.db, id) : []),
+      addBookmark: (index) => {
+        if (id) addBookmark(services.db, id, index);
+      },
+      removeBookmark: (bookmarkId) => removeBookmark(services.db, bookmarkId),
       lookUpWord: (word, context) => lookUpWord(LamplightEngine, word, context),
       speak: (text, lang) => {
         const voice =

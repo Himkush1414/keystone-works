@@ -30,6 +30,7 @@ import {
   getPosition,
   getSetting,
   listBookmarks,
+  removeBookmark,
   listCollections,
   listenedSince,
   listHighlights,
@@ -223,6 +224,8 @@ describe('annotations, collections and settings', () => {
       [1, null],
       [3, 'here'],
     ]);
+    removeBookmark(db, listBookmarks(db, id)[0]?.id ?? '');
+    expect(listBookmarks(db, id).map((b) => b.sentenceOrd)).toEqual([3]);
     addHighlight(db, id, { blockOrd: 2, start: 0, end: 5, note: ' warm ' });
     addHighlight(db, id, { blockOrd: 1, start: 4, end: 8 });
     expect(listHighlights(db, id).map((h) => [h.blockOrd, h.note])).toEqual([

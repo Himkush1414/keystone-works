@@ -11,8 +11,9 @@ import { Text } from '@/ui/Text';
 import { useT } from '@/i18n/useLocale';
 import { ChoiceRow, SwitchRow } from '@/ui/SettingRows';
 import { Sheet } from '@/ui/Sheet';
+import { useTheme } from '@/theme/theme';
 import type { CleanReadRow } from './session';
-import { contentsEntries, SLEEP_MINUTES } from './sheets';
+import { contentsEntries, SLEEP_MINUTES, type BookmarkEntry } from './sheets';
 
 /** Sleep timer (R-PL-6): a number of minutes or the end of the chapter, with a gentle fade from the engine. */
 export function SleepSheet({
@@ -50,35 +51,63 @@ export function SleepSheet({
   );
 }
 
-/** Contents: the chapters, with the one being heard marked; choosing one reads from its start. */
+/**
+ * Contents: bookmarks first (with one for the sentence being heard), then the chapters with the one being heard
+ * marked; choosing either reads from there.
+ */
 export function ContentsSheet({
   visible,
   queue,
   index,
+  bookmarks,
   onClose,
   onJump,
+  onToggleBookmark,
 }: {
   visible: boolean;
   queue: QueueFile | null;
   index: number;
+  bookmarks: readonly BookmarkEntry[];
   onClose(): void;
   onJump(sentence: number): void;
+  /** Bookmarks the sentence being heard, or removes its bookmark. */
+  onToggleBookmark(): void;
 }) {
   const t = useT();
+  const { colors, space } = useTheme();
   if (!queue) return null;
+  const jump = (sentence: number) => () => {
+    onJump(sentence);
+    onClose();
+  };
+  const marked = bookmarks.some((b) => b.start === index);
   return (
     <Sheet visible={visible} title={t('player.contents')} onClose={onClose} closeLabel={t('common.close')}>
       <ScrollView style={{ maxHeight: 480 }}>
+        <Button
+          label={t(marked ? 'player.bookmarkRemove' : 'player.bookmark')}
+          icon={marked ? 'bookmarkFilled' : 'bookmark'}
+          kind="secondary"
+          block
+          onPress={onToggleBookmark}
+        />
+        <Text variant="bodyStrong" style={{ color: colors.ink, marginTop: space.md, marginBottom: space.xs }}>
+          {t('player.bookmarks')}
+        </Text>
+        {bookmarks.length === 0 ? (
+          <Text variant="meta" style={{ color: colors.inkSoft, marginBottom: space.sm }}>
+            {t('player.bookmarksEmpty')}
+          </Text>
+        ) : (
+          bookmarks.map((b) => (
+            <ChoiceRow key={b.id} label={b.text} selected={b.start === index} onPress={jump(b.start)} />
+          ))
+        )}
+        <Text variant="bodyStrong" style={{ color: colors.ink, marginTop: space.md, marginBottom: space.xs }}>
+          {t('player.chapters')}
+        </Text>
         {contentsEntries(queue, index).map((e) => (
-          <ChoiceRow
-            key={e.start}
-            label={e.title}
-            selected={e.current}
-            onPress={() => {
-              onJump(e.start);
-              onClose();
-            }}
-          />
+          <ChoiceRow key={e.start} label={e.title} selected={e.current} onPress={jump(e.start)} />
         ))}
       </ScrollView>
     </Sheet>
