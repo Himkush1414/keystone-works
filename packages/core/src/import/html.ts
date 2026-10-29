@@ -187,6 +187,17 @@ export interface HtmlDocumentInfo {
   language?: string;
 }
 
+/**
+ * A <title> without the site's name after it ("ईदगाह - विकिस्रोत" → "ईदगाह"): dropped when the page's heading or
+ * its site name says where the title ends, so a dash that belongs to the title ("Spider-Man – A Life") stays.
+ */
+function withoutSite(title: string, h1: string, site: string | undefined): string {
+  const m = title.match(/^(.+?)\s+[-–—|·:]\s+([^-–—|·:]+)$/u);
+  if (!m?.[1] || !m[2]) return title;
+  const same = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' }) === 0;
+  return (h1 && same(m[1], h1)) || (site && same(m[2], site)) ? m[1] : title;
+}
+
 export function htmlInfo(doc: Document): HtmlDocumentInfo {
   const titleTag = cleanText(textContent(getElementsByTagName('title', doc, true)[0] ?? []));
   const h1 = cleanText(textContent(getElementsByTagName('h1', doc, true)[0] ?? []));
@@ -196,11 +207,11 @@ export function htmlInfo(doc: Document): HtmlDocumentInfo {
   const time = published ? Date.parse(published) : NaN;
   const lang = getAttributeValue(getElementsByTagName('html', doc, true)[0] ?? ({} as Element), 'lang');
   const info: HtmlDocumentInfo = {};
-  const title = meta(doc, 'og:title', 'twitter:title') ?? (titleTag || h1);
+  const site = meta(doc, 'og:site_name', 'application-name');
+  const title = meta(doc, 'og:title', 'twitter:title') ?? (withoutSite(titleTag, h1, site) || h1);
   if (title) info.title = title;
   const author = meta(doc, 'author', 'article:author', 'dc.creator', 'parsely-author');
   if (author && !/^https?:/i.test(author)) info.author = author;
-  const site = meta(doc, 'og:site_name', 'application-name');
   if (site) info.siteName = site;
   if (!Number.isNaN(time)) info.publishedAt = time;
   if (lang) info.language = lang.toLowerCase();
