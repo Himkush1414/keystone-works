@@ -1,4 +1,6 @@
+import type { Block, Sentence } from '@lamplight/core';
 import type { PlayerState, QueueFile } from '../../modules/lamplight-engine/src/types';
+import type { Bookmark } from '../data/userdata';
 import { formatDuration, translate, type Locale } from '../i18n/translate';
 
 /** Sleep timer choices in minutes (R-PL-6); "end of chapter" is offered separately. */
@@ -38,4 +40,33 @@ export function contentsEntries(
     start,
     current: k === current,
   }));
+}
+
+export interface BookmarkEntry {
+  id: string;
+  /** Sentence the bookmark marks. */
+  start: number;
+  /** Its label, or the start of its sentence. */
+  text: string;
+}
+
+/** Longest sentence opening shown for a bookmark; the row clips it further. */
+const BOOKMARK_CHARS = 90;
+
+/** Bookmarks in reading order, each named by its label or the words it marks; ones past the end are dropped. */
+export function bookmarkEntries(
+  bookmarks: readonly Pick<Bookmark, 'id' | 'sentenceOrd' | 'label'>[],
+  blocks: readonly Pick<Block, 'text'>[],
+  sentences: readonly Pick<Sentence, 'block' | 'start' | 'end'>[],
+): BookmarkEntry[] {
+  return bookmarks
+    .flatMap((b) => {
+      const s = sentences[b.sentenceOrd];
+      if (!s) return [];
+      const words = (blocks[s.block]?.text ?? '').slice(s.start, s.end).replace(/\s+/g, ' ').trim();
+      const text =
+        b.label ?? (words.length > BOOKMARK_CHARS ? `${words.slice(0, BOOKMARK_CHARS).trimEnd()}…` : words);
+      return [{ id: b.id, start: b.sentenceOrd, text }];
+    })
+    .sort((a, b) => a.start - b.start);
 }
