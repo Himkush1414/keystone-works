@@ -179,6 +179,8 @@ export const en = {
     pause: 'Pause',
     prevSentence: 'Previous sentence',
     nextSentence: 'Next sentence',
+    prevParagraph: 'Previous paragraph',
+    nextParagraph: 'Next paragraph',
     prevChapter: 'Previous chapter',
     nextChapter: 'Next chapter',
     backToVoice: 'Back to voice',

@@ -1,6 +1,6 @@
 import { defaultCleanSettings, parsePlainText, prepareDocument, type Block } from '@lamplight/core';
 import { describe, expect, it } from 'vitest';
-import { blockOfSentence, readAlongBlocks, wordTimesFor } from '../src/player/readAlong';
+import { blockOfSentence, paragraphJump, readAlongBlocks, wordTimesFor } from '../src/player/readAlong';
 
 const CLEAN = defaultCleanSettings('document', false);
 
@@ -87,5 +87,28 @@ describe('wordTimesFor', () => {
     // "1984" is spoken as several words, so it gets more time than "in".
     expect(at(times, 5).t1 - at(times, 5).t0).toBeGreaterThan(at(times, 4).t1 - at(times, 4).t0);
     expect(at(times, -1).t1).toBeLessThanOrEqual(3_000);
+  });
+});
+
+describe('paragraphJump', () => {
+  // Paragraphs (blocks) 0, 2 and 3 hold sentences 0–2, 3–4 and 5.
+  const sentences = [0, 0, 0, 2, 2, 3].map((block) => ({ block }));
+
+  it('goes forward to the next paragraph, and stays in the last one', () => {
+    expect(paragraphJump(sentences, 1, 1)).toBe(3);
+    expect(paragraphJump(sentences, 3, 1)).toBe(5);
+    expect(paragraphJump(sentences, 5, 1)).toBe(5);
+  });
+
+  it('goes back to the start of this paragraph, then to the one before', () => {
+    expect(paragraphJump(sentences, 4, -1)).toBe(3);
+    expect(paragraphJump(sentences, 3, -1)).toBe(0);
+    expect(paragraphJump(sentences, 2, -1)).toBe(0);
+    expect(paragraphJump(sentences, 0, -1)).toBe(0);
+  });
+
+  it('copes with an empty text and an index past the end', () => {
+    expect(paragraphJump([], 4, 1)).toBe(0);
+    expect(paragraphJump(sentences, 99, -1)).toBe(3);
   });
 });

@@ -40,7 +40,7 @@ import { Screen } from '@/ui/Screen';
 import { Tappable } from '@/ui/Tappable';
 import { Text } from '@/ui/Text';
 import { ReadAlong } from './ReadAlongView';
-import { blockOfSentence, readAlongBlocks, speakerLabels, wordTimesFor } from './readAlong';
+import { blockOfSentence, paragraphJump, readAlongBlocks, speakerLabels, wordTimesFor } from './readAlong';
 import { formatSpeed, nextSpeed } from './speed';
 import { livePosition } from './store';
 
@@ -324,6 +324,10 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
             icon="skipBack"
             label={t('player.prevSentence')}
             onPress={() => actions.skip(-1)}
+            longPress={{
+              label: t('player.prevParagraph'),
+              run: () => actions.seekTo(paragraphJump(content.sentences, index, -1)),
+            }}
             color={theme.ink}
           />
           <IconButton
@@ -337,6 +341,10 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
             icon="skipForward"
             label={t('player.nextSentence')}
             onPress={() => actions.skip(1)}
+            longPress={{
+              label: t('player.nextParagraph'),
+              run: () => actions.seekTo(paragraphJump(content.sentences, index, 1)),
+            }}
             color={theme.ink}
           />
           <View style={styles.speed}>

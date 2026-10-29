@@ -17,6 +17,8 @@ export interface IconButtonProps {
   disabled?: boolean;
   selected?: boolean;
   hint?: string;
+  /** A second action on long press, also offered to screen readers by its label. */
+  longPress?: { label: string; run(): void };
   style?: StyleProp<ViewStyle>;
 }
 
@@ -30,6 +32,7 @@ export function IconButton({
   disabled,
   selected,
   hint,
+  longPress,
   style,
 }: IconButtonProps) {
   const { colors } = useTheme();
@@ -37,6 +40,9 @@ export function IconButton({
   return (
     <Tappable
       onPress={onPress}
+      onLongPress={longPress?.run}
+      accessibilityActions={longPress ? [{ name: 'longpress', label: longPress.label }] : undefined}
+      onAccessibilityAction={(e) => e.nativeEvent.actionName === 'longpress' && longPress?.run()}
       disabled={disabled}
       pressScale={filled ? 0.94 : 0.9}
       haptic={filled ? 'tap' : undefined}

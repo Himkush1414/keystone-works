@@ -179,6 +179,8 @@ export const es: Catalog = {
     pause: 'Pausa',
     prevSentence: 'Frase anterior',
     nextSentence: 'Frase siguiente',
+    prevParagraph: 'Párrafo anterior',
+    nextParagraph: 'Párrafo siguiente',
     prevChapter: 'Capítulo anterior',
     nextChapter: 'Capítulo siguiente',
     backToVoice: 'Volver a la voz',

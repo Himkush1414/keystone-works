@@ -183,6 +183,8 @@ export const fr: Catalog = {
     pause: 'Pause',
     prevSentence: 'Phrase précédente',
     nextSentence: 'Phrase suivante',
+    prevParagraph: 'Paragraphe précédent',
+    nextParagraph: 'Paragraphe suivant',
     prevChapter: 'Chapitre précédent',
     nextChapter: 'Chapitre suivant',
     backToVoice: 'Revenir à la voix',
