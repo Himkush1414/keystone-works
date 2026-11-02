@@ -398,6 +398,8 @@ export const de: Catalog = {
     sounds: 'Dezente Töne',
     clearCache: 'Vorbereitetes Audio löschen',
     clearCacheConfirm: '{size} vorbereitetes Audio löschen? Bücher und Positionen bleiben erhalten.',
+    cacheDesc:
+      'Bereits gehörte Sätze werden aufbewahrt, damit sie beim nächsten Mal sofort abgespielt werden, bis zu 2 GB. Deine Bücher bleiben beim Löschen erhalten.',
     cacheSize: 'Vorbereitetes Audio: {size}',
     version: 'Version {version}',
   },

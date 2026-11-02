@@ -396,6 +396,8 @@ export const pt: Catalog = {
     sounds: 'Sons discretos',
     clearCache: 'Limpar áudio preparado',
     clearCacheConfirm: 'Limpar {size} de áudio preparado? Seus livros e posições continuam salvos.',
+    cacheDesc:
+      'As frases que você já ouviu ficam guardadas para tocar na hora da próxima vez, até 2 GB. Limpar não mexe nos seus livros.',
     cacheSize: 'Áudio preparado: {size}',
     version: 'Versão {version}',
   },

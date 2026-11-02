@@ -400,6 +400,8 @@ export const fr: Catalog = {
     sounds: 'Sons discrets',
     clearCache: 'Effacer l’audio préparé',
     clearCacheConfirm: 'Effacer {size} d’audio préparé\u202f? Vos livres et positions sont conservés.',
+    cacheDesc:
+      'Les phrases déjà écoutées sont gardées pour être lues immédiatement la prochaine fois, jusqu’à 2\u00a0Go. Les effacer ne touche pas à vos livres.',
     cacheSize: 'Audio préparé\u00a0: {size}',
     version: 'Version {version}',
   },
