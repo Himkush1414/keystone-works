@@ -7,13 +7,23 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ServicesProvider, useServices } from '@/services/context';
 import { deviceServices } from '@/services/device';
+import { installErrorCapture } from '@/services/errorLog';
+import { errorLog } from '@/services/errors';
 import { ThemeProvider, useTheme, type ThemePreference } from '@/theme/theme';
 import { useAppFonts } from '@/theme/useAppFonts';
 import { AnimatedSplash } from '@/ui/AnimatedSplash';
+import { ErrorScreen } from '@/ui/ErrorScreen';
 import { ToastHost } from '@/ui/Toast';
 
 // Keep the splash up until the first screen can draw with its real fonts (no layout shift, R-ON-1).
 preventAutoHideAsync().catch(() => undefined);
+
+// Uncaught errors and lost promise rejections go to the error log (Settings › Diagnostics) before React
+// Native's own handler runs; in a release build a rejected promise was otherwise silent.
+installErrorCapture(errorLog);
+
+/** A screen that throws while drawing shows this instead of a blank app; expo-router renders it. */
+export const ErrorBoundary = ErrorScreen;
 
 export default function RootLayout() {
   const fontsReady = useAppFonts();
