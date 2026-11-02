@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function Privacy() {
   return (
-    <Prose title="Privacy policy" updated="26 October 2026">
+    <Prose title="Privacy policy" updated="2 November 2026">
       <p>
         <strong>The short version:</strong> Lamplight has no account, no analytics, no trackers and no ads.
         The documents you open, where you are in them, and the audio made from them stay on your phone. We
@@ -48,25 +48,19 @@ export default function Privacy() {
       </table>
       <p>The voices run on your phone’s own processor. Text is never sent anywhere to be read aloud.</p>
 
-      <h3>When the app uses the internet</h3>
-      <ul>
-        <li>
-          <strong>Importing a web article.</strong> When you share or type a web address, the app downloads
-          that page from the website you chose, like a browser would. That website sees the request; we don’t.
-        </li>
-        <li>
-          <strong>Nothing else today.</strong> Lamplight does not send crash reports, usage statistics or
-          anything else. If a future version offers crash reports, a report will be sent only after you have
-          seen its contents and tapped Send, it will contain no text from your documents, and this policy will
-          say so first.
-        </li>
-      </ul>
+      <h3>The internet</h3>
+      <p>
+        Lamplight does not connect to the internet. The Android app doesn’t even ask for the internet
+        permission, so it can’t send anything anywhere: no crash reports, no usage statistics, nothing else.
+        If a future version offers something that needs the internet, such as crash reports, this policy will
+        say so first, and a crash report would be sent only after you have seen its contents and tapped Send,
+        with no text from your documents in it.
+      </p>
 
       <h3>Android backups</h3>
       <p>
-        If backup is turned on for your phone, Android may include Lamplight’s data in your device backup to
-        your Google account, as it does for most apps. That backup is handled by Google under your account’s
-        settings, not by us, and we can’t read it.
+        Lamplight turns Android’s automatic backup off, so your library is not copied to your Google account
+        or anywhere else. The flip side: on a new phone, Lamplight starts with an empty library.
       </p>
 
       <h3>Google Play</h3>

@@ -414,8 +414,7 @@ export const en = {
     empty: 'No entries yet. Long-press a word while reading to fix how it’s said.',
   },
   privacy: {
-    network:
-      'Lamplight connects to the internet only when you import a web article or choose to send a crash report.',
+    network: 'Lamplight does not connect to the internet: it doesn’t have the permission to.',
     noAccount: 'No account, no analytics, no trackers, no ads.',
     local: 'Your documents, positions, highlights and audio stay on this device.',
   },

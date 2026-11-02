@@ -155,7 +155,8 @@ export const fr: Catalog = {
       processed: 'Traitée (triste)',
       old: 'Ancienne (3 étapes)',
     },
-    abResult: '{kind}\u00a0: {steps} étapes, {seconds} s, {clipped} échantillons saturés. Enregistré dans {path}',
+    abResult:
+      '{kind}\u00a0: {steps} étapes, {seconds} s, {clipped} échantillons saturés. Enregistré dans {path}',
     volumeMuted: 'Le volume multimédia est coupé, la lecture est donc muette. Montez le volume.',
   },
   errors: {
@@ -420,8 +421,7 @@ export const fr: Catalog = {
     empty: 'Aucune entrée. Appuyez longuement sur un mot pendant la lecture pour corriger sa prononciation.',
   },
   privacy: {
-    network:
-      'Lamplight ne se connecte à internet que lorsque vous importez un article web ou choisissez d’envoyer un rapport de plantage.',
+    network: 'Lamplight ne se connecte pas à internet\u00a0: l’app n’en a même pas l’autorisation.',
     noAccount: 'Pas de compte, pas de statistiques, pas de traceurs, pas de publicité.',
     local: 'Vos documents, positions, surlignages et fichiers audio restent sur cet appareil.',
   },

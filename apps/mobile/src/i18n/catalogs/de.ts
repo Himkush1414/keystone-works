@@ -418,8 +418,7 @@ export const de: Catalog = {
     empty: 'Noch keine Einträge. Halte beim Lesen ein Wort gedrückt, um die Aussprache zu korrigieren.',
   },
   privacy: {
-    network:
-      'Lamplight verbindet sich nur mit dem Internet, wenn du einen Webartikel importierst oder einen Absturzbericht sendest.',
+    network: 'Lamplight verbindet sich nicht mit dem Internet: Die App hat dafür keine Berechtigung.',
     noAccount: 'Kein Konto, keine Analysen, keine Tracker, keine Werbung.',
     local: 'Deine Dokumente, Positionen, Markierungen und Audiodaten bleiben auf diesem Gerät.',
   },
