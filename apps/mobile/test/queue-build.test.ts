@@ -11,6 +11,7 @@ import {
   QUEUE_WINDOW,
   queueContext,
   startDocument,
+  wholeQueue,
   type SessionSettings,
 } from '../src/player/session';
 import { createPlayerStore } from '../src/player/store';
@@ -181,5 +182,38 @@ describe('re-voicing a long book', () => {
     const total = planSession(db, id, SETTINGS).queue;
     expect(device.store.getState().queue?.segments).toEqual(total.segments);
     expect((JSON.parse(device.files.get(id) ?? '{}') as QueueFile).key).toBe(total.key);
+  });
+});
+
+describe('the whole queue for an export', () => {
+  it("matches a whole-book build without stopping the player's own build", async () => {
+    const { db, id } = seed(4);
+    const device = fakeDevice();
+    const playing = startDocument(
+      { ...device.deps(db), yieldToUi: () => new Promise((r) => setTimeout(r, 0)) },
+      id,
+      SETTINGS,
+    );
+    const whole = await wholeQueue(device.deps(db), id, SETTINGS);
+    const plan = await playing;
+    const total = planSession(db, id, SETTINGS).queue;
+    expect(whole.segments).toEqual(total.segments);
+    expect(whole.key).toBe(total.key);
+    // The player's background build ran to the end and cached its queue.
+    expect(plan.queue.segments.every((s) => !s.pending)).toBe(true);
+  });
+
+  it('reuses the cached queue', async () => {
+    const { db, id } = seed(2);
+    const device = fakeDevice();
+    await prepareQueue(device.deps(db), id, SETTINGS);
+    const reads: string[] = [];
+    const whole = await wholeQueue(
+      { ...device.deps(db), readQueue: async (d) => (reads.push(d), device.files.get(d) ?? null) },
+      id,
+      SETTINGS,
+    );
+    expect(reads).toEqual([id]);
+    expect(whole.key).toBe(planSession(db, id, SETTINGS).queue.key);
   });
 });

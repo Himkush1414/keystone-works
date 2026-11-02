@@ -10,6 +10,7 @@ import android.media.AudioManager
 import android.os.BatteryManager
 import android.os.Handler
 import android.os.Looper
+import android.os.ParcelFileDescriptor
 import android.os.PowerManager
 import app.lamplight.engine.core.AudioWindow
 import app.lamplight.engine.core.Chunks
@@ -21,6 +22,7 @@ import app.lamplight.engine.core.Seed
 import app.lamplight.engine.core.SleepFade
 import org.json.JSONObject
 import java.io.File
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.Executors
 import java.util.concurrent.locks.ReentrantLock
@@ -444,6 +446,97 @@ class PlaybackController private constructor(private val context: Context) : Str
         seekTo(target)
     }
 
+    // ── audio export (R-EX-1) ──
+
+    /** One file of an export: sentences [from, to) of the queue, written to [uri]. */
+    class ExportTrack(val uri: String, val from: Int, val to: Int)
+
+    /** An export that can't go on, with a [code] the app turns into words. */
+    class ExportError(val code: String, message: String, cause: Throwable? = null) : Exception(message, cause)
+
+    @Volatile private var exportToken = 0
+
+    /** Stops the export under way before its next sentence. */
+    fun cancelExport() {
+        exportToken++
+    }
+
+    /**
+     * Writes each of [tracks] as an M4A file opened through [open]: a sentence heard or prepared before comes
+     * from the cache, the rest is rendered at [q] exactly as narration would play it (and cached). Narration
+     * comes first: the export waits while it plays (and while the phone is too hot), and [progress] says so.
+     * Returns each file's length in ms. Throws [CancellationException] when [cancelExport] is called. Blocks:
+     * runs on the caller's thread.
+     */
+    fun export(
+        spec: QueueSpec,
+        tracks: List<ExportTrack>,
+        q: Quality,
+        open: (String) -> ParcelFileDescriptor,
+        progress: (done: Int, total: Int, waiting: Boolean) -> Unit,
+    ): List<Long> {
+        val token = ++exportToken
+        val steps = if (q == Quality.STUDIO_PLUS) STUDIO_PLUS_STEPS else studioSteps
+        val total = tracks.sumOf { it.to - it.from }
+        var done = 0
+        EngineLog.i(TAG, "export ${spec.docId}: ${tracks.size} files, $total sentences at $steps steps")
+        val lengths = ArrayList<Long>()
+        for (t in tracks) {
+            val fd = try {
+                open(t.uri)
+            } catch (e: Exception) {
+                throw ExportError("export-write", "could not open ${t.uri}", e)
+            }
+            fd.use {
+                val writer = try {
+                    M4aWriter(fd.fileDescriptor, SAMPLE_RATE)
+                } catch (e: Exception) {
+                    // A folder whose files can't be written in place (some cloud folders): MP4 needs to seek.
+                    throw ExportError("export-write", "could not start an M4A file at ${t.uri}", e)
+                }
+                writer.use { out ->
+                    for (i in t.from until t.to) {
+                        waitForExportTurn(token) { progress(done, total, true) }
+                        val seg = spec.segments.getOrNull(i) ?: error("sentence $i is not in the queue")
+                        if (seg.pending) throw ExportError("export-queue", "sentence $i is not queued yet")
+                        if (!seg.isSilent) out.write(exportAudio(seg, steps, token))
+                        // A file ends on a short silence; the next one starts with its own pause.
+                        val pause = if (i == t.to - 1) minOf(seg.pauseMs, EXPORT_END_PAUSE_MS) else seg.pauseMs
+                        out.silence(pause * SAMPLE_RATE / 1000)
+                        done++
+                        progress(done, total, false)
+                    }
+                    out.finish()
+                    lengths.add(out.samples * 1000 / SAMPLE_RATE)
+                }
+            }
+        }
+        EngineLog.i(TAG, "export ${spec.docId} done: ${lengths.sum() / 1000} s of audio")
+        return lengths
+    }
+
+    private fun waitForExportTurn(token: Int, waiting: () -> Unit) {
+        var told = false
+        while (true) {
+            if (token != exportToken) throw CancellationException("export cancelled")
+            if (!playing && !isTooHot()) return
+            if (!told) waiting().also { told = true }
+            Thread.sleep(400)
+        }
+    }
+
+    /** One sentence for an export: from the cache if it's there, otherwise rendered (and cached). */
+    private fun exportAudio(seg: Segment, steps: Int, token: Int): FloatArray {
+        cache.best(seg, cachedSteps())?.let { (_, key) -> cache.read(key) }?.let { return it }
+        val parts = ArrayList<Part>()
+        val whole = renderPieces(seg, steps, keepGoing = { token == exportToken }) { parts.add(it) }
+        if (!whole) throw CancellationException("export cancelled")
+        val samples = if (parts.size == 1) parts[0].samples else joined(parts)
+        val key = cache.key(seg, steps)
+        cacheWriter.execute { cache.write(key, samples, SAMPLE_RATE) }
+        return samples
+    }
+
     // ── StreamPlayer.Source ──
 
     override fun awaitPart(index: Int, part: Int): StreamPlayer.Pcm? {
@@ -576,8 +669,6 @@ class PlaybackController private constructor(private val context: Context) : Str
     private fun runJob(job: Job) {
         val seg = job.segment
         val i = seg.index
-        val voice = host.voice(seg.voice)
-        val pieces = Chunks.split(seg.text, seg.lang, seg.runs)
         val forPlayer = job.prepare == null && !job.upgrade
         // Heard before (or prepared offline): no need to render it again.
         if (forPlayer && readFromCache(i, job.gen)) return
@@ -586,34 +677,15 @@ class PlaybackController private constructor(private val context: Context) : Str
             if (job.gen != generation || renders[i]?.complete == true) return
             renders[i] = rendered
         }
-        val joiner = Chunks.Joiner(SAMPLE_RATE)
-        val style = LineRender.Style(seg.rate, seg.gainDb, seg.pitch, seg.ending, seg.breath)
-        for ((k, piece) in pieces.withIndex()) {
-            if (job.gen != generation) return
-            val t0 = System.nanoTime()
-            val last = k == pieces.lastIndex
-            val raw = engineLock.withLock { host.engine().synthesize(piece.text, piece.lang, voice, job.steps, style.modelRate(BASE_RATE), LineRender.continues(last, style)) }
-            val workMs = (System.nanoTime() - t0) / 1_000_000
-            if (raw.dropped.isNotEmpty()) EngineLog.i(TAG, "dropped characters ${raw.dropped}")
-            lastRender = mapOf("sentence" to i.toLong(), "piece" to k.toLong(), "steps" to job.steps.toLong(), "workMs" to workMs, "audioMs" to raw.durationMs) +
-                host.engine().lastTimings
-            if (failure != null || failures > 0) {
-                EngineLog.i(TAG, "rendering again after ${failures} failure(s)")
-                failure = null
-                failures = 0
-                emitState()
-            }
-            // The model pads every render with silence; only speech (and the pauses we choose) is heard.
-            val trimmed = LineRender.edges(raw.samples, raw.sampleRate, last, style, seg.release)
-            pacing.record(job.steps, workMs, trimmed.size * 1000L / raw.sampleRate, piece.text.length)
-            val seed = Seed.forSentence(piece.text, voice.id, job.steps)
-            val part = Part(LineRender.piece(trimmed, raw.sampleRate, k, last, style, seed, piece.gapMs, joiner), piece.gapMs)
+        val finished = renderPieces(seg, job.steps, keepGoing = { job.gen == generation }) { part ->
             if (forPlayer) lock.withLock {
-                if (job.gen != generation) return
+                if (job.gen != generation) return@renderPieces false
                 rendered.parts.add(part)
                 ready.signalAll()
             } else rendered.parts.add(part)
+            true
         }
+        if (!finished) return
         rendered.complete = true
         if (pacing.measured % PACING_SAVE_EVERY == 0) savePacing()
         val whole = if (rendered.parts.size == 1) rendered.parts[0].samples else joined(rendered.parts)
@@ -641,6 +713,39 @@ class PlaybackController private constructor(private val context: Context) : Str
         }
         // The sentence being heard now has its true length, for the word underline.
         if (i == currentIndex) main.post { listeners.forEach { it.onSentence(i, duration) } }
+    }
+
+    /**
+     * Renders [seg] piece by piece at [steps], exactly as narration plays it, handing each piece to [take] as
+     * soon as it's made. Stops (returning false) when [keepGoing] turns false before a piece or [take] refuses one.
+     */
+    private fun renderPieces(seg: Segment, steps: Int, keepGoing: () -> Boolean, take: (Part) -> Boolean): Boolean {
+        val voice = host.voice(seg.voice)
+        val pieces = Chunks.split(seg.text, seg.lang, seg.runs)
+        val joiner = Chunks.Joiner(SAMPLE_RATE)
+        val style = LineRender.Style(seg.rate, seg.gainDb, seg.pitch, seg.ending, seg.breath)
+        for ((k, piece) in pieces.withIndex()) {
+            if (!keepGoing()) return false
+            val t0 = System.nanoTime()
+            val last = k == pieces.lastIndex
+            val raw = engineLock.withLock { host.engine().synthesize(piece.text, piece.lang, voice, steps, style.modelRate(BASE_RATE), LineRender.continues(last, style)) }
+            val workMs = (System.nanoTime() - t0) / 1_000_000
+            if (raw.dropped.isNotEmpty()) EngineLog.i(TAG, "dropped characters ${raw.dropped}")
+            lastRender = mapOf("sentence" to seg.index.toLong(), "piece" to k.toLong(), "steps" to steps.toLong(), "workMs" to workMs, "audioMs" to raw.durationMs) +
+                host.engine().lastTimings
+            if (failure != null || failures > 0) {
+                EngineLog.i(TAG, "rendering again after ${failures} failure(s)")
+                failure = null
+                failures = 0
+                emitState()
+            }
+            // The model pads every render with silence; only speech (and the pauses we choose) is heard.
+            val trimmed = LineRender.edges(raw.samples, raw.sampleRate, last, style, seg.release)
+            pacing.record(steps, workMs, trimmed.size * 1000L / raw.sampleRate, piece.text.length)
+            val seed = Seed.forSentence(piece.text, voice.id, steps)
+            if (!take(Part(LineRender.piece(trimmed, raw.sampleRate, k, last, style, seed, piece.gapMs, joiner), piece.gapMs))) return false
+        }
+        return true
     }
 
     /** A sentence's pieces as one clip, gaps included, for the disk cache. */
@@ -854,6 +959,8 @@ class PlaybackController private constructor(private val context: Context) : Str
         private const val LOOKAHEAD_MS = 30_000L
         private const val TICK_MS = 100L
         private const val FADE_MS = 10_000L
+        /** Silence at the end of an exported file. */
+        private const val EXPORT_END_PAUSE_MS = 1_200
 
         @Volatile private var instance: PlaybackController? = null
 

@@ -15,9 +15,13 @@ export interface ItemSheetProps {
   onToggleFinished(item: LibraryItem): void;
   onSaveDetails(item: LibraryItem, details: { title: string; author: string | null }): void;
   onDelete(item: LibraryItem): void;
+  onExport(item: LibraryItem): void;
 }
 
-/** What you can do with one item (R-LB-3): play, fix its title and author, mark it finished, delete it. */
+/**
+ * What you can do with one item (R-LB-3): play, fix its title and author, mark it finished, export its audio
+ * (R-EX-1), delete it.
+ */
 export function ItemSheet({
   item,
   onClose,
@@ -25,6 +29,7 @@ export function ItemSheet({
   onToggleFinished,
   onSaveDetails,
   onDelete,
+  onExport,
 }: ItemSheetProps) {
   const t = useT();
   const { space } = useTheme();
@@ -57,6 +62,9 @@ export function ItemSheet({
               label={t(item.finishedAt === null ? 'item.markFinished' : 'item.markUnfinished')}
               onPress={then(onToggleFinished)}
             />
+          ) : null}
+          {item.status === 'ready' && !item.loading ? (
+            <OptionRow icon="export" label={t('item.export')} onPress={then(onExport)} />
           ) : null}
           <OptionRow icon="trash" label={t('item.delete')} tone="danger" onPress={then(onDelete)} />
         </View>

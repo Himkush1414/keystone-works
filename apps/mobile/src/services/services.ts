@@ -5,6 +5,7 @@ import { purgeDeleted } from '../data/library';
 import { getSetting, setSetting } from '../data/userdata';
 import { trackPosition } from '../player/session';
 import { connectEngine, createPlayerStore, type PlayerMirror } from '../player/store';
+import { createExportStore, type ExportState } from '../state/export';
 import { createLibraryStore, type LibraryState } from '../state/library';
 import { createToastStore, type ToastState } from '../state/toast';
 import {
@@ -38,6 +39,8 @@ export interface Services {
   library: StoreApi<LibraryState>;
   player: StoreApi<PlayerMirror>;
   toast: StoreApi<ToastState>;
+  /** The audio export under way, if any. */
+  exports: StoreApi<ExportState>;
   dispose(): void;
 }
 
@@ -63,6 +66,7 @@ export function createServices(
     library,
     player,
     toast: createToastStore(),
+    exports: createExportStore(),
     dispose: () => unsubscribe.forEach((u) => u()),
   };
 }

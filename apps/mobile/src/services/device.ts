@@ -1,11 +1,15 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { Platform } from 'react-native';
 import LamplightEngine from '../../modules/lamplight-engine';
+import type { ExportEvent } from '../../modules/lamplight-engine/src/types';
+import { getItem } from '../data/library';
 import { getDb } from '../data/expoDb';
 import { getSetting, setSetting } from '../data/userdata';
 import { uriToPath } from '../import/paths';
 import { scheduleCalibration } from '../player/calibration';
-import { prepareQueue, startDocument } from '../player/session';
+import { exportPlan, playlist } from '../player/export';
+import { forPlayer } from '../player/queue';
+import { prepareQueue, startDocument, wholeQueue } from '../player/session';
 import { createServices, type Services } from './services';
 
 /** Queue files live in the cache: they are rebuilt from the library whenever a document is opened. */
@@ -75,3 +79,75 @@ export function prepareQueueSoon(s: Services, documentId: string): void {
 
 /** For re-voicing: the rebuilt queue is cached for the next open. */
 export const queueCache = { writeQueue, readQueue };
+
+export interface ExportOutcome {
+  folder: string;
+  files: number;
+  durationMs: number;
+}
+
+/** An export that couldn't start or finish; `code` picks the words (see errors.export* in the catalogs). */
+export class ExportFailure extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+const nextFrame = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+/**
+ * Audio export (R-EX-1): the listener picks a folder; a folder named after the book gets one M4A per chapter
+ * (or only `chapter`) and an M3U playlist. Cached audio is reused, the rest is rendered; the engine gives way
+ * to narration. Resolves null when the folder picker was closed; a failed or cancelled export removes what it
+ * wrote.
+ */
+export async function exportDocument(
+  s: Services,
+  documentId: string,
+  opts: { chapter?: number },
+  onProgress: (e: ExportEvent) => void,
+): Promise<ExportOutcome | null> {
+  const settings = s.settings.getState();
+  const queue = await wholeQueue({ db: s.db, readQueue, yieldToUi: nextFrame }, documentId, settings);
+  const plan = exportPlan(queue, opts);
+  if (!plan.tracks.length) throw new ExportFailure('export-empty', 'nothing to export');
+  let picked: Directory;
+  try {
+    picked = await Directory.pickDirectoryAsync();
+  } catch {
+    return null;
+  }
+  const folder = picked.createDirectory(plan.folder);
+  try {
+    const tracks = plan.tracks.map((t) => ({
+      uri: folder.createFile(t.file, 'audio/mp4').uri,
+      from: t.from,
+      to: t.to,
+    }));
+    const path = await writeQueue(`${documentId}-export`, forPlayer(queue));
+    const quality = getItem(s.db, documentId)?.settings.quality ?? settings.quality;
+    const sub = LamplightEngine.addListener('onExport', onProgress);
+    let lengths: number[];
+    try {
+      lengths = await LamplightEngine.exportAudio(path, JSON.stringify(tracks), quality);
+    } finally {
+      sub.remove();
+    }
+    await folder.createFile(plan.playlist, 'audio/x-mpegurl').write(playlist(plan, queue, lengths));
+    return { folder: folder.name, files: tracks.length, durationMs: lengths.reduce((a, b) => a + b, 0) };
+  } catch (e) {
+    try {
+      folder.delete();
+    } catch {
+      // Already gone, or the folder can't be written at all; nothing more to undo.
+    }
+    const code = (e as { code?: unknown }).code;
+    throw new ExportFailure(typeof code === 'string' ? code : 'export-failed', String(e));
+  }
+}
+
+/** Stops the export under way; its promise rejects with "export-cancelled". */
+export const cancelExport = () => LamplightEngine.cancelExport();

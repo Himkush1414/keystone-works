@@ -13,6 +13,7 @@ import android.os.Build
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import androidx.core.view.WindowCompat
@@ -54,7 +55,7 @@ class LamplightEngineModule : Module() {
     override fun definition() = ModuleDefinition {
         Name("LamplightEngine")
 
-        Events("onState", "onProgress", "onSentence", "onRender", "onError")
+        Events("onState", "onProgress", "onSentence", "onRender", "onError", "onExport")
 
         OnStartObserving { controller.addListener(listener) }
         OnStopObserving { controller.removeListener(listener) }
@@ -167,6 +168,39 @@ class LamplightEngineModule : Module() {
             controller.prepareOffline(QueueSpec.parse(File(path).readText()), parseQuality(quality), chargingOnly)
         }
         AsyncFunction("cancelPrepare") { docId: String -> controller.cancelPrepare(docId) }
+
+        // Writes M4A files (content URIs from the folder the listener picked) on a thread of its own; resolves with
+        // each file's length in ms, rejects with "export-cancelled" or the reason it failed.
+        AsyncFunction("exportAudio") { path: String, tracksJson: String, quality: String, promise: Promise ->
+            val spec = QueueSpec.parse(File(path).readText())
+            val list = org.json.JSONArray(tracksJson)
+            val tracks = (0 until list.length()).map { k ->
+                list.getJSONObject(k).let { PlaybackController.ExportTrack(it.getString("uri"), it.getInt("from"), it.getInt("to")) }
+            }
+            Thread({
+                var last = 0L
+                try {
+                    val lengths = controller.export(spec, tracks, parseQuality(quality), ::openForWriting) { done, total, waiting ->
+                        val now = System.currentTimeMillis()
+                        if (waiting || done == total || now - last >= 250) {
+                            last = now
+                            sendEvent("onExport", mapOf("docId" to spec.docId, "done" to done, "total" to total, "waiting" to waiting))
+                        }
+                    }
+                    promise.resolve(lengths.map { it.toDouble() })
+                } catch (e: java.util.concurrent.CancellationException) {
+                    promise.reject(CodedException("export-cancelled", "Export cancelled", e))
+                } catch (e: PlaybackController.ExportError) {
+                    EngineLog.e("LamplightExport", "export stopped (${e.code})", e)
+                    promise.reject(CodedException(e.code, e.message ?: e.code, e))
+                } catch (e: Throwable) {
+                    EngineLog.e("LamplightExport", "export failed", e)
+                    val f = EngineFailure.of(e)
+                    promise.reject(CodedException(f.code, f.message, e))
+                }
+            }, "lamplight-export").apply { priority = Thread.NORM_PRIORITY - 1 }.start()
+        }
+        AsyncFunction("cancelExport") { controller.cancelExport() }
 
         AsyncFunction("getState") { controller.snapshot() }
         AsyncFunction("lastPosition") { controller.lastPosition() }
@@ -301,6 +335,12 @@ class LamplightEngineModule : Module() {
         "studio" -> Quality.STUDIO
         "studioPlus" -> Quality.STUDIO_PLUS
         else -> Quality.AUTO
+    }
+
+    /** A file the listener chose (SAF content URI, or a file path in tests), opened for the muxer. */
+    private fun openForWriting(uri: String): android.os.ParcelFileDescriptor {
+        val parsed = if (uri.startsWith("/")) Uri.fromFile(File(uri)) else Uri.parse(uri)
+        return context.contentResolver.openFileDescriptor(parsed, "rw") ?: error("could not open $uri for writing")
     }
 
     private fun runOnMain(block: () -> Unit) {
