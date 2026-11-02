@@ -2,6 +2,7 @@ package app.lamplight.engine
 
 import android.content.Context
 import android.util.Log
+import app.lamplight.engine.core.CacheTrim
 import java.io.File
 import java.security.MessageDigest
 
@@ -58,6 +59,9 @@ class AudioCache(context: Context, private val modelVersion: String) {
         }
     }
 
+    private var writes = 0
+
+    /** Writes one sentence; every [TRIM_EVERY] writes the cache is brought back under its cap. Writer thread. */
     fun write(key: String, pcm: FloatArray, sampleRate: Int) {
         val f = file(key)
         if (f.exists()) return
@@ -68,19 +72,17 @@ class AudioCache(context: Context, private val modelVersion: String) {
             Log.w(TAG, "could not cache audio", e)
             f.delete()
         }
+        if (++writes % TRIM_EVERY == 0) trim()
     }
 
     fun sizeBytes(): Long = root.walkTopDown().filter { it.isFile }.sumOf { it.length() }
 
     /** Removes least recently used entries until the cache is under [capBytes]. */
     fun trim() {
-        val files = root.walkTopDown().filter { it.isFile }.sortedBy { it.lastModified() }.toMutableList()
-        var total = files.sumOf { it.length() }
-        while (total > capBytes && files.isNotEmpty()) {
-            val f = files.removeAt(0)
-            total -= f.length()
-            f.delete()
-        }
+        val entries = root.walkTopDown().filter { it.isFile }.map { CacheTrim.Entry(it, it.length(), it.lastModified()) }.toList()
+        val victims = CacheTrim.victims(entries, capBytes)
+        victims.forEach { it.delete() }
+        if (victims.isNotEmpty()) Log.i(TAG, "trimmed ${victims.size} cached sentences to stay under ${capBytes shr 20} MB")
     }
 
     fun clear() {
@@ -90,5 +92,6 @@ class AudioCache(context: Context, private val modelVersion: String) {
 
     companion object {
         private const val TAG = "LamplightCache"
+        private const val TRIM_EVERY = 64
     }
 }
