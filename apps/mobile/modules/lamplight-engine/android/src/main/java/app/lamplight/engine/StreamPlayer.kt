@@ -25,6 +25,8 @@ class StreamPlayer(
         fun awaitPart(index: Int, part: Int): Pcm?
         fun onUnderrun(index: Int)
         fun onEnded()
+        /** The track refused audio ([code] < 0, e.g. ERROR_DEAD_OBJECT); the writer has stopped at sentence [index]. */
+        fun onWriteError(index: Int, code: Int)
     }
 
     /** One piece of a sentence and the silence after it; [last] ends the sentence. */
@@ -79,6 +81,7 @@ class StreamPlayer(
         framesWritten.set(0)
         baseHeadFrames = track.playbackHeadPosition.toLong() and 0xffffffffL
         nextIndex = index
+        failedWrite = 0
         running.set(true)
         val gen = ++generation
         writer = Thread({ writeLoop(gen) }, "lamplight-audio").apply {
@@ -171,8 +174,11 @@ class StreamPlayer(
                 synchronized(spans) {
                     spans.add(Span(index, start, frames + pause, if (pcm.last) frames else frames + pause, offset))
                 }
-                if (!writeFully(pcm.samples, gen)) return
-                if (pause > 0 && !writeFully(FloatArray(pause), gen)) return
+                if (!writeFully(pcm.samples, gen) || (pause > 0 && !writeFully(FloatArray(pause), gen))) {
+                    // Stopped for a restart, or the track failed: only the second needs telling.
+                    if (gen == generation && failedWrite < 0) source.onWriteError(index, failedWrite)
+                    return
+                }
                 if (pcm.last) {
                     nextIndex = index + 1
                     part = 0
@@ -189,6 +195,8 @@ class StreamPlayer(
     }
 
     @Volatile private var lastWriteError = 0
+    /** The error that stopped the current writer, if a write failed (rather than a restart). */
+    @Volatile private var failedWrite = 0
 
     /** The audio output as the Diagnostics screen shows it. */
     fun stats(): Map<String, Any?> = mapOf(
@@ -215,6 +223,7 @@ class StreamPlayer(
             val n = track.write(samples, off, minOf(samples.size - off, SLICE_FRAMES), AudioTrack.WRITE_BLOCKING)
             if (n < 0) {
                 lastWriteError = n
+                failedWrite = n
                 EngineLog.e(TAG, "AudioTrack write failed: $n")
                 return false
             }

@@ -18,6 +18,7 @@ import app.lamplight.engine.core.LineRender
 import app.lamplight.engine.core.Pacing
 import app.lamplight.engine.core.Performance
 import app.lamplight.engine.core.ReadAhead
+import app.lamplight.engine.core.RetryBudget
 import app.lamplight.engine.core.Seed
 import app.lamplight.engine.core.SleepFade
 import org.json.JSONObject
@@ -587,6 +588,40 @@ class PlaybackController private constructor(private val context: Context) : Str
     }
 
     override fun onUnderrun(index: Int) = setBuffering(true)
+
+    private val outputRebuilds = RetryBudget(max = 3, windowMs = 60_000)
+
+    /**
+     * The audio output died under narration (the audio server restarted, a route went away). A new track
+     * carries on from the start of the sentence being heard; an output that keeps failing pauses narration
+     * with a reason rather than playing silence.
+     */
+    override fun onWriteError(index: Int, code: Int) {
+        main.post {
+            EngineLog.w(TAG, "audio write failed ($code) at sentence $index")
+            val old = player ?: return@post
+            player = null
+            runCatching { old.release() }
+            if (!outputRebuilds.take(System.currentTimeMillis())) {
+                failure = EngineFailure("audio-output", "The phone's audio output keeps failing. Press play to try again.", "AudioTrack.write $code")
+                main.post { listeners.forEach { it.onError("audio-output", failure?.message ?: "") } }
+                pause()
+                return@post
+            }
+            val at = currentIndex
+            lock.withLock {
+                renders.entries.removeIf { !it.value.complete }
+                generation++
+                work.signalAll()
+                ready.signalAll()
+            }
+            val p = ensurePlayer()
+            p.setSpeed(speed)
+            p.start(at)
+            if (playing) p.play()
+            EngineLog.i(TAG, "audio output rebuilt; carrying on from sentence $at")
+        }
+    }
 
     /** Timings of the last piece rendered (whole and per stage), for the Diagnostics screen. */
     @Volatile var lastRender: Map<String, Long> = emptyMap()
