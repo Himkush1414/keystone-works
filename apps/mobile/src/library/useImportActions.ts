@@ -5,6 +5,8 @@ import { importBundledSample, pickAndImport } from '@/import/device';
 import type { Sample } from '@/import/samples';
 import { useT } from '@/i18n/useLocale';
 import { useServices } from '@/services/context';
+import { errorLog } from '@/services/errors';
+import { isStorageFull } from '@/import/run';
 import { playDocument, prepareQueueSoon } from '@/services/device';
 import { importMessage } from './importMessage';
 
@@ -12,8 +14,16 @@ import { importMessage } from './importMessage';
 export function useImportActions() {
   const services = useServices();
   const t = useT();
+  // The picker's copy or the database can fail before an item exists: say a full phone is full, and keep
+  // anything else in the error log (Settings › Diagnostics) instead of only a generic toast.
   const failed = useCallback(
-    () => services.toast.getState().show({ message: t('errors.generic'), tone: 'danger' }),
+    (e: unknown) => {
+      const full = isStorageFull(e);
+      if (!full) errorLog.record(e, 'js');
+      services.toast
+        .getState()
+        .show({ message: t(full ? 'errors.storageFull' : 'errors.generic'), tone: 'danger' });
+    },
     [services, t],
   );
   const voiceFailed = useCallback(
