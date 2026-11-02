@@ -169,6 +169,7 @@ export const en = {
     empty: 'There’s no text to read in this file.',
     unsupported: 'Lamplight can’t open this type of file yet.',
     tooLarge: 'This file is too large to open.',
+    storageFull: 'Your phone is out of storage. Free some space, then try again.',
     network: 'Couldn’t reach that page. Check your connection and try again.',
     partialArticle: 'Only part of this article was available. Paste the full text?',
     generic: 'Something went wrong.',

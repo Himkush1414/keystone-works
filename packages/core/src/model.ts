@@ -92,6 +92,7 @@ export class ImportError extends Error {
       | 'empty'
       | 'unsupported'
       | 'tooLarge'
+      | 'storageFull'
       | 'network'
       | 'partialArticle',
     message?: string,

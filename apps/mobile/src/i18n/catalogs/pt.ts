@@ -170,6 +170,7 @@ export const pt: Catalog = {
     empty: 'Não há texto para ler neste arquivo.',
     unsupported: 'O Lamplight ainda não abre este tipo de arquivo.',
     tooLarge: 'Este arquivo é grande demais para abrir.',
+    storageFull: 'O armazenamento do telefone está cheio. Libere espaço e tente de novo.',
     network: 'Não foi possível abrir essa página. Verifique sua conexão e tente de novo.',
     partialArticle: 'Só parte deste artigo estava disponível. Colar o texto completo?',
     generic: 'Algo deu errado.',

@@ -174,6 +174,7 @@ export const fr: Catalog = {
     empty: 'Il n’y a pas de texte à lire dans ce fichier.',
     unsupported: 'Lamplight ne sait pas encore ouvrir ce type de fichier.',
     tooLarge: 'Ce fichier est trop volumineux.',
+    storageFull: 'Le stockage du téléphone est plein. Libérez de l’espace, puis réessayez.',
     network: 'Impossible d’atteindre cette page. Vérifiez votre connexion et réessayez.',
     partialArticle: 'Seule une partie de l’article était disponible. Coller le texte complet\u202f?',
     generic: 'Un problème est survenu.',
