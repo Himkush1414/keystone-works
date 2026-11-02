@@ -436,6 +436,7 @@ export const es: Catalog = {
     preparing: 'Preparando el libro…',
     progress: '{done} de {total} frases',
     eta: 'Quedan unos {time}',
+    almostDone: 'Queda menos de un minuto',
     waiting: 'En pausa mientras suena la lectura. Sigue cuando la pausas.',
     keepOpen: 'Mantén Lamplight abierta hasta que termine.',
     show: 'Ver',

@@ -440,6 +440,7 @@ export const de: Catalog = {
     preparing: 'Buch wird vorbereitet …',
     progress: '{done} von {total} Sätzen',
     eta: 'Noch etwa {time}',
+    almostDone: 'Weniger als eine Minute',
     waiting: 'Pausiert, solange vorgelesen wird. Es geht weiter, wenn du pausierst.',
     keepOpen: 'Lass Lamplight geöffnet, bis es fertig ist.',
     show: 'Anzeigen',

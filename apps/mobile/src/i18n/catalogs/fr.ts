@@ -442,6 +442,7 @@ export const fr: Catalog = {
     preparing: 'Préparation du livre…',
     progress: '{done} phrases sur {total}',
     eta: 'Environ {time} restantes',
+    almostDone: 'Moins d’une minute restante',
     waiting: 'En pause pendant la lecture. L’export reprend quand vous la mettez en pause.',
     keepOpen: 'Gardez Lamplight ouverte jusqu’à la fin.',
     show: 'Afficher',

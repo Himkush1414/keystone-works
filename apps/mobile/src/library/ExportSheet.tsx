@@ -97,9 +97,11 @@ export function ExportSheet({
           <Text variant="meta" tone="soft">
             {state.waiting
               ? t('export.waiting')
-              : left !== null
-                ? t('export.eta', { time: formatDuration(locale, left) })
-                : t('export.keepOpen')}
+              : left === null
+                ? t('export.keepOpen')
+                : left < 60_000
+                  ? t('export.almostDone')
+                  : t('export.eta', { time: formatDuration(locale, left) })}
           </Text>
           {left !== null && !state.waiting ? (
             <Text variant="meta" tone="faint">

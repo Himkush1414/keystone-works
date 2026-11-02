@@ -436,6 +436,7 @@ export const en = {
     preparing: 'Getting the book ready…',
     progress: '{done} of {total} sentences',
     eta: 'About {time} left',
+    almostDone: 'Less than a minute left',
     waiting: 'Paused while narration plays. It carries on when you pause.',
     keepOpen: 'Keep Lamplight open until it finishes.',
     show: 'Show',
