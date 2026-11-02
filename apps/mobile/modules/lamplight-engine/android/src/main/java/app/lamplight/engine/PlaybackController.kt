@@ -571,8 +571,6 @@ class PlaybackController private constructor(private val context: Context) : Str
     private fun runJob(job: Job) {
         val seg = job.segment
         val i = seg.index
-        val voice = host.voice(seg.voice)
-        val pieces = Chunks.split(seg.text, seg.lang, seg.runs)
         val forPlayer = job.prepare == null && !job.upgrade
         // Heard before (or prepared offline): no need to render it again.
         if (forPlayer && readFromCache(i, job.gen)) return
@@ -581,34 +579,15 @@ class PlaybackController private constructor(private val context: Context) : Str
             if (job.gen != generation || renders[i]?.complete == true) return
             renders[i] = rendered
         }
-        val joiner = Chunks.Joiner(SAMPLE_RATE)
-        val style = LineRender.Style(seg.rate, seg.gainDb, seg.pitch, seg.ending, seg.breath)
-        for ((k, piece) in pieces.withIndex()) {
-            if (job.gen != generation) return
-            val t0 = System.nanoTime()
-            val last = k == pieces.lastIndex
-            val raw = engineLock.withLock { host.engine().synthesize(piece.text, piece.lang, voice, job.steps, style.modelRate(BASE_RATE), LineRender.continues(last, style)) }
-            val workMs = (System.nanoTime() - t0) / 1_000_000
-            if (raw.dropped.isNotEmpty()) EngineLog.i(TAG, "dropped characters ${raw.dropped}")
-            lastRender = mapOf("sentence" to i.toLong(), "piece" to k.toLong(), "steps" to job.steps.toLong(), "workMs" to workMs, "audioMs" to raw.durationMs) +
-                host.engine().lastTimings
-            if (failure != null || failures > 0) {
-                EngineLog.i(TAG, "rendering again after ${failures} failure(s)")
-                failure = null
-                failures = 0
-                emitState()
-            }
-            // The model pads every render with silence; only speech (and the pauses we choose) is heard.
-            val trimmed = LineRender.edges(raw.samples, raw.sampleRate, last, style, seg.release)
-            pacing.record(job.steps, workMs, trimmed.size * 1000L / raw.sampleRate, piece.text.length)
-            val seed = Seed.forSentence(piece.text, voice.id, job.steps)
-            val part = Part(LineRender.piece(trimmed, raw.sampleRate, k, last, style, seed, piece.gapMs, joiner), piece.gapMs)
+        val finished = renderPieces(seg, job.steps, keepGoing = { job.gen == generation }) { part ->
             if (forPlayer) lock.withLock {
-                if (job.gen != generation) return
+                if (job.gen != generation) return@renderPieces false
                 rendered.parts.add(part)
                 ready.signalAll()
             } else rendered.parts.add(part)
+            true
         }
+        if (!finished) return
         rendered.complete = true
         if (pacing.measured % PACING_SAVE_EVERY == 0) savePacing()
         val whole = if (rendered.parts.size == 1) rendered.parts[0].samples else joined(rendered.parts)
@@ -636,6 +615,39 @@ class PlaybackController private constructor(private val context: Context) : Str
         }
         // The sentence being heard now has its true length, for the word underline.
         if (i == currentIndex) main.post { listeners.forEach { it.onSentence(i, duration) } }
+    }
+
+    /**
+     * Renders [seg] piece by piece at [steps], exactly as narration plays it, handing each piece to [take] as
+     * soon as it's made. Stops (returning false) when [keepGoing] turns false before a piece or [take] refuses one.
+     */
+    private fun renderPieces(seg: Segment, steps: Int, keepGoing: () -> Boolean, take: (Part) -> Boolean): Boolean {
+        val voice = host.voice(seg.voice)
+        val pieces = Chunks.split(seg.text, seg.lang, seg.runs)
+        val joiner = Chunks.Joiner(SAMPLE_RATE)
+        val style = LineRender.Style(seg.rate, seg.gainDb, seg.pitch, seg.ending, seg.breath)
+        for ((k, piece) in pieces.withIndex()) {
+            if (!keepGoing()) return false
+            val t0 = System.nanoTime()
+            val last = k == pieces.lastIndex
+            val raw = engineLock.withLock { host.engine().synthesize(piece.text, piece.lang, voice, steps, style.modelRate(BASE_RATE), LineRender.continues(last, style)) }
+            val workMs = (System.nanoTime() - t0) / 1_000_000
+            if (raw.dropped.isNotEmpty()) EngineLog.i(TAG, "dropped characters ${raw.dropped}")
+            lastRender = mapOf("sentence" to seg.index.toLong(), "piece" to k.toLong(), "steps" to steps.toLong(), "workMs" to workMs, "audioMs" to raw.durationMs) +
+                host.engine().lastTimings
+            if (failure != null || failures > 0) {
+                EngineLog.i(TAG, "rendering again after ${failures} failure(s)")
+                failure = null
+                failures = 0
+                emitState()
+            }
+            // The model pads every render with silence; only speech (and the pauses we choose) is heard.
+            val trimmed = LineRender.edges(raw.samples, raw.sampleRate, last, style, seg.release)
+            pacing.record(steps, workMs, trimmed.size * 1000L / raw.sampleRate, piece.text.length)
+            val seed = Seed.forSentence(piece.text, voice.id, steps)
+            if (!take(Part(LineRender.piece(trimmed, raw.sampleRate, k, last, style, seed, piece.gapMs, joiner), piece.gapMs))) return false
+        }
+        return true
     }
 
     /** A sentence's pieces as one clip, gaps included, for the disk cache. */
