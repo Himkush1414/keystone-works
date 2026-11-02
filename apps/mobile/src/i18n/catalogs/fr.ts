@@ -49,7 +49,7 @@ export const fr: Catalog = {
     sampleHint: 'Un chapitre classique avec une distribution de voix',
   },
   library: {
-    readingPages: 'Lecture des pages : {done} sur {total}',
+    readingPages: 'Lecture des pages\u00a0: {done} sur {total}',
     scanned: 'Images numérisées, aucun texte à lire',
     title: 'Bibliothèque',
     continue: 'Reprendre l’écoute',
@@ -146,7 +146,7 @@ export const fr: Catalog = {
     refresh: 'Actualiser',
     share: 'Partager le rapport',
     testOk: '{audio} de parole, produite en {render}.',
-    testFailed: 'Le test de la voix a échoué : {reason}',
+    testFailed: 'Le test de la voix a échoué\u00a0: {reason}',
     abTitle: 'Voix A/B (mode test)',
     abDesc: 'La même phrase, directement du modèle de voix ou via le lecteur, pour comparer à l’oreille.',
     ab: {
@@ -155,7 +155,7 @@ export const fr: Catalog = {
       processed: 'Traitée (triste)',
       old: 'Ancienne (3 étapes)',
     },
-    abResult: '{kind} : {steps} étapes, {seconds} s, {clipped} échantillons saturés. Enregistré dans {path}',
+    abResult: '{kind}\u00a0: {steps} étapes, {seconds} s, {clipped} échantillons saturés. Enregistré dans {path}',
     volumeMuted: 'Le volume multimédia est coupé, la lecture est donc muette. Montez le volume.',
   },
   errors: {
@@ -176,7 +176,7 @@ export const fr: Catalog = {
     voiceUnavailable: 'La voix n’a pas pu démarrer. Réinstaller Lamplight peut aider.',
   },
   player: {
-    speakerUnknown: 'Qui ?',
+    speakerUnknown: 'Qui\u202f?',
     reimport:
       'Ce PDF a été ajouté avec une version antérieure de Lamplight et certaines lignes ont été coupées. Rouvrez le même fichier (Ajouter › Ouvrir un fichier) pour obtenir le texte complet. Votre position est conservée.',
     play: 'Lire',
@@ -214,18 +214,18 @@ export const fr: Catalog = {
   },
   meaning: {
     short: 'Sens',
-    title: 'Que veut dire ce mot ici ?',
+    title: 'Que veut dire ce mot ici\u202f?',
     hint: 'Touchez un mot de la phrase.',
     wordHint: 'Montre le sens de ce mot ici',
     empty: 'Choisissez un mot pour voir son sens dans cette phrase.',
     looking: 'Recherche…',
-    notFound: '« {word} » n’est pas dans le dictionnaire de ce téléphone.',
-    noHindi: 'Pas encore de mot hindi ; le sens anglais est affiché.',
+    notFound: '«\u00a0{word}\u00a0» n’est pas dans le dictionnaire de ce téléphone.',
+    noHindi: 'Pas encore de mot hindi\u202f; le sens anglais est affiché.',
     language: 'Répondre en',
     hear: 'Écouter',
     fixPronunciation: 'Corriger la prononciation',
     resume: 'Reprendre',
-    ask: 'Que veut dire un mot ?',
+    ask: 'Que veut dire un mot\u202f?',
   },
   sleep: {
     off: 'Désactivée',
@@ -248,7 +248,7 @@ export const fr: Catalog = {
       'La meilleure qualité, recommandée. Les premiers mots peuvent prendre quelques secondes de plus.',
   },
   speaker: {
-    title: 'Qui dit cela ?',
+    title: 'Qui dit cela\u202f?',
     nobody: 'Personne en particulier',
     hint: 'Votre choix est gardé pour ce livre, et les répliques suivantes s’ajustent.',
   },
@@ -273,7 +273,7 @@ export const fr: Catalog = {
       bright: 'enjoué',
       fiery: 'fougueux',
     },
-    autoVoice: 'Automatique : {voice}',
+    autoVoice: 'Automatique\u00a0: {voice}',
   },
   clean: {
     title: 'Lecture épurée',
@@ -337,12 +337,12 @@ export const fr: Catalog = {
     title: 'Langues des voix',
     best: 'Excellent',
     bestDesc:
-      'Nombres, dates et heures en toutes lettres ; locuteurs reconnus par leur nom et les verbes de parole ; émotion lue dans la façon de dire. Testé sur des histoires aux locuteurs connus.',
+      'Nombres, dates et heures en toutes lettres\u202f; locuteurs reconnus par leur nom et les verbes de parole\u202f; émotion lue dans la façon de dire. Testé sur des histoires aux locuteurs connus.',
     good: 'Bon',
     goodDesc:
-      'Nombres et abréviations en toutes lettres ; locuteurs reconnus par leur nom et les verbes de parole.',
+      'Nombres et abréviations en toutes lettres\u202f; locuteurs reconnus par leur nom et les verbes de parole.',
     basic: 'Simple',
-    basicDesc: 'Lu tel quel, nombres compris ; locuteurs distingués par alternance.',
+    basicDesc: 'Lu tel quel, nombres compris\u202f; locuteurs distingués par alternance.',
   },
   settings: {
     title: 'Réglages',
