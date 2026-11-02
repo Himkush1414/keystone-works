@@ -28,22 +28,25 @@ Lamplight is an Android app that reads your books, documents and articles aloud 
 ## Why it's different
 
 - **A storyteller, not a screen reader.** Lamplight works out who is speaking, gives each character a voice that suits them, and performs the lines: a whisper is soft, a shout is loud, and the pause between two speakers feels like a turn in conversation.
-- **Private by design.** Speech is generated on the device by an ONNX voice model. Nothing is uploaded.
-- **Reads what you actually have.** It handles EPUB, PDF, Word, web pages and plain text, and _Clean Read_ quietly skips page numbers, running headers and citations.
+- **Private by design.** Speech is generated on the device by an ONNX voice model. The app has no internet permission at all, so nothing can be uploaded.
+- **Reads what you actually have.** It handles EPUB, PDF, Word, saved web pages (HTML), Markdown and plain text, and _Clean Read_ quietly skips page numbers, running headers and citations.
 - **Made for English and Hindi first.** It also speaks 29 more languages, with each language's support level stated honestly in Settings.
 
 ## Features
 
-| Area                   | What you get                                                                                                                                                                                                                                           |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Listen**             | Read-along with the current word underlined · speeds 0.75×–2× · sleep timer (minutes or end of chapter) · chapter contents · background playback with lock-screen controls · resume where you left off                                                 |
-| **Cast**               | Speakers found in English, Hindi and Hinglish (speech verbs, names, pronouns, turn-taking) · voices cast by gender, age and temperament · voices kept for the whole book · your own choice for any character wins · merge two names into one character |
-| **Expressive reading** | Whisper, shout, anger, excitement, sadness, fear, tenderness and calm shape pace and loudness · deliberate pauses for ellipses, dashes, speaker changes, reveals and scene breaks · optional natural breaths                                           |
-| **Clean Read**         | Skips page numbers, running headers and footers, citations and links · review what was skipped and change it per document                                                                                                                              |
-| **Pronunciation**      | Your own dictionary for names and terms · numbers, dates, times, money and units read as words, including Hindi (लाख, करोड़, साढ़े तीन बजे) · Hinglish read by the Hindi voice                                                                         |
-| **Library**            | Import a file, paste text or start from a sample · shelves for books, documents and articles · "continue listening" · search across titles and full text                                                                                               |
-| **Voices**             | 10 voices · Live, Studio and Studio+ quality, or Automatic · voice and quality per document                                                                                                                                                            |
-| **Comfort**            | Light and dark themes · four reader themes · Literata, Atkinson Hyperlegible and OpenDyslexic · reduce motion · interface in English, Spanish, German, French and Brazilian Portuguese                                                                 |
+| Area                    | What you get                                                                                                                                                                                                                                                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Listen**              | Read-along with the current word underlined · every speed from 0.5× to 3× in 0.05 steps (long-press the speed button) · sleep timer (minutes or end of chapter) · contents and bookmarks · line focus · long-press skip by paragraph · background playback with lock-screen controls · resume where you left off |
+| **Cast**                | Speakers found in English, Hindi and Hinglish (speech verbs, names, pronouns, turn-taking) · voices cast by gender, age and temperament · voices kept for the whole book · your own choice for any character wins · merge two names into one character                                                           |
+| **Expressive reading**  | Whisper, shout, anger, excitement, sadness, fear, tenderness and calm shape pace and loudness · deliberate pauses for ellipses, dashes, speaker changes, reveals and scene breaks · optional natural breaths                                                                                                     |
+| **Clean Read**          | Skips page numbers, running headers and footers, citations and links · review what was skipped and change it per document                                                                                                                                                                                        |
+| **Pronunciation**       | Your own dictionary for names and terms · numbers, dates, times, money and units read as words, including Hindi (लाख, करोड़, साढ़े तीन बजे) · Hinglish read by the Hindi voice                                                                                                                                   |
+| **Library**             | Import a file, paste text or start from a sample · shelves for books, documents and articles · "continue listening" · search across titles and full text                                                                                                                                                         |
+| **Voices**              | 10 voices · Live, Studio and Studio+ quality, or Automatic · voice and quality per document                                                                                                                                                                                                                      |
+| **Comfort**             | Light and dark themes · four reader themes · Literata, Atkinson Hyperlegible and OpenDyslexic · reduce motion · interface in English, Spanish, German, French and Brazilian Portuguese                                                                                                                           |
+| **Export**              | A whole book as M4A audio, one file per chapter plus a playlist, in a folder you choose · audio you've already heard is reused                                                                                                                                                                                   |
+| **Word meaning**        | Long-press a sentence while listening to see what a word means in that sentence, from a dictionary on the phone (WordNet 3.1 for English, Wiktionary for Hindi)                                                                                                                                                  |
+| **Privacy and support** | No account, no analytics, no internet permission, Android backup off · errors are kept on the phone and shown in Settings › Diagnostics, with a report you can share yourself                                                                                                                                    |
 
 ## Screenshots
 
@@ -66,7 +69,15 @@ Lamplight is an Android app that reads your books, documents and articles aloud 
     <td align="center"><img src="docs/readme/voice-light.png" width="200" alt="Choose a voice during onboarding"><br><sub><b>Onboarding: choose a voice</b></sub></td>
     <td align="center"><img src="docs/readme/settings-dark.png" width="200" alt="Settings, dark"><br><sub>Settings · dark</sub></td>
   </tr>
+  <tr>
+    <td align="center"><img src="docs/readme/bookmarks-light.png" width="200" alt="Contents sheet with a bookmark"><br><sub><b>Contents and bookmarks</b></sub></td>
+    <td align="center"><img src="docs/readme/speed-light.png" width="200" alt="Speed sheet"><br><sub><b>Speed sheet</b></sub></td>
+    <td align="center"><img src="docs/readme/line-focus-light.png" width="200" alt="Line focus in the reader"><br><sub><b>Line focus</b></sub></td>
+    <td align="center"><img src="docs/readme/export-light.png" width="200" alt="Audio export finished"><br><sub><b>Audio export</b></sub></td>
+  </tr>
 </table>
+
+<sub>The last row is from the Android emulator (x86_64 release build of 2 Nov 2026), with a short test PDF.</sub>
 
 ## How it works
 
