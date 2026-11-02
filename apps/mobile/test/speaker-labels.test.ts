@@ -26,4 +26,11 @@ describe('speakerLabels', () => {
     const other = speakerLabels([s(0), s(1)], ['anna', 'tom'], names, '?', true);
     expect(labels.get(1)?.color).toBe(other.get(0)?.color);
   });
+
+  it('does not repeat the label when a tag breaks one speech, but does when the speaker changes', () => {
+    // “My dear Mr. Bennet,” said his lady to him one day, “have you heard…?”
+    const sentences = [s(0), s(0, 'narration'), s(0), s(0, 'narration'), s(0), s(1)];
+    const speakers = ['anna', undefined, 'anna', undefined, 'tom', 'tom'];
+    expect([...speakerLabels(sentences, speakers, names, '?', false).keys()]).toEqual([0, 4, 5]);
+  });
 });

@@ -129,9 +129,9 @@ const LABEL_COLORS = {
 const UNKNOWN_COLOR = { light: '#606060', dark: '#A8A8A8' } as const;
 
 /**
- * The label for the first sentence of each turn of dialogue (a turn: consecutive dialogue sentences of one
- * speaker in one paragraph). Colours go to characters in order of their first line in the book, so a
- * character keeps the same colour when a correction changes who has the most lines.
+ * The label for the first sentence of each turn of dialogue (a turn: one speaker's dialogue in one paragraph,
+ * even when narration such as "said his lady" breaks it). Colours go to characters in order of their first
+ * line in the book, so a character keeps the same colour when a correction changes who has the most lines.
  */
 export function speakerLabels(
   sentences: readonly Pick<Sentence, 'block' | 'kind'>[],
@@ -145,10 +145,8 @@ export function speakerLabels(
   const out = new Map<number, SpeakerLabel>();
   let prev: { block: number; speaker: string | undefined } | null = null;
   sentences.forEach((s, i) => {
-    if (s.kind !== 'dialogue') {
-      prev = null;
-      return;
-    }
+    // Narration inside a paragraph (a speaker tag) doesn't end the turn; a new paragraph does (below).
+    if (s.kind !== 'dialogue') return;
     const speaker = speakers[i];
     if (speaker && !order.has(speaker)) order.set(speaker, order.size);
     if (!prev || prev.block !== s.block || prev.speaker !== speaker) {
