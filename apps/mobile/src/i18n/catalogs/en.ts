@@ -153,6 +153,9 @@ export const en = {
     },
     abResult: '{kind}: {steps} steps, {seconds} s, {clipped} clipped samples. Saved to {path}',
     volumeMuted: 'Media volume is off, so narration is silent. Turn the volume up.',
+    errors: 'App errors',
+    noErrors: 'No errors recorded.',
+    clearErrors: 'Clear errors',
   },
   errors: {
     drm: 'This book is protected by DRM, so Lamplight can’t open it.',
@@ -419,11 +422,9 @@ export const en = {
     local: 'Your documents, positions, highlights and audio stay on this device.',
   },
   crash: {
-    card: 'Lamplight closed unexpectedly last time. Send a report to help fix it?',
-    view: 'View report',
-    send: 'Send',
-    dismiss: 'Not now',
-    sent: 'Thank you. Report {id} was sent.',
+    title: 'Something went wrong',
+    body: 'This screen stopped because of an error. The details are saved on this phone in Settings › Diagnostics, so you can share them with us.',
+    retry: 'Try again',
   },
   promise: {
     title: 'Our promise',

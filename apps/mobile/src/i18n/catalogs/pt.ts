@@ -155,6 +155,9 @@ export const pt: Catalog = {
     },
     abResult: '{kind}: {steps} passos, {seconds} s, {clipped} amostras saturadas. Salvo em {path}',
     volumeMuted: 'O volume de mídia está desligado, então a narração fica muda. Aumente o volume.',
+    errors: 'Erros do app',
+    noErrors: 'Nenhum erro registrado.',
+    clearErrors: 'Limpar erros',
   },
   errors: {
     drm: 'Este livro tem DRM, por isso o Lamplight não consegue abri-lo.',
@@ -421,11 +424,9 @@ export const pt: Catalog = {
     local: 'Seus documentos, posições, destaques e áudios ficam neste aparelho.',
   },
   crash: {
-    card: 'O Lamplight fechou inesperadamente da última vez. Enviar um relatório para ajudar a corrigir?',
-    view: 'Ver relatório',
-    send: 'Enviar',
-    dismiss: 'Agora não',
-    sent: 'Obrigado. O relatório {id} foi enviado.',
+    title: 'Algo deu errado',
+    body: 'Esta tela parou por causa de um erro. Os detalhes ficam salvos neste telefone em Ajustes › Diagnóstico, para você compartilhar com a gente.',
+    retry: 'Tentar de novo',
   },
   promise: {
     title: 'Nossa promessa',

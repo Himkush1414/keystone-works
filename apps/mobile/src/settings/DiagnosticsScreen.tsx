@@ -7,6 +7,7 @@ import { Button } from '@/ui/Button';
 import { IconButton } from '@/ui/IconButton';
 import { Screen, useGutter } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
+import { formatError, type ErrorEntry } from '@/services/errorLog';
 import { diagnosticsReport, diagnosticsSections, isSilenced } from './diagnostics';
 import { Section } from './SettingsScreen';
 
@@ -15,6 +16,9 @@ export interface DiagnosticsProps {
   test(): Promise<VoiceTest>;
   /** Voice A/B test mode, opened by tapping the title five times. */
   ab?(kind: AbKind, lang: 'en' | 'hi'): Promise<AbSample>;
+  /** Errors the app recorded (services/errorLog), newest last. */
+  errors?(): ErrorEntry[];
+  clearErrors?(): void;
   onBack(): void;
 }
 
@@ -25,12 +29,13 @@ const AB_TAPS = 5;
 const MONO = Platform.select({ android: 'monospace', ios: 'Menlo', default: 'monospace' });
 
 /** Settings › Advanced › Diagnostics: what the voice engine is doing, and a report to send when it fails. */
-export function DiagnosticsScreen({ load, test, ab, onBack }: DiagnosticsProps) {
+export function DiagnosticsScreen({ load, test, ab, errors, clearErrors, onBack }: DiagnosticsProps) {
   const t = useT();
   const locale = useLocale();
   const { colors, space } = useTheme();
   const gutter = useGutter();
   const [data, setData] = useState<Diagnostics | null>(null);
+  const [appErrors, setAppErrors] = useState<ErrorEntry[]>(() => errors?.() ?? []);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<VoiceTest | null>(null);
@@ -50,13 +55,14 @@ export function DiagnosticsScreen({ load, test, ab, onBack }: DiagnosticsProps) 
   };
 
   const refresh = useCallback(() => {
+    if (errors) setAppErrors(errors());
     load()
       .then((d) => {
         setData(d);
         setLoadError(null);
       })
       .catch((e: unknown) => setLoadError(String((e as Error | null)?.message ?? e)));
-  }, [load]);
+  }, [load, errors]);
   useEffect(refresh, [refresh]);
 
   const runTest = () => {
@@ -108,7 +114,9 @@ export function DiagnosticsScreen({ load, test, ab, onBack }: DiagnosticsProps) 
             icon="share"
             kind="secondary"
             disabled={!data}
-            onPress={() => data && void Share.share({ message: diagnosticsReport(data, new Date()) })}
+            onPress={() =>
+              data && void Share.share({ message: diagnosticsReport(data, new Date(), appErrors) })
+            }
           />
         </View>
         {result ? (
@@ -180,6 +188,25 @@ export function DiagnosticsScreen({ load, test, ab, onBack }: DiagnosticsProps) 
               </Section>
             ))
           : null}
+        <Section title={t('diagnostics.errors')}>
+          <Text variant="meta" selectable style={{ fontFamily: MONO, color: colors.ink }}>
+            {appErrors.length
+              ? [...appErrors].reverse().map(formatError).join('\n\n')
+              : t('diagnostics.noErrors')}
+          </Text>
+          {appErrors.length && clearErrors ? (
+            <View style={styles.actions}>
+              <Button
+                label={t('diagnostics.clearErrors')}
+                kind="secondary"
+                onPress={() => {
+                  clearErrors();
+                  setAppErrors([]);
+                }}
+              />
+            </View>
+          ) : null}
+        </Section>
         {data ? (
           <Section title={t('diagnostics.log')}>
             <Text variant="meta" selectable style={{ fontFamily: MONO, color: colors.ink }}>

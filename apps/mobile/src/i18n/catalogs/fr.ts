@@ -158,6 +158,9 @@ export const fr: Catalog = {
     abResult:
       '{kind}\u00a0: {steps} étapes, {seconds} s, {clipped} échantillons saturés. Enregistré dans {path}',
     volumeMuted: 'Le volume multimédia est coupé, la lecture est donc muette. Montez le volume.',
+    errors: 'Erreurs de l’app',
+    noErrors: 'Aucune erreur enregistrée.',
+    clearErrors: 'Effacer les erreurs',
   },
   errors: {
     drm: 'Ce livre est protégé par DRM, Lamplight ne peut donc pas l’ouvrir.',
@@ -426,11 +429,9 @@ export const fr: Catalog = {
     local: 'Vos documents, positions, surlignages et fichiers audio restent sur cet appareil.',
   },
   crash: {
-    card: 'Lamplight s’est fermé de façon inattendue la dernière fois. Envoyer un rapport pour aider à corriger\u202f?',
-    view: 'Voir le rapport',
-    send: 'Envoyer',
-    dismiss: 'Plus tard',
-    sent: 'Merci. Le rapport {id} a été envoyé.',
+    title: 'Un problème est survenu',
+    body: 'Cet écran s’est arrêté à cause d’une erreur. Les détails sont enregistrés sur ce téléphone dans Réglages › Diagnostic, pour que vous puissiez nous les envoyer.',
+    retry: 'Réessayer',
   },
   promise: {
     title: 'Notre promesse',
