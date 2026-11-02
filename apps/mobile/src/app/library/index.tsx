@@ -10,6 +10,7 @@ import { ItemSheet } from '@/library/ItemSheet';
 import { LibraryScreen } from '@/library/LibraryScreen';
 import { useImportActions } from '@/library/useImportActions';
 import { useServices } from '@/services/context';
+import { continueAction } from '@/library/present';
 import { playDocument } from '@/services/device';
 
 export default function LibraryRoute() {
@@ -28,6 +29,16 @@ export default function LibraryRoute() {
       playDocument(services, item.id).catch(() => failed('errors.voiceUnavailable'));
     },
     [services, failed],
+  );
+  // The Continue card pauses or resumes the book already in the player instead of reloading it.
+  const continueWith = useCallback(
+    (item: LibraryItem) => {
+      const action = continueAction(services.player.getState(), item.id);
+      if (action === 'pause') LamplightEngine.pause().catch(() => undefined);
+      else if (action === 'resume') LamplightEngine.play().catch(() => failed('errors.voiceUnavailable'));
+      else play(item);
+    },
+    [services, play, failed],
   );
   const { fromFile, fromSample, toCompose } = useImportActions();
 
@@ -96,8 +107,9 @@ export default function LibraryRoute() {
         if (item.status === 'ready') router.push(`/player/${item.id}`);
       },
       onPlay: play,
+      onContinue: continueWith,
     }),
-    [play],
+    [play, continueWith],
   );
   return (
     <>

@@ -19,6 +19,8 @@ export interface LibraryActions {
   onAdd(): void;
   onOpen(item: LibraryItem): void;
   onPlay(item: LibraryItem): void;
+  /** The Continue card's button: pause, resume in place, or open and play. Falls back to onPlay. */
+  onContinue?(item: LibraryItem): void;
   /** Optional until the screens exist: a control without a destination is hidden, never dead. */
   onMore?(item: LibraryItem): void;
   onSearch?(): void;
@@ -27,8 +29,9 @@ export interface LibraryActions {
 
 /** Home: what to continue, the shelves, and every item. Local data, so it appears without a spinner. */
 export function LibraryScreen(actions: LibraryActions) {
-  const { library, settings } = useServices();
+  const { library, settings, player } = useServices();
   const { items, shelf, continueWith, importing } = useStore(library);
+  const playingId = useStore(player, (p) => (p.native.playing ? p.native.docId : null));
   const speed = useStore(settings, (s) => s.defaultSpeed);
   const locale = useLocale();
   const t = useT();
@@ -71,8 +74,9 @@ export function LibraryScreen(actions: LibraryActions) {
         <ContinueCard
           item={continueWith}
           speed={continueWith.settings.speed ?? speed}
+          playing={playingId === continueWith.id}
           onOpen={() => actions.onOpen(continueWith)}
-          onPlay={() => actions.onPlay(continueWith)}
+          onPlay={() => (actions.onContinue ?? actions.onPlay)(continueWith)}
         />
       ) : null}
       <ShelfPicker shelf={shelf} onChange={(s) => library.getState().setView({ shelf: s })} />
