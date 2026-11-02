@@ -12,7 +12,9 @@ import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.os.PowerManager
+import android.os.SystemClock
 import app.lamplight.engine.core.AudioWindow
+import app.lamplight.engine.core.IdleRelease
 import app.lamplight.engine.core.Chunks
 import app.lamplight.engine.core.LineRender
 import app.lamplight.engine.core.Pacing
@@ -21,6 +23,7 @@ import app.lamplight.engine.core.ReadAhead
 import app.lamplight.engine.core.RetryBudget
 import app.lamplight.engine.core.Seed
 import app.lamplight.engine.core.SleepFade
+import app.lamplight.engine.core.Supertonic
 import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.CancellationException
@@ -101,6 +104,38 @@ class PlaybackController private constructor(private val context: Context) : Str
 
     /** One model at a time: the render thread and calibration take turns. */
     private val engineLock = ReentrantLock()
+    @Volatile private var lastEngineUse = 0L
+    private val idleRelease = Runnable { releaseIfIdle() }
+
+    /**
+     * Runs [block] with the voice model, loading it if needed. Every use of the model goes through here, under
+     * the engine lock, so it can be freed safely when idle (see [IdleRelease]).
+     */
+    fun <T> withEngine(block: (Supertonic) -> T): T {
+        val result = engineLock.withLock {
+            lastEngineUse = SystemClock.elapsedRealtime()
+            block(host.engine())
+        }
+        scheduleIdleRelease()
+        return result
+    }
+
+    private fun scheduleIdleRelease() {
+        main.removeCallbacks(idleRelease)
+        main.postDelayed(idleRelease, IdleRelease.AFTER_MS)
+    }
+
+    /** Frees the model after three quiet minutes; a render in progress (holding the lock) puts it off. */
+    private fun releaseIfIdle() {
+        if (!engineLock.tryLock()) return scheduleIdleRelease()
+        try {
+            val now = SystemClock.elapsedRealtime()
+            if (IdleRelease.due(now, lastEngineUse, host.isLoaded, playing)) host.release()
+            else if (host.isLoaded) scheduleIdleRelease()
+        } finally {
+            engineLock.unlock()
+        }
+    }
     private val readAhead = ReadAhead(lookaheadMs = LOOKAHEAD_MS)
     private val pacing = Pacing().apply {
         val fixed = prefs.getFloat(PACING_FIXED, -1f)
@@ -147,11 +182,10 @@ class PlaybackController private constructor(private val context: Context) : Str
         val (r4, r8) = if (pacing.measured >= CALIBRATION_SAMPLES) {
             pacing.rtf(4) to pacing.rtf(8)
         } else {
-            val engine = host.engine()
             val voice = host.voice("F1")
             val text = "Reading by lamplight was once the only way to read at night, and the warm light shaped how stories were told."
-            engineLock.withLock { engine.synthesize("Warm up.", "en", voice, 2) }
-            fun rtf(steps: Int): Double = engineLock.withLock {
+            withEngine { it.synthesize("Warm up.", "en", voice, 2) }
+            fun rtf(steps: Int): Double = withEngine { engine ->
                 val t0 = System.nanoTime()
                 val r = engine.synthesize(text, "en", voice, steps)
                 val workMs = (System.nanoTime() - t0) / 1_000_000
@@ -186,15 +220,14 @@ class PlaybackController private constructor(private val context: Context) : Str
     fun renderSample(text: String, lang: String, kind: String): Pair<Int, FloatArray> {
         val steps = if (kind == "old") 3 else targetSteps()
         val voice = host.voice("F1")
-        val engine = host.engine()
-        if (kind == "raw" || kind == "old") return steps to engineLock.withLock { engine.synthesize(text, lang, voice, steps, BASE_RATE) }.samples
+        if (kind == "raw" || kind == "old") return steps to withEngine { it.synthesize(text, lang, voice, steps, BASE_RATE) }.samples
         val style = if (kind == "processed") LineRender.Style(rate = 0.9f, gainDb = -2.5f, pitch = -1.5f) else LineRender.Style()
         val pieces = Chunks.split(text, lang)
         val joiner = Chunks.Joiner(SAMPLE_RATE)
         val out = ArrayList<Float>()
         pieces.forEachIndexed { k, p ->
             val last = k == pieces.lastIndex
-            val raw = engineLock.withLock { engine.synthesize(p.text, p.lang, voice, steps, style.modelRate(BASE_RATE), LineRender.continues(last, style)) }
+            val raw = withEngine { it.synthesize(p.text, p.lang, voice, steps, style.modelRate(BASE_RATE), LineRender.continues(last, style)) }
             LineRender.piece(Chunks.trim(raw.samples, raw.sampleRate), raw.sampleRate, k, last, style, 0L, p.gapMs, joiner).forEach(out::add)
             if (!last) repeat(p.gapMs * SAMPLE_RATE / 1000) { out.add(0f) }
         }
@@ -297,6 +330,7 @@ class PlaybackController private constructor(private val context: Context) : Str
     fun pause() {
         if (playing) EngineLog.i(TAG, "pause at sentence $currentIndex")
         playing = false
+        if (host.isLoaded) scheduleIdleRelease()
         player?.pause()
         persistPosition()
         unregisterNoisy()
@@ -763,11 +797,11 @@ class PlaybackController private constructor(private val context: Context) : Str
             if (!keepGoing()) return false
             val t0 = System.nanoTime()
             val last = k == pieces.lastIndex
-            val raw = engineLock.withLock { host.engine().synthesize(piece.text, piece.lang, voice, steps, style.modelRate(BASE_RATE), LineRender.continues(last, style)) }
+            val (raw, timings) = withEngine { it.synthesize(piece.text, piece.lang, voice, steps, style.modelRate(BASE_RATE), LineRender.continues(last, style)) to it.lastTimings }
             val workMs = (System.nanoTime() - t0) / 1_000_000
             if (raw.dropped.isNotEmpty()) EngineLog.i(TAG, "dropped characters ${raw.dropped}")
             lastRender = mapOf("sentence" to seg.index.toLong(), "piece" to k.toLong(), "steps" to steps.toLong(), "workMs" to workMs, "audioMs" to raw.durationMs) +
-                host.engine().lastTimings
+                timings
             if (failure != null || failures > 0) {
                 EngineLog.i(TAG, "rendering again after ${failures} failure(s)")
                 failure = null
