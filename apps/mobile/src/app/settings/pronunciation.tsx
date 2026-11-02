@@ -1,5 +1,5 @@
 import { DEFAULT_NARRATOR } from '@lamplight/core';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import LamplightEngine from '../../../modules/lamplight-engine';
 import {
@@ -17,6 +17,7 @@ export default function PronunciationRoute() {
   const { db } = services;
   const t = useT();
   const locale = useLocale();
+  const { word } = useLocalSearchParams<{ word?: string }>();
   const [entries, setEntries] = useState(() => listDictionary(db));
   const refresh = useCallback(() => setEntries(listDictionary(db)), [db]);
 
@@ -54,6 +55,7 @@ export default function PronunciationRoute() {
       onAdd={add}
       onRemove={remove}
       onTest={test}
+      {...(typeof word === 'string' && word ? { initialMatch: word } : {})}
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/settings'))}
     />
   );

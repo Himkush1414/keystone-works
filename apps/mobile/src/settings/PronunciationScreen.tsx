@@ -23,14 +23,26 @@ export interface PronunciationProps {
   onRemove(entry: DictionaryEntry): void;
   onTest(sayAs: string): void;
   onBack(): void;
+  /** A word to start a new entry with (from the reader's "Fix pronunciation"). */
+  initialMatch?: string;
 }
 
-/** The pronunciation dictionary (R-PR-1): how Lamplight should say names and terms, everywhere. */
-export function PronunciationScreen({ entries, onAdd, onRemove, onTest, onBack }: PronunciationProps) {
+/**
+ * The pronunciation dictionary (R-PR-1): how Lamplight should say names and terms, everywhere. Opened from
+ * the reader (R-PR-2), it starts with that word written in.
+ */
+export function PronunciationScreen({
+  entries,
+  onAdd,
+  onRemove,
+  onTest,
+  onBack,
+  initialMatch,
+}: PronunciationProps) {
   const t = useT();
   const { colors, space, radius } = useTheme();
   const gutter = useGutter();
-  const [match, setMatch] = useState('');
+  const [match, setMatch] = useState(initialMatch?.trim() ?? '');
   const [sayAs, setSayAs] = useState('');
   const [wholeWord, setWholeWord] = useState(true);
   const [caseSensitive, setCaseSensitive] = useState(false);
