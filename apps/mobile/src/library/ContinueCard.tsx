@@ -13,11 +13,14 @@ import { rowMeta } from './present';
 export function ContinueCard({
   item,
   speed,
+  playing,
   onOpen,
   onPlay,
 }: {
   item: LibraryItem;
   speed: number;
+  /** This item is the one narrating now: the button pauses it. */
+  playing: boolean;
   onOpen(): void;
   onPlay(): void;
 }) {
@@ -60,8 +63,8 @@ export function ContinueCard({
         </View>
       </View>
       <IconButton
-        icon="play"
-        label={`${t('player.play')}: ${item.title}`}
+        icon={playing ? 'pause' : 'play'}
+        label={`${t(playing ? 'player.pause' : 'player.play')}: ${item.title}`}
         onPress={onPlay}
         filled
         size={22}
