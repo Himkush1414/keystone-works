@@ -38,6 +38,13 @@ declare class LamplightEngineModule extends NativeModule<LamplightEngineEvents> 
   setSleepTimer(minutes: number | null, endOfChapter: boolean): Promise<void>;
   prepareOffline(path: string, quality: Quality, chargingOnly: boolean): Promise<void>;
   cancelPrepare(docId: string): Promise<void>;
+  /**
+   * Writes the queue at `path` as M4A files, one per track (JSON array of ExportTrackSpec), from the cache
+   * where it can and rendering the rest at `quality`. Resolves with each file's length in ms; rejects with
+   * code "export-cancelled", "export-write" (the folder can't take the files) or an engine failure.
+   */
+  exportAudio(path: string, tracksJson: string, quality: Quality): Promise<number[]>;
+  cancelExport(): Promise<void>;
   getState(): Promise<PlayerState>;
   getDiagnostics(): Promise<Diagnostics>;
   /** System bar icons for a dark (true) or light background, and the window colour behind the app. */

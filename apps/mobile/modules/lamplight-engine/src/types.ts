@@ -105,12 +105,28 @@ export interface EngineErrorEvent {
   message: string;
 }
 
+/** How far an audio export has got; `waiting` while narration plays (the export gives way to it). */
+export interface ExportEvent {
+  docId: string;
+  done: number;
+  total: number;
+  waiting: boolean;
+}
+
+/** One M4A file of an export: sentences [from, to) of the queue, written to `uri` (a content URI). */
+export interface ExportTrackSpec {
+  uri: string;
+  from: number;
+  to: number;
+}
+
 export type LamplightEngineEvents = {
   onState: (e: PlayerState) => void;
   onProgress: (e: ProgressEvent) => void;
   onSentence: (e: SentenceEvent) => void;
   onRender: (e: RenderEvent) => void;
   onError: (e: EngineErrorEvent) => void;
+  onExport: (e: ExportEvent) => void;
 };
 
 /** The queue file the player reads (written by apps/mobile/src/player/queue.ts). */

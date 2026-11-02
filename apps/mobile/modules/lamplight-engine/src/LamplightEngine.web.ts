@@ -150,6 +150,10 @@ class LamplightEngineWeb extends NativeModule<LamplightEngineEvents> {
 
   async prepareOffline() {}
   async cancelPrepare() {}
+  async exportAudio(): Promise<number[]> {
+    throw new Error('Audio export needs the phone app');
+  }
+  async cancelExport() {}
   async getState() {
     return { ...this.state };
   }
