@@ -5,6 +5,7 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.PlaybackParams
 import android.os.Process
+import android.os.SystemClock
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -69,7 +70,9 @@ class StreamPlayer(
     /** Starts (or restarts) writing from sentence [index]. */
     @Synchronized
     fun start(index: Int) {
-        stopWriter()
+        val t0 = SystemClock.elapsedRealtime()
+        val stopped = stopWriter()
+        EngineLog.i(TAG, "start at sentence $index (writer stopped in ${SystemClock.elapsedRealtime() - t0} ms${if (stopped) "" else ", still writing"})")
         track.pause()
         track.flush()
         synchronized(spans) { spans.clear() }
@@ -138,12 +141,15 @@ class StreamPlayer(
         }
     }
 
-    private fun stopWriter() {
+    /** Stops the writer; it finishes the slice it's writing (≤ [SLICE_FRAMES]) and exits. True once it has. */
+    private fun stopWriter(): Boolean {
         running.set(false)
         generation++
-        writer?.interrupt()
-        writer?.join(500)
+        val w = writer ?: return true
+        w.interrupt()
+        w.join(500)
         writer = null
+        return !w.isAlive
     }
 
     private fun writeLoop(gen: Int) {
@@ -204,7 +210,9 @@ class StreamPlayer(
         var off = 0
         while (off < samples.size) {
             if (!running.get() || gen != generation) return false
-            val n = track.write(samples, off, samples.size - off, AudioTrack.WRITE_BLOCKING)
+            // In slices: a blocking write of a whole piece (seconds) can't be interrupted, and held a seek on the
+            // main thread for the full join timeout while the old sentence kept flowing into the flushed track.
+            val n = track.write(samples, off, minOf(samples.size - off, SLICE_FRAMES), AudioTrack.WRITE_BLOCKING)
             if (n < 0) {
                 lastWriteError = n
                 EngineLog.e(TAG, "AudioTrack write failed: $n")
@@ -213,6 +221,8 @@ class StreamPlayer(
             // A paused track takes nothing once its buffer is full; a blocking write then returns 0 at once,
             // and looping straight back kept a core busy for as long as narration stayed paused.
             if (n == 0) Thread.sleep(PAUSED_POLL_MS)
+            // A writer that was stopped mid-slice must not count its frames into the next start's clock.
+            if (gen != generation) return false
             off += n
             framesWritten.addAndGet(n.toLong())
         }
@@ -235,5 +245,7 @@ class StreamPlayer(
     companion object {
         private const val TAG = "LamplightAudio"
         private const val PAUSED_POLL_MS = 20L
+        /** About 40 ms at 44.1 kHz: how long a stopped writer can take to notice. */
+        private const val SLICE_FRAMES = 1_764
     }
 }
