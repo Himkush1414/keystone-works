@@ -98,6 +98,25 @@ describe('importing a long PDF', () => {
     expect(whole.chapters.map((c) => c.title)).toHaveLength(10);
   });
 
+  it('keeps the first pages and reports why when the rest of a long PDF cannot be read', async () => {
+    const db = testDb();
+    const { pages } = book(100);
+    const h = harness({ pages });
+    const reported: unknown[] = [];
+    const failure = new Error('PdfText: page 13 could not be read');
+    const read = h.reader.pages.bind(h.reader);
+    h.deps.pdf = {
+      ...h.reader,
+      pages: (handle, from, to) => (from > 12 ? Promise.reject(failure) : read(handle, from, to)),
+    };
+    h.deps.report = (e) => reported.push(e);
+    const r = await importFile(db, file, h.deps);
+    const id = r.status === 'ready' ? r.id : '';
+    await Promise.all(h.tasks);
+    expect(getItem(db, id)).toMatchObject({ status: 'ready', loading: { pages: 12, of: 12 } });
+    expect(reported).toEqual([failure]);
+  });
+
   it('keeps reading past pages without text before showing anything', async () => {
     const db = testDb();
     const { pages } = book(60);
