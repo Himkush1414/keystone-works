@@ -157,6 +157,7 @@ export default function PlayerRoute() {
         ),
       close: () => (router.canGoBack() ? router.back() : router.replace('/library')),
       openDiagnostics: () => router.push('/settings/diagnostics'),
+      fixPronunciation: (word) => router.push({ pathname: '/settings/pronunciation', params: { word } }),
     };
   }, [services, t, id, content, item]);
 
