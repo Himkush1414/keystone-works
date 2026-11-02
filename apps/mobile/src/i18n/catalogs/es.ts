@@ -169,6 +169,7 @@ export const es: Catalog = {
     empty: 'No hay texto que leer en este archivo.',
     unsupported: 'Lamplight todavía no puede abrir este tipo de archivo.',
     tooLarge: 'Este archivo es demasiado grande para abrirlo.',
+    storageFull: 'El teléfono no tiene espacio libre. Libera espacio y vuelve a intentarlo.',
     network: 'No se pudo abrir esa página. Revisa tu conexión e inténtalo de nuevo.',
     partialArticle: 'Solo había parte de este artículo. ¿Pegar el texto completo?',
     generic: 'Algo salió mal.',

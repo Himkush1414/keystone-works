@@ -1,8 +1,10 @@
+import type { ImportError } from '@lamplight/core';
 import type { Params, TKey } from '../i18n/translate';
 import type { ImportSummary } from '../state/library';
 import type { ToastSpec } from '../state/toast';
 
-const ERROR_KEYS: Record<string, TKey> = {
+/** Every import failure code has its own message (the type makes a new code fail to compile until it does). */
+const ERROR_KEYS: Record<ImportError['code'], TKey> = {
   drm: 'errors.drm',
   scanned: 'errors.scanned',
   password: 'errors.password',
@@ -10,6 +12,7 @@ const ERROR_KEYS: Record<string, TKey> = {
   empty: 'errors.empty',
   unsupported: 'errors.unsupported',
   tooLarge: 'errors.tooLarge',
+  storageFull: 'errors.storageFull',
   network: 'errors.network',
   partialArticle: 'errors.partialArticle',
 };
@@ -24,7 +27,7 @@ export function importMessage(
   open: (id: string) => void,
 ): ToastSpec | null {
   const failed = summary.failed[0];
-  const reason = failed ? t(ERROR_KEYS[failed.code] ?? 'errors.generic') : null;
+  const reason = failed ? t(ERROR_KEYS[failed.code as ImportError['code']] ?? 'errors.generic') : null;
   if (summary.added.length > 0) {
     const added = t('import.added', { n: summary.added.length });
     return reason ? { message: `${added}. ${reason}`, tone: 'danger' } : { message: added };

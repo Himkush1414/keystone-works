@@ -170,6 +170,7 @@ export const de: Catalog = {
     empty: 'In dieser Datei gibt es keinen Text zum Vorlesen.',
     unsupported: 'Lamplight kann diesen Dateityp noch nicht öffnen.',
     tooLarge: 'Diese Datei ist zu groß.',
+    storageFull: 'Der Speicher deines Telefons ist voll. Gib etwas Platz frei und versuch es dann erneut.',
     network: 'Die Seite war nicht erreichbar. Prüfe deine Verbindung und versuch es erneut.',
     partialArticle: 'Nur ein Teil des Artikels war verfügbar. Ganzen Text einfügen?',
     generic: 'Etwas ist schiefgelaufen.',

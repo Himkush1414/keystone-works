@@ -3,6 +3,7 @@ import { Directory, File, Paths } from 'expo-file-system';
 import LamplightEngine from '../../modules/lamplight-engine';
 import type { Db } from '../data/db';
 import type { DocumentSource } from '../data/library';
+import { errorLog } from '../services/errors';
 import { coverExtension, PICKER_TYPES, uriToPath } from './paths';
 import type { PdfOpened, PdfPageLines } from '../../modules/lamplight-engine/src/types';
 import type { PdfReader } from './parse';
@@ -68,6 +69,7 @@ export async function importIncoming(
         sha256: () => file.digest('SHA-256'),
         pdf: pdfReader,
         saveCover,
+        report: (e) => errorLog.record(e, 'js'),
         ...hooks,
         // The rest of a long PDF is still being read from the file after this returns: delete it after that.
         background: (task) => {

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { makeEpub } from '../../../packages/core/test/fixtures/epub';
 import { loadContent } from '../src/data/content';
 import { getItem, IMPORT_VERSION, listItems } from '../src/data/library';
-import { importFile, type ImportDeps } from '../src/import/run';
+import { failureCode, importFile, isStorageFull, type ImportDeps } from '../src/import/run';
 import { failingPdfReader, fakePdfReader } from './fakePdf';
 import { testDb } from './nodeDb';
 
@@ -123,5 +123,49 @@ describe('importFile', () => {
     expect(r.status).toBe('ready');
     expect(covers).toHaveLength(1);
     expect(getItem(db, r.status === 'ready' ? r.id : '')).toMatchObject({ kind: 'book' });
+  });
+
+  it('says the phone is full instead of "damaged" when saving runs out of space, and logs nothing', async () => {
+    const db = testDb();
+    const reported: unknown[] = [];
+    const r = await importFile(
+      db,
+      { name: 'book.epub', bytes: makeEpub({ cover: true }), source: 'file' },
+      deps({
+        saveCover: () => Promise.reject(new Error('Error code 13: database or disk is full')),
+        report: (e) => reported.push(e),
+      }),
+    );
+    expect(r).toMatchObject({ status: 'failed', code: 'storageFull' });
+    expect(getItem(db, r.status === 'failed' ? (r.id ?? '') : '')).toMatchObject({
+      errorCode: 'storageFull',
+    });
+    expect(reported).toEqual([]);
+  });
+
+  it('reports an unexpected error to the error log while the listener still sees "damaged"', async () => {
+    const db = testDb();
+    const reported: unknown[] = [];
+    const bug = new TypeError("Cannot read properties of undefined (reading 'mime')");
+    const r = await importFile(
+      db,
+      { name: 'book.epub', bytes: makeEpub({ cover: true }), source: 'file' },
+      deps({ saveCover: () => Promise.reject(bug), report: (e) => reported.push(e) }),
+    );
+    expect(r).toMatchObject({ status: 'failed', code: 'corrupt' });
+    expect(reported).toEqual([bug]);
+  });
+});
+
+describe('failureCode', () => {
+  it('keeps import errors, names a full phone, and reports only the unknown', () => {
+    const reported: unknown[] = [];
+    const report = (e: unknown) => reported.push(e);
+    expect(failureCode(new Error('ENOSPC: no space left on device, write'), { report })).toBe('storageFull');
+    expect(failureCode(new Error('SQLITE_FULL'), { report })).toBe('storageFull');
+    expect(failureCode(new RangeError('Invalid array length'), { report })).toBe('corrupt');
+    expect(reported).toHaveLength(1);
+    expect(isStorageFull('java.io.IOException: No space left on device')).toBe(true);
+    expect(isStorageFull(new Error('This file is damaged'))).toBe(false);
   });
 });

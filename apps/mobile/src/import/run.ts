@@ -61,6 +61,30 @@ export interface ImportDeps extends ParseDeps {
   yieldToUi?(): Promise<void>;
   /** Work that goes on after importFile returns (the rest of a long PDF); tests await it. */
   background?(task: Promise<void>): void;
+  /** An error that isn't a known import failure (a bug, the disk): the device sends it to the error log. */
+  report?(error: unknown): void;
+}
+
+/** SQLite, the file system and the engine all say "out of space" in their own words. */
+const STORAGE_FULL =
+  /SQLITE_FULL|database or disk is full|ENOSPC|no space left|not enough (?:free )?space|disk full/i;
+
+/** True when `error` says the phone has no room left. */
+export function isStorageFull(error: unknown): boolean {
+  const text = error instanceof Error ? `${error.name} ${error.message}` : String(error);
+  return STORAGE_FULL.test(text);
+}
+
+/**
+ * The listener-facing reason an import failed. A known ImportError keeps its code; a full phone says so
+ * instead of "damaged"; anything else still reads as damaged to the listener, but goes to the error log so
+ * a bug in the importer doesn't hide behind that message.
+ */
+export function failureCode(error: unknown, deps: Pick<ImportDeps, 'report'> = {}): ImportError['code'] {
+  if (error instanceof ImportError) return error.code;
+  if (isStorageFull(error)) return 'storageFull';
+  deps.report?.(error);
+  return 'corrupt';
 }
 
 export type ImportResult =
@@ -111,7 +135,7 @@ export async function importFile(db: Db, file: ImportFile, deps: ImportDeps): Pr
     try {
       return await importPdf(db, id, file, deps);
     } catch (e) {
-      const code = e instanceof ImportError ? e.code : 'corrupt';
+      const code = failureCode(e, deps);
       markFailed(db, id, code);
       deps.onUpdate?.(id, false);
       return { status: 'failed', id, code };
@@ -137,7 +161,7 @@ export async function importFile(db: Db, file: ImportFile, deps: ImportDeps): Pr
     saveContent(db, id, prepared, cover ? { coverPath: cover } : {});
     return { status: 'ready', id };
   } catch (e) {
-    const code = e instanceof ImportError ? e.code : 'corrupt';
+    const code = failureCode(e, deps);
     markFailed(db, id, code);
     return { status: 'failed', id, code };
   }
@@ -216,8 +240,8 @@ async function importPdf(db: Db, id: string, file: ImportFile, deps: ImportDeps)
       await finishPdf(db, id, info, meta, pages, deps, yieldToUi);
       deps.onUpdate?.(id, true);
     } catch (e) {
-      // The first pages stay playable; the rest couldn't be read, so stop saying it's coming.
-      console.warn('PDF import stopped after the first pages', e);
+      // The first pages stay playable; the rest couldn't be read, so stop saying it's coming, and keep why.
+      deps.report?.(e);
       setPagesLoaded(db, id, read, read);
       deps.onUpdate?.(id, false);
     }
