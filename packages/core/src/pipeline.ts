@@ -17,6 +17,35 @@ import { detectLanguage, lineLanguage, VOICE_LANGUAGES, type VoiceLanguage } fro
 import { normalize, type DictionaryRule } from './text/normalize';
 import { segment, type Span } from './text/segment';
 
+/** A picture's caption in plain text, as Project Gutenberg and its PDFs write it: `[Illustration: …]`. */
+const ILLUSTRATION_OPEN = /^\s*\[\s*(?:illustration|picture|image|figure|plate)\b/iu;
+/** A caption that never closes its bracket stops being one after this many paragraphs. */
+const CAPTION_MAX_BLOCKS = 6;
+
+/**
+ * The text Cast reads for each block: paragraphs and block quotes only. Headings, captions and the paragraphs
+ * of a bracketed `[Illustration: …]` caption read as '' so a quoted caption never gets a speaker.
+ */
+export function castInput(blocks: readonly Block[]): string[] {
+  const out = blocks.map((b) => (b.kind === 'paragraph' || b.kind === 'quote' ? b.text : ''));
+  let depth = 0;
+  let since = 0;
+  blocks.forEach((b, i) => {
+    if (depth <= 0) {
+      if (!ILLUSTRATION_OPEN.test(b.text)) return;
+      depth = 0;
+      since = 0;
+    }
+    out[i] = '';
+    for (const ch of b.text) {
+      if (ch === '[') depth++;
+      else if (ch === ']') depth--;
+    }
+    if (++since >= CAPTION_MAX_BLOCKS) depth = 0;
+  });
+  return out;
+}
+
 /**
  * Silence after a sentence, in ms. The engine trims the model's own padding and keeps about 90 ms of quiet
  * edges, so a listener hears roughly this plus 90 ms: about 0.45 s between sentences, 0.85 s between
@@ -141,7 +170,7 @@ export function* prepareSteps(
   };
   const chapterStarts = new Set(chapters.map((c) => c.blockStart));
 
-  const castBlocks = blocks.map((b) => (b.kind === 'paragraph' || b.kind === 'quote' ? b.text : ''));
+  const castBlocks = castInput(blocks);
   // Books, and any other text that tells a story in dialogue (a short story saved as a PDF).
   const useCast = opts.cast ?? (draft.meta.kind === 'book' || hasDialogue(castBlocks, docLang));
   const cast = useCast ? yield* castSteps(castBlocks, docLang) : { characters: [], attributions: [] };
@@ -391,7 +420,7 @@ export function recastSpeakers(
   lang: string,
   fixed: readonly FixedSpeaker[],
 ): { speakers: (string | undefined)[]; confidence: number[]; characters: Character[] } {
-  const castBlocks = blocks.map((b) => (b.kind === 'paragraph' || b.kind === 'quote' ? b.text : ''));
+  const castBlocks = castInput(blocks);
   const base = lang.slice(0, 2);
   const cast = analyseCast(castBlocks, base, fixed);
   const quotes = new Map<number, ReturnType<typeof findDialogue>>();

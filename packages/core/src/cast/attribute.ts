@@ -317,9 +317,10 @@ const CONVERSATION_GAP = 3;
  * time they play (the listener's corrections held fixed). 2: dialogue measured on real books (Premchand's
  * unquoted Hindi, "said the Hatter", turns by name and by the first-person narrator). 3: lines said by several
  * people go to no one, things and verbs are never speakers, Hindi genders from a speaker's own words. 4: Hindi
- * titles beside a speaker's name (शेख जुम्मन, जुम्मन मियाँ, बेगम) give their gender.
+ * titles beside a speaker's name (शेख जुम्मन, जुम्मन मियाँ, बेगम) give their gender. 5: a bracketed
+ * `[Illustration: …]` caption is never dialogue.
  */
-export const CAST_VERSION = 4;
+export const CAST_VERSION = 5;
 
 /** A line whose speaker the listener has set: the quotation starting at `start` in paragraph `block`. */
 export interface FixedSpeaker {
