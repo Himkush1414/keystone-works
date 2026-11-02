@@ -61,7 +61,7 @@ class LamplightEngineModule : Module() {
         OnStopObserving { controller.removeListener(listener) }
 
         AsyncFunction("initialize") {
-            controller.host.engine()
+            controller.withEngine { }
             mapOf(
                 "voices" to controller.host.voiceIds(),
                 "sampleRate" to PlaybackController.SAMPLE_RATE,
@@ -208,7 +208,7 @@ class LamplightEngineModule : Module() {
         AsyncFunction("clearCache") { controller.clearCache() }
 
         AsyncFunction("previewVoice") { text: String, lang: String, voice: String, steps: Int ->
-            val audio = controller.host.engine().synthesize(text, lang, controller.host.voice(voice), steps.coerceAtLeast(ReadAhead.FLOOR_STEPS))
+            val audio = controller.withEngine { it.synthesize(text, lang, controller.host.voice(voice), steps.coerceAtLeast(ReadAhead.FLOOR_STEPS)) }
             runOnMain {
                 if (controller.playing) controller.pause()
                 playPreview(audio.samples, audio.sampleRate)
@@ -220,7 +220,7 @@ class LamplightEngineModule : Module() {
         AsyncFunction("warmDictionary") { lexicon.warm() }
 
         AsyncFunction("synthesizeToFile") { text: String, lang: String, voice: String, steps: Int, path: String ->
-            val audio = controller.host.engine().synthesize(text, lang, controller.host.voice(voice), steps.coerceAtLeast(ReadAhead.FLOOR_STEPS))
+            val audio = controller.withEngine { it.synthesize(text, lang, controller.host.voice(voice), steps.coerceAtLeast(ReadAhead.FLOOR_STEPS)) }
             writeWav(File(path), audio.samples, audio.sampleRate)
             audio.durationMs.toDouble()
         }
@@ -312,17 +312,24 @@ class LamplightEngineModule : Module() {
     private fun runVoiceTest(): Map<String, Any?> {
         val t0 = System.nanoTime()
         return try {
-            val engine = controller.host.engine()
-            val loadMs = (System.nanoTime() - t0) / 1_000_000
-            val t1 = System.nanoTime()
-            val audio = engine.synthesize("This is Lamplight, reading to you.", "en", controller.host.voice("F1"), 8)
-            val renderMs = (System.nanoTime() - t1) / 1_000_000
+            var loadMs = 0L
+            var renderMs = 0L
+            var stages: Map<String, Long> = emptyMap()
+            val audio = controller.withEngine { engine ->
+                loadMs = (System.nanoTime() - t0) / 1_000_000
+                val t1 = System.nanoTime()
+                engine.synthesize("This is Lamplight, reading to you.", "en", controller.host.voice("F1"), 8)
+                    .also {
+                        renderMs = (System.nanoTime() - t1) / 1_000_000
+                        stages = engine.lastTimings
+                    }
+            }
             runOnMain {
                 if (controller.playing) controller.pause()
                 playPreview(audio.samples, audio.sampleRate)
             }
             EngineLog.i("LamplightEngine", "voice test: load $loadMs ms, render $renderMs ms for ${audio.durationMs} ms of speech")
-            mapOf("ok" to true, "loadMs" to loadMs, "renderMs" to renderMs, "audioMs" to audio.durationMs, "stages" to engine.lastTimings)
+            mapOf("ok" to true, "loadMs" to loadMs, "renderMs" to renderMs, "audioMs" to audio.durationMs, "stages" to stages)
         } catch (e: Throwable) {
             val f = EngineFailure.of(e)
             EngineLog.e("LamplightEngine", "voice test failed", e)
