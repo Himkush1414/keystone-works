@@ -30,11 +30,7 @@ _If a merge is ever blocked, the exact commands are listed here, in order._
 
 ### 2.2 Android emulator on this machine
 
-The user account isn't in the `kvm` group, so the Android emulator can't run here. One command fixes it (then log out and back in to WSL):
-
-```bash
-sudo usermod -aG kvm "$USER"
-```
+The Linux emulator can't run in WSL (the account isn't in the `kvm` group: `sudo usermod -aG kvm "$USER"` would fix it), so the agent uses the Windows emulator instead: `emulator.exe` from the Windows SDK with the system image and AVD on D:, x86_64 builds of the app, and the Windows `adb.exe`. Nothing is needed from you for this.
 
 ### 2.3 Key rotation
 
@@ -60,9 +56,19 @@ The interface ships in English (source), Spanish, German, French and Brazilian P
 - **French typography:** narrow no-break spaces before `; ! ?` and no-break spaces before `:` and inside « ». `tooling/scripts/french-spacing.mjs` applies them; a reviewer only needs to check the words.
 - **Agreement:** adjectives after "voz"/"voix" (feminine) in the voice descriptions (`voices.traits`).
 
-Keys added most recently, which no reviewer has seen yet: `import.added`, `player.expand`, `item.titleField`, `item.authorField`, `voices.traits.*`, `voicePick.choose`, `settings.expressive*`, `settings.breaths*`, `tiers.*`, `settings.voiceProcessing*`, `quality.*Desc` (rewritten 25 Oct).
+Keys added most recently, which no reviewer has seen yet: `export.*` and `settings.cacheDesc` (2 Nov), `import.added`, `player.expand`, `item.titleField`, `item.authorField`, `voices.traits.*`, `voicePick.choose`, `settings.expressive*`, `settings.breaths*`, `tiers.*`, `settings.voiceProcessing*`, `quality.*Desc` (rewritten 25 Oct).
 
 ## 4. Checks that need a real phone
+
+**Added 2 Nov (export, playback fixes):**
+
+- **Export audio.** Library › long-press a book › _Export audio_ › _Whole book_ › choose a folder on the phone (Audiobooks, Music or Documents; Android doesn't allow the top level or Download itself). A folder named after the book appears with `01 Chapter….m4a` files and a playlist. Check that they play in your usual audiobook or music app and in the car, and note how long a long book takes. While the export runs, start narration: the sheet says it's paused, and it carries on when you pause. _Stop export_ removes what it wrote.
+- **Continue card.** While a book plays, the card on the library shows ⏸; tapping it pauses, tapping again resumes from the same word (it used to restart the sentence).
+- **Tapping a sentence while it reads.** The voice should jump at once, with no half-second freeze and no fragment of the old sentence.
+- **Sleep timer.** Set 5 minutes; when the volume starts fading, turn the timer off: narration keeps playing at full volume.
+- **Settings › Storage.** Shows how much prepared audio is kept and clears it after a confirmation; playback carries on (the next sentences are rendered again).
+- **Long listening.** An hour of a book you've heard before (from the cache) shouldn't slow the phone down or close the app.
+- **Never seen on a device until this build:** bookmarks in the Contents sheet, line focus (Settings › Reading appearance), the Speed sheet (long-press the speed button), long-press previous/next for a paragraph, with TalkBack too ("More speeds", "Previous paragraph").
 
 **Added 25 Oct (voice, Hindi PDFs, speakers):**
 
