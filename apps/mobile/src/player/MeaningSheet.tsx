@@ -29,6 +29,7 @@ export function MeaningSheet({
   onResume,
   lookUp,
   speak,
+  onFixPronunciation,
 }: {
   visible: boolean;
   /** The sentence as written. */
@@ -40,6 +41,8 @@ export function MeaningSheet({
   onResume(): void;
   lookUp(word: string, context: string): Promise<Meaning | null>;
   speak(text: string, lang: AnswerLanguage): void;
+  /** The chosen word is said wrong: open the pronunciation dictionary with it. */
+  onFixPronunciation?(word: string): void;
 }) {
   const t = useT();
   const { colors, space, radius } = useTheme();
@@ -173,6 +176,14 @@ export function MeaningSheet({
           { value: 'hi', label: 'हिन्दी' },
         ]}
       />
+      {onFixPronunciation && word !== null && tokens[word]?.word ? (
+        <Button
+          label={t('meaning.fixPronunciation')}
+          icon="dictionary"
+          kind="quiet"
+          onPress={() => onFixPronunciation(tokens[word]?.text ?? '')}
+        />
+      ) : null}
       <View style={[styles.row, { gap: space.sm }]}>
         <View style={styles.grow}>
           <Button

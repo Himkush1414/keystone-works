@@ -66,6 +66,8 @@ export interface PlayerActions {
   lookUpWord(word: string, context: string): Promise<Meaning | null>;
   /** Says a short text in the narrator's voice (the meaning, while paused). */
   speak(text: string, lang: AnswerLanguage): void;
+  /** Opens the pronunciation dictionary with `word` filled in (R-PR-2). */
+  fixPronunciation?(word: string): void;
   /** A tapped sentence: narration moves there and plays from it, paused or not. */
   playFrom(index: number): void;
   listBookmarks(): Bookmark[];
@@ -429,6 +431,15 @@ export function PlayerScreen({ item, content, clean, customSkips, dictionary, ac
         initialLanguage={item.language.startsWith('hi') || locale.startsWith('hi') ? 'hi' : 'en'}
         lookUp={actions.lookUpWord}
         speak={actions.speak}
+        {...(actions.fixPronunciation
+          ? {
+              onFixPronunciation: (w: string) => {
+                setSheet(null);
+                setAsking(null);
+                actions.fixPronunciation?.(w);
+              },
+            }
+          : {})}
         onClose={() => setSheet(null)}
         onResume={() => {
           setSheet(null);

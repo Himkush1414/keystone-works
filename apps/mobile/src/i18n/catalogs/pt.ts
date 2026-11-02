@@ -220,6 +220,7 @@ export const pt: Catalog = {
     noHindi: 'Ainda não há palavra em hindi; mostrando o significado em inglês.',
     language: 'Responder em',
     hear: 'Ouvir',
+    fixPronunciation: 'Corrigir a pronúncia',
     resume: 'Continuar',
     ask: 'O que significa uma palavra?',
   },

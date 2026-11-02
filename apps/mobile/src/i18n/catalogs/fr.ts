@@ -223,6 +223,7 @@ export const fr: Catalog = {
     noHindi: 'Pas encore de mot hindi ; le sens anglais est affiché.',
     language: 'Répondre en',
     hear: 'Écouter',
+    fixPronunciation: 'Corriger la prononciation',
     resume: 'Reprendre',
     ask: 'Que veut dire un mot ?',
   },

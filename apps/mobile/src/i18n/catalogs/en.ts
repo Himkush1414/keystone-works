@@ -219,6 +219,7 @@ export const en = {
     noHindi: 'No Hindi word for this yet; showing the English meaning.',
     language: 'Answer in',
     hear: 'Hear it',
+    fixPronunciation: 'Fix pronunciation',
     resume: 'Resume',
     ask: 'What does a word mean?',
   },

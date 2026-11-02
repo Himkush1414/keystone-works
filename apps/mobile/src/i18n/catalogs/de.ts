@@ -220,6 +220,7 @@ export const de: Catalog = {
     noHindi: 'Noch kein Hindi-Wort dafür; die englische Bedeutung wird gezeigt.',
     language: 'Antwort auf',
     hear: 'Anhören',
+    fixPronunciation: 'Aussprache korrigieren',
     resume: 'Weiter',
     ask: 'Was bedeutet ein Wort?',
   },
