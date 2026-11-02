@@ -14,7 +14,22 @@ Google Play does **not** allow changing an app from free to paid after it has be
 
 ### 1.2 Remaining Play Console steps
 
-_(Filled in as the build reaches each boundary: store listing upload, Data Safety, content rating, foreground service declaration, closed testing, production release.)_
+In order. Each step needs your Google account; none can be done from the build machine.
+
+1. **Developer account.** Sign up at play.google.com/console as an individual ($25 one-off), verify your identity, and verify a phone number. A new personal account cannot publish to production until step 7 is done.
+2. **Upload key.** On your own computer (not this repository): `keytool -genkeypair -v -keystore lamplight-upload.jks -alias upload -keyalg RSA -keysize 4096 -validity 10000`. Keep the file and both passwords in a password manager. Never commit it. Today's preview APKs are signed with the template's debug key, which Play rejects. Release signing from this key is a small change to the Android config, to make once the key exists (step 8 in [section 6](#6-left-to-build)).
+3. **Play App Signing.** On the first upload of an AAB (`./gradlew :app:bundleRelease`), accept Play App Signing. Google keeps the app signing key, and your key from step 2 only signs uploads.
+4. **App content** (Policy → App content):
+   - Privacy policy: `https://keystone-works-three.vercel.app/privacy`.
+   - Ads: **No**. App access: **All functionality is available without special access** (no login).
+   - Data safety: **No data collected, no data shared**. The release build has no internet permission (#146), so this is literally true.
+   - Content rating: fill in the IARC questionnaire (a reference app, no user content shared, no violence). Expect "Everyone" / PEGI 3.
+   - Target audience: 13+ (it's a general reader; avoid the "Designed for families" requirements).
+   - Foreground service: declare **Media playback** (`FOREGROUND_SERVICE_MEDIA_PLAYBACK`) for narration that keeps playing with the screen off, and attach a short screen recording of starting playback, locking the phone and using the lock-screen controls.
+5. **Store listing.** Texts are drafted in the private planning notes (store listing). Upload the icon (512×512), feature graphic (1024×500) and at least 4 phone screenshots. `docs/readme/*.png` are real-app screenshots, but Play wants 1080×1920 or larger, so take them on a phone.
+6. **Closed test.** Testing → Closed testing → create a track, upload the AAB, add **at least 12 testers** (email list or Google Group). They must opt in from the link and stay opted in for **14 days in a row**. Ask them to use the app for real during those days; Play asks about it.
+7. **Apply for production** (Dashboard → Apply for production) after the 14 days, answering Play's questions about the test. Approval takes up to about a week.
+8. **Production release.** Set the price (section 1.1), choose countries, roll out. Then swap the website's "Coming soon" for the Play badge (section 2.4, item 3).
 
 ## 2. Things that need your accounts or permissions
 
@@ -48,6 +63,20 @@ Before launch, these need you:
 4. **Store listing vs app.** Fixed on 26 Oct: the listing draft now promises only what the app does. Bookmarks (#96), line focus (#97) and audio export (#98) are tracked as issues; promise them again once they ship.
 5. **Pin the roadmap.** Discussions are on, with "Roadmap and feedback" (#103) under Announcements. GitHub's API can't pin a discussion: open it and choose **Pin discussion** in the right-hand column.
 
+### 2.5 Dependencies
+
+`npm audit` (2 Nov) lists 27 advisories (3 high: `node-forge`, `zod`, `@expo/cli`). All of them are in build tools (Expo CLI and config plugins, ESLint, typescript-eslint, `xcode`, `glob`). None is in the app: the release JavaScript bundle contains no code from any of them (checked by searching `index.android.bundle`). `npm audit fix` without `--force` clears the three highs, but it moves Expo from 58.0.16 to 58.0.22, which changes native modules. So run it on a branch, build the release APK, and check it on a device before merging:
+
+```sh
+git checkout -b chore/audit-fix origin/main
+npm audit fix            # no --force: that would downgrade Expo and ESLint majors
+npm run typecheck && npm run lint && npm test
+```
+
+### 2.6 Build machine limits
+
+The build machine has 7.6 GB of RAM for WSL. Run **one** Gradle build at a time, with native compile jobs capped (`cmake.dir` pointing at the `-j6` ninja shim in `/mnt/d/_cache/cmake-limited`, and `--max-workers=4`). On 2 Nov an x86_64 build was stopped for low memory while a Gradle and a Kotlin daemon from the previous build were still alive: `./gradlew --stop` after each build. `:lamplight-engine:downloadDictionary` fetches the dictionary from the `dictionary-v1` release at build time and fails on a network timeout. It's cached in `modules/lamplight-engine/android/build/engine-assets/` once downloaded (SHA-256 checked).
+
 ## 3. Translations to review
 
 The interface ships in English (source), Spanish, German, French and Brazilian Portuguese. The non-English catalogs (`apps/mobile/src/i18n/catalogs/{es,de,fr,pt}.ts`) were written without a native speaker, so please have each reviewed before launch in its market. Things to check:
@@ -59,6 +88,14 @@ The interface ships in English (source), Spanish, German, French and Brazilian P
 Keys added most recently, which no reviewer has seen yet: `export.*` and `settings.cacheDesc` (2 Nov), `import.added`, `player.expand`, `item.titleField`, `item.authorField`, `voices.traits.*`, `voicePick.choose`, `settings.expressive*`, `settings.breaths*`, `tiers.*`, `settings.voiceProcessing*`, `quality.*Desc` (rewritten 25 Oct).
 
 ## 4. Checks that need a real phone
+
+**Added 2 Nov, afternoon (privacy, errors, Cast):**
+
+- **No internet.** Android Settings › Apps › Lamplight › Permissions shows no network permission, and everything works in airplane mode, as before.
+- **Settings › Advanced › Diagnostics › App errors.** It normally says "No errors recorded." If the app ever closes by itself, the error is listed there on the next launch and is included in _Share report_.
+- **Picture captions.** A PDF made from Project Gutenberg text with `[Illustration: "…"]` captions: the caption's quote has no speaker label and is read by the narrator. Books already in the library are re-attributed on the next open (Cast version 5).
+- **Full phone.** If the phone is almost full, importing a book says "Your phone is out of storage", not "damaged".
+- **Settings segments** (text size, line spacing): easy to hit with a thumb, including at the largest font size.
 
 **Added 2 Nov (export, playback fixes):**
 
@@ -168,3 +205,19 @@ Each item says what to listen for and which value to change if it's off. All the
 - [ ] Pressing play on a freshly imported book starts speaking about as quickly as before. Rate, gain and breath add only microseconds per sentence, but confirm it on a mid-range phone.
 
 When something sounds off, note the book, the sentence and the setting. That is enough to tune the value named next to it.
+
+## 6. Left to build
+
+From the plan (PRD ids), smallest first. Each is its own issue and pull request when it starts.
+
+1. Dictionary JSON import and export (R-PR-3).
+2. Progress scrubber with chapter ticks in the player (R-PL-1).
+3. Custom Clean Read skip rules (R-CR-5).
+4. Repeat sentence and A–B loop (R-PL-13, P2).
+5. Listening stats (R-LB-6, P2).
+6. Highlights with notes, and export to Markdown (R-PL-10); highlights need relocating in `saveContent` like bookmarks.
+7. Android share sheet and "Open with" for files (R-IM-2). Files only: sharing a web link would need the internet permission back, plus a privacy policy change first.
+8. Release signing from the upload key (section 1.2, step 2): read the keystore path and passwords from `~/.gradle/gradle.properties` (never the repository) in a config plugin, keeping the debug key as the fallback for previews.
+9. Library backup and restore to a file the listener chooses (R-EX-2), since Android backup is off (#114).
+10. Native crash capture in the engine (Kotlin `UncaughtExceptionHandler` writing to the same error log; R-DI-2, second half).
+11. Prepare a book for offline in advance (R-VO-4), and OCR for scanned PDFs (R-IM-7, P2).
