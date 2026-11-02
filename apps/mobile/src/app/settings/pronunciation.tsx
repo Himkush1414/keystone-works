@@ -9,7 +9,9 @@ import {
   type DictionaryEntry,
 } from '@/data/userdata';
 import { useLocale, useT } from '@/i18n/useLocale';
+import { requeue } from '@/player/session';
 import { useServices } from '@/services/context';
+import { queueCache } from '@/services/device';
 import { PronunciationScreen, type NewEntry } from '@/settings/PronunciationScreen';
 
 export default function PronunciationRoute() {
@@ -21,23 +23,37 @@ export default function PronunciationRoute() {
   const [entries, setEntries] = useState(() => listDictionary(db));
   const refresh = useCallback(() => setEntries(listDictionary(db)), [db]);
 
+  // The book in the player says the word the new way from its next sentence (R-PR-2), not on the next open.
+  const applyToPlaying = useCallback(() => {
+    const { queue, progress } = services.player.getState();
+    if (!queue) return;
+    requeue(
+      { db, store: services.player, engine: LamplightEngine, ...queueCache },
+      queue.docId,
+      services.settings.getState(),
+      progress.index,
+    ).catch((e: unknown) => console.warn('requeue after a dictionary change failed', e));
+  }, [db, services]);
+
   const add = useCallback(
     (e: NewEntry | DictionaryEntry) => {
       addDictionaryEntry(db, e);
       refresh();
+      applyToPlaying();
     },
-    [db, refresh],
+    [db, refresh, applyToPlaying],
   );
   const remove = useCallback(
     (e: DictionaryEntry) => {
       removeDictionaryEntry(db, e.id);
       refresh();
+      applyToPlaying();
       services.toast.getState().show({
         message: t('item.deleted', { title: e.match }),
         action: { label: t('common.undo'), run: () => add(e) },
       });
     },
-    [db, refresh, services, t, add],
+    [db, refresh, services, t, add, applyToPlaying],
   );
   const test = useCallback(
     (sayAs: string) => {
