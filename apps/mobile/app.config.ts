@@ -100,6 +100,11 @@ const config: ExpoConfig = {
           compileSdkVersion: 37,
           enableProguardInReleaseBuilds: true,
           enableShrinkResourcesInReleaseBuilds: true,
+          packagingOptions: {
+            // PDFBox brings BouncyCastle for encrypted PDFs; the post-quantum parameter tables it also ships
+            // (4.1 MB of .properties, never read: PDFs don't use those algorithms) are left out of the APK.
+            exclude: ['org/bouncycastle/pqc/**/*.properties'],
+          },
         },
       },
     ],
