@@ -61,4 +61,16 @@ describe('diagnostics', () => {
     expect(text).toContain('[device]\nmodel: SM-A546E\nabis: arm64-v8a\nsdk: 34');
     expect(text).toContain('[log]\n12:00:00.000 E LamplightEngine: voice model failed to load');
   });
+
+  it('includes the app errors, newest last, or says there were none', () => {
+    const at = new Date('2026-10-24T12:00:00Z');
+    expect(diagnosticsReport(failed, at)).toContain('[errors]\n—');
+    const text = diagnosticsReport(failed, at, [
+      { at: Date.UTC(2026, 9, 24, 11), source: 'promise', fatal: false, message: 'Import failed', count: 2 },
+      { at: Date.UTC(2026, 9, 24, 11, 30), source: 'js', fatal: true, message: 'TypeError: boom', count: 1 },
+    ]);
+    expect(text).toContain(
+      '[errors]\n2026-10-24T11:00:00.000Z promise ×2: Import failed\n2026-10-24T11:30:00.000Z js FATAL: TypeError: boom',
+    );
+  });
 });

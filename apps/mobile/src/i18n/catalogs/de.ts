@@ -155,6 +155,9 @@ export const de: Catalog = {
     abResult:
       '{kind}: {steps} Schritte, {seconds} s, {clipped} übersteuerte Samples. Gespeichert unter {path}',
     volumeMuted: 'Die Medienlautstärke ist aus, daher ist nichts zu hören. Lautstärke erhöhen.',
+    errors: 'App-Fehler',
+    noErrors: 'Keine Fehler aufgezeichnet.',
+    clearErrors: 'Fehler löschen',
   },
   errors: {
     drm: 'Dieses Buch ist per DRM geschützt, daher kann Lamplight es nicht öffnen.',
@@ -423,11 +426,9 @@ export const de: Catalog = {
     local: 'Deine Dokumente, Positionen, Markierungen und Audiodaten bleiben auf diesem Gerät.',
   },
   crash: {
-    card: 'Lamplight wurde beim letzten Mal unerwartet beendet. Bericht senden, um bei der Behebung zu helfen?',
-    view: 'Bericht ansehen',
-    send: 'Senden',
-    dismiss: 'Nicht jetzt',
-    sent: 'Danke. Bericht {id} wurde gesendet.',
+    title: 'Etwas ist schiefgelaufen',
+    body: 'Dieser Bildschirm wurde wegen eines Fehlers angehalten. Die Details sind auf diesem Telefon unter Einstellungen › Diagnose gespeichert, damit du sie uns schicken kannst.',
+    retry: 'Erneut versuchen',
   },
   promise: {
     title: 'Unser Versprechen',

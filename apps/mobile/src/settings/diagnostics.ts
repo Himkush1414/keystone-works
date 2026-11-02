@@ -1,4 +1,5 @@
 import type { Diagnostics } from '../../modules/lamplight-engine/src/types';
+import { formatError, type ErrorEntry } from '../services/errorLog';
 
 export interface DiagnosticsSection {
   key: 'engine' | 'player' | 'volume' | 'device' | 'app';
@@ -60,9 +61,14 @@ export function isSilenced(d: Diagnostics): boolean {
 }
 
 /** Plain text of everything on the screen, to paste into a message. */
-export function diagnosticsReport(d: Diagnostics, at: Date): string {
+export function diagnosticsReport(d: Diagnostics, at: Date, errors: readonly ErrorEntry[] = []): string {
   const parts = diagnosticsSections(d).map(
     (s) => `[${s.key}]\n${s.rows.map(([k, v]) => `${k}: ${v}`).join('\n')}`,
   );
-  return [`Lamplight diagnostics ${at.toISOString()}`, ...parts, `[log]\n${d.log.join('\n')}`].join('\n\n');
+  return [
+    `Lamplight diagnostics ${at.toISOString()}`,
+    ...parts,
+    `[errors]\n${errors.length ? errors.map(formatError).join('\n') : '—'}`,
+    `[log]\n${d.log.join('\n')}`,
+  ].join('\n\n');
 }
