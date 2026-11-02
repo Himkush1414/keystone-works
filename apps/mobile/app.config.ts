@@ -56,7 +56,10 @@ const config: ExpoConfig = {
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.WAKE_LOCK',
     ],
+    // Nothing in the app uses the network (privacy policy: no internet). Blocking these makes that a guarantee.
     blockedPermissions: [
+      'android.permission.INTERNET',
+      'android.permission.ACCESS_NETWORK_STATE',
       'android.permission.RECORD_AUDIO',
       'android.permission.READ_EXTERNAL_STORAGE',
       'android.permission.WRITE_EXTERNAL_STORAGE',
@@ -81,6 +84,7 @@ const config: ExpoConfig = {
     './modules/lamplight-engine/plugin/withLamplightEngine.js',
     ['./plugins/withNightBackground.js', { color: NIGHT }],
     './plugins/withConfigChanges.js',
+    './plugins/withDebugInternet.js',
     ['expo-font', { fonts }],
     [
       'expo-splash-screen',
