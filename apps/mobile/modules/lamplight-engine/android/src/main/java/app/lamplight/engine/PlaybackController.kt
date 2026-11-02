@@ -11,6 +11,7 @@ import android.os.BatteryManager
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import app.lamplight.engine.core.AudioWindow
 import app.lamplight.engine.core.Chunks
 import app.lamplight.engine.core.LineRender
 import app.lamplight.engine.core.Pacing
@@ -315,7 +316,7 @@ class PlaybackController private constructor(private val context: Context) : Str
             playhead = target
             currentIndex = target
             currentOffsetMs = 0
-            renders.keys.filter { it < target - 2 }.forEach { renders.remove(it) }
+            AudioWindow.stale(renders.keys, target).forEach { renders.remove(it) }
             // A sentence cut short by the seek would leave the player waiting for pieces that never come.
             renders.entries.removeIf { !it.value.complete }
             generation++
@@ -481,6 +482,8 @@ class PlaybackController private constructor(private val context: Context) : Str
                 complete = true
             }
             durationsMs[index] = samples.size * 1000L / SAMPLE_RATE
+            // Listening again plays sentence after sentence from the cache, with no render to clean up after.
+            dropBehindLocked()
         }
         return true
     }
@@ -627,8 +630,7 @@ class PlaybackController private constructor(private val context: Context) : Str
                 renders[i] = rendered
             }
             durationsMs[i] = rendered.durationMs
-            // Keep memory bounded: drop audio well behind the playhead.
-            renders.keys.filter { it < currentIndex - 2 }.forEach { renders.remove(it) }
+            dropBehindLocked()
             ready.signalAll()
             rendered.durationMs
         }
@@ -664,7 +666,11 @@ class PlaybackController private constructor(private val context: Context) : Str
                 val (index, offset) = pos
                 if (index != currentIndex) {
                     currentIndex = index
-                    lock.withLock { playhead = index; work.signalAll() }
+                    lock.withLock {
+                        playhead = index
+                        dropBehindLocked()
+                        work.signalAll()
+                    }
                     persistPosition()
                     val d = lock.withLock { durationsMs[index] ?: 0L }
                     listeners.forEach { it.onSentence(index, d) }
@@ -774,6 +780,11 @@ class PlaybackController private constructor(private val context: Context) : Str
     }
 
     // ── helpers ──
+
+    /** Keeps memory bounded: audio well behind the sentence being heard is let go. Holds [lock]. */
+    private fun dropBehindLocked() {
+        AudioWindow.stale(renders.keys, currentIndex).forEach { renders.remove(it) }
+    }
 
     private fun ensurePlayer(): StreamPlayer = player ?: StreamPlayer(SAMPLE_RATE, this).also { player = it }
 
