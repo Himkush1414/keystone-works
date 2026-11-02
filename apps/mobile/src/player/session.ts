@@ -363,6 +363,29 @@ export async function prepareQueue(
 }
 
 /**
+ * A document's whole queue, for work on all of it at once (audio export): the cached one when its inputs
+ * match, otherwise built a chunk at a time between frames. Unlike prepareQueue it never stops a build the
+ * player is running (the book being exported may be the one playing).
+ */
+export async function wholeQueue(
+  deps: Pick<SessionDeps, 'db' | 'readQueue' | 'yieldToUi'>,
+  documentId: string,
+  settings: SessionSettings,
+): Promise<QueueFile> {
+  const ctx = queueContext(deps.db, documentId, settings);
+  const cached = await cachedQueue(deps, ctx);
+  if (cached) return cached;
+  const yieldToUi = deps.yieldToUi ?? defaultYield;
+  const count = ctx.content.sentences.length;
+  let queue = partialQueueFile(ctx.meta, ctx.content.chapters, ctx.content.sentences, [], count);
+  for (let a = 0; a < count; a += QUEUE_CHUNK) {
+    await yieldToUi();
+    queue = withSegments(queue, buildRange(ctx, a, Math.min(count, a + QUEUE_CHUNK)));
+  }
+  return { ...queue, key: ctx.key };
+}
+
+/**
  * Saves the listening position whenever a new sentence starts or playback pauses, with the time listened
  * since the last save. Returns an unsubscribe function.
  */
