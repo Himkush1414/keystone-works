@@ -414,8 +414,7 @@ export const es: Catalog = {
     empty: 'Aún no hay entradas. Mantén pulsada una palabra mientras lees para corregir cómo se dice.',
   },
   privacy: {
-    network:
-      'Lamplight solo se conecta a internet cuando importas un artículo web o decides enviar un informe de errores.',
+    network: 'Lamplight no se conecta a internet: ni siquiera tiene permiso para hacerlo.',
     noAccount: 'Sin cuenta, sin analíticas, sin rastreadores, sin anuncios.',
     local: 'Tus documentos, posiciones, subrayados y audio se quedan en este dispositivo.',
   },

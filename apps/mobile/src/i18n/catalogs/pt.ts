@@ -416,8 +416,7 @@ export const pt: Catalog = {
     empty: 'Nenhuma entrada ainda. Toque e segure uma palavra durante a leitura para corrigir a pronúncia.',
   },
   privacy: {
-    network:
-      'O Lamplight só se conecta à internet quando você importa um artigo da web ou decide enviar um relatório de erro.',
+    network: 'O Lamplight não se conecta à internet: o app nem tem permissão para isso.',
     noAccount: 'Sem conta, sem análises, sem rastreadores, sem anúncios.',
     local: 'Seus documentos, posições, destaques e áudios ficam neste aparelho.',
   },

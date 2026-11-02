@@ -30,11 +30,11 @@ const FAQ: [string, string][] = [
   ],
   [
     'Does it really work without the internet?',
-    'Yes. The voices are inside the app and run on your phone’s own processor. Airplane mode is fine. The internet is only used if you import a web article.',
+    'Yes. The voices are inside the app and run on your phone’s own processor. Airplane mode is fine. The app doesn’t connect to the internet at all.',
   ],
   [
     'What can it read?',
-    'EPUB books, PDFs with selectable text, Word documents, plain text, Markdown, web pages and articles you share to it. It can’t open DRM-protected books, and scanned PDFs need text in them.',
+    'EPUB books, PDFs with selectable text, Word documents, plain text, Markdown and saved web pages (HTML). It can’t open DRM-protected books, and scanned PDFs need text in them.',
   ],
   [
     'Is there a subscription?',
