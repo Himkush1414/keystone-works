@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import LamplightEngine from '../../modules/lamplight-engine';
 import { getDb } from '../data/expoDb';
 import { getSetting, setSetting } from '../data/userdata';
+import { refreshBundledSamples } from '../import/device';
 import { uriToPath } from '../import/paths';
 import { scheduleCalibration } from '../player/calibration';
 import { prepareQueue, startDocument } from '../player/session';
@@ -46,6 +47,13 @@ export function deviceServices(): Services {
     calibrate: () => LamplightEngine.calibrate(),
     now: Date.now,
   });
+  const created = services;
+  // Samples added by an older version get their text again (the app has it); the library shows the result.
+  refreshBundledSamples(db)
+    .then((ids) => {
+      if (ids.length) created.library.getState().refresh();
+    })
+    .catch((e: unknown) => console.warn('sample refresh failed', e));
   return services;
 }
 
