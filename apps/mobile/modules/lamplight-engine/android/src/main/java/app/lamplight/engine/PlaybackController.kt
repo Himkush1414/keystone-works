@@ -17,6 +17,7 @@ import app.lamplight.engine.core.Pacing
 import app.lamplight.engine.core.Performance
 import app.lamplight.engine.core.ReadAhead
 import app.lamplight.engine.core.Seed
+import app.lamplight.engine.core.SleepFade
 import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.CopyOnWriteArraySet
@@ -74,7 +75,7 @@ class PlaybackController private constructor(private val context: Context) : Str
     @Volatile private var currentOffsetMs = 0L
     @Volatile private var sleepAtMs: Long? = null
     @Volatile private var sleepAtIndex: Int? = null
-    private var fading = false
+    private val sleepFade = SleepFade(FADE_MS)
     /** Why narration isn't producing sound, until a piece renders again; shown to the listener as is. */
     @Volatile var failure: EngineFailure? = null
         private set
@@ -361,10 +362,9 @@ class PlaybackController private constructor(private val context: Context) : Str
     fun setSleepTimer(minutes: Double?, endOfChapter: Boolean) {
         sleepAtMs = minutes?.let { System.currentTimeMillis() + (it * 60_000).toLong() }
         sleepAtIndex = if (endOfChapter) queue?.chapterEnd(currentIndex) else null
-        if (minutes == null && !endOfChapter) {
-            fading = false
-            player?.setVolume(1f)
-        }
+        // Cancelled or set again: a fade under way ends here, at full volume, and never pauses.
+        sleepFade.cancel()
+        player?.setVolume(1f)
         emitState()
     }
 
@@ -686,26 +686,25 @@ class PlaybackController private constructor(private val context: Context) : Str
         val byTime = sleepAtMs?.let { System.currentTimeMillis() >= it - FADE_MS } ?: false
         val byChapter = sleepAtIndex?.let { currentIndex >= it } ?: false
         if (!byTime && !byChapter) return
-        if (!fading) {
-            fading = true
-            fadeOut(System.currentTimeMillis())
-        }
+        if (!sleepFade.active) fadeOut(sleepFade.start(System.currentTimeMillis()))
     }
 
-    private fun fadeOut(startedAt: Long) {
-        val p = player ?: return
-        val t = (System.currentTimeMillis() - startedAt).toFloat() / FADE_MS
-        if (t >= 1f || !playing) {
-            pause()
-            p.setVolume(1f)
-            fading = false
-            sleepAtMs = null
-            sleepAtIndex = null
-            emitState()
-            return
+    private fun fadeOut(fade: Int) {
+        val p = player ?: return sleepFade.cancel()
+        when (val step = sleepFade.step(fade, System.currentTimeMillis(), playing)) {
+            SleepFade.Step.Retired -> return
+            SleepFade.Step.Done -> {
+                pause()
+                p.setVolume(1f)
+                sleepAtMs = null
+                sleepAtIndex = null
+                emitState()
+            }
+            is SleepFade.Step.Volume -> {
+                p.setVolume(step.volume)
+                main.postDelayed({ fadeOut(fade) }, 100)
+            }
         }
-        p.setVolume(1f - t)
-        main.postDelayed({ fadeOut(startedAt) }, 100)
     }
 
     // ── audio focus and noisy output ──
