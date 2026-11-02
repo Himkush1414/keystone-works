@@ -1,3 +1,4 @@
+import { touch } from '@lamplight/tokens';
 import { StyleSheet, View } from 'react-native';
 import { useTheme } from '@/theme/theme';
 import { Tappable } from './Tappable';
@@ -35,6 +36,8 @@ export function Segmented<T extends string>({
             accessibilityRole="radio"
             accessibilityState={{ checked: selected }}
             pressScale={0.97}
+            // 44 dp drawn inside the track's 3 dp padding and 1 dp border; the slop reaches the 48 dp minimum.
+            hitSlop={SLOP}
             style={[
               styles.segment,
               { borderRadius: radius.md - 3 },
@@ -55,6 +58,9 @@ export function Segmented<T extends string>({
     </View>
   );
 }
+
+/** Vertical slop that makes a 44 dp segment a 48 dp touch target (Android's minimum). */
+const SLOP = { top: (touch.minTarget - 44) / 2, bottom: (touch.minTarget - 44) / 2 };
 
 const styles = StyleSheet.create({
   track: { flexDirection: 'row', padding: 3, borderWidth: 1 },
