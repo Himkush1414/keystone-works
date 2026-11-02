@@ -95,3 +95,16 @@ export function needsReimport(item: LibraryItem, blocks: readonly { kind: string
   const short = paragraphs.filter((b) => b.text.trim().split(/\s+/).length <= 2).length;
   return short * 4 >= paragraphs.length;
 }
+
+/**
+ * What the Continue card's button does for `itemId`: pause it while it plays, resume it in place when it's
+ * the book loaded in the player, otherwise open and play it (which loads its queue).
+ */
+export function continueAction(
+  player: { native: { docId: string | null; playing: boolean }; queue: { docId: string } | null },
+  itemId: string,
+): 'pause' | 'resume' | 'open' {
+  const loaded = (player.native.docId ?? player.queue?.docId) === itemId && player.queue?.docId === itemId;
+  if (!loaded) return 'open';
+  return player.native.playing ? 'pause' : 'resume';
+}

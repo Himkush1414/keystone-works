@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { LibraryItem } from '../src/data/library';
 import { IMPORT_VERSION } from '../src/data/library';
 import {
+  continueAction,
   coverTitleSize,
   estimatedListeningMs,
   generatedCover,
@@ -148,5 +149,27 @@ describe('needsReimport', () => {
     expect(needsReimport(item({ importVersion: IMPORT_VERSION }), blocks(cut))).toBe(false);
     expect(needsReimport(item({ importVersion: 0, source: 'paste' }), blocks(cut))).toBe(false);
     expect(needsReimport(item({ importVersion: 0 }), blocks(cut.slice(0, 5)))).toBe(false);
+  });
+});
+
+describe('continueAction', () => {
+  const player = (docId: string | null, playing: boolean, queueDoc: string | null = docId) => ({
+    native: { docId, playing },
+    queue: queueDoc ? { docId: queueDoc } : null,
+  });
+
+  it('pauses the book that is playing', () => {
+    expect(continueAction(player('a', true), 'a')).toBe('pause');
+  });
+
+  it('resumes the loaded book in place', () => {
+    expect(continueAction(player('a', false), 'a')).toBe('resume');
+  });
+
+  it('opens a book that is not loaded, or when the player holds another one', () => {
+    expect(continueAction(player(null, false, null), 'a')).toBe('open');
+    expect(continueAction(player('b', true), 'a')).toBe('open');
+    // The engine still reports a book the app has since unloaded (deleted): open it fresh.
+    expect(continueAction(player('a', false, null), 'a')).toBe('open');
   });
 });
