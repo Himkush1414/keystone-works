@@ -1,8 +1,8 @@
 import type { DocumentKind } from '@lamplight/core';
 import type { Db } from '../data/db';
-import type { DocumentSource } from '../data/library';
+import { IMPORT_VERSION, listItems, type DocumentSource } from '../data/library';
 import { importFile, type ImportDeps, type ImportResult } from './run';
-import type { Sample } from './samples';
+import { SAMPLES, type Sample } from './samples';
 
 const MAX_TITLE = 60;
 
@@ -48,4 +48,25 @@ export function importSample(db: Db, sample: Sample, deps: ImportDeps): Promise<
     { text: sample.text, title: sample.title, kind: sample.kind, author: sample.author, source: 'sample' },
     deps,
   );
+}
+
+/**
+ * Bundled samples whose stored text an older importer made are imported again in place: the app has their
+ * text, so the listener needn't do anything (files have a notice instead). Matched by the bundled title; the
+ * same item, place and settings are kept. Returns the ids refreshed.
+ */
+export async function refreshStaleSamples(
+  db: Db,
+  deps: ImportDeps,
+  samples: readonly Sample[] = SAMPLES,
+): Promise<string[]> {
+  const refreshed: string[] = [];
+  for (const item of listItems(db)) {
+    if (item.source !== 'sample' || item.status !== 'ready' || item.importVersion >= IMPORT_VERSION) continue;
+    const sample = samples.find((s) => s.title === item.title);
+    if (!sample) continue;
+    const r = await importSample(db, sample, deps);
+    if (r.status === 'ready' && r.id === item.id) refreshed.push(item.id);
+  }
+  return refreshed;
 }

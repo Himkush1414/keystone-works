@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { loadContent } from '../src/data/content';
-import { getItem, listItems } from '../src/data/library';
+import { getItem, IMPORT_VERSION, listItems } from '../src/data/library';
+import { getPosition, savePosition } from '../src/data/userdata';
 import { SAMPLES } from '../src/import/samples';
-import { importSample, importText, pastedTitle } from '../src/import/text';
+import { importSample, importText, pastedTitle, refreshStaleSamples } from '../src/import/text';
 import type { ImportDeps } from '../src/import/run';
 import { failingPdfReader } from './fakePdf';
 import { testDb } from './nodeDb';
@@ -94,5 +95,40 @@ describe('importSample', () => {
     const first = await importSample(db, sample, deps);
     expect((await importSample(db, sample, deps)).status).toBe('duplicate');
     expect(first.status).toBe('ready');
+  });
+});
+
+describe('refreshStaleSamples', () => {
+  it('imports a sample stored by an older importer again, in place', async () => {
+    const db = testDb();
+    const sample = SAMPLES[0];
+    if (!sample) throw new Error('no samples');
+    const first = await importSample(db, sample, deps);
+    const id = first.status === 'ready' ? first.id : '';
+    savePosition(db, id, { sentenceOrd: 7, offsetMs: 0, progress: 0.2, listenedDeltaMs: 0 }, 1);
+    // As an older version left it: an earlier import version and the underscores still in the text.
+    db.run('UPDATE documents SET import_version = ? WHERE id = ?', [IMPORT_VERSION - 1, id]);
+    db.run(
+      "UPDATE blocks SET text = replace(text, 'certainly have had', 'certainly _have_ had') WHERE document_id = ?",
+      [id],
+    );
+    expect(loadContent(db, id).blocks.some((b) => b.text.includes('_have_'))).toBe(true);
+
+    expect(await refreshStaleSamples(db, deps)).toEqual([id]);
+    expect(listItems(db)).toHaveLength(1);
+    expect(getItem(db, id)?.importVersion).toBe(IMPORT_VERSION);
+    expect(loadContent(db, id).blocks.some((b) => b.text.includes('_have_'))).toBe(false);
+    expect(getPosition(db, id)?.sentenceOrd).toBe(7);
+  });
+
+  it('leaves current samples and everything else alone', async () => {
+    const db = testDb();
+    const sample = SAMPLES[1];
+    if (!sample) throw new Error('no samples');
+    await importSample(db, sample, deps);
+    const pasted = await importText(db, { text: 'Some pasted words.' }, deps);
+    const pastedId = pasted.status === 'ready' ? pasted.id : '';
+    db.run('UPDATE documents SET import_version = 0 WHERE id = ?', [pastedId]);
+    expect(await refreshStaleSamples(db, deps)).toEqual([]);
   });
 });

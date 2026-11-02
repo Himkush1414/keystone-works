@@ -8,7 +8,7 @@ import type { PdfOpened, PdfPageLines } from '../../modules/lamplight-engine/src
 import type { PdfReader } from './parse';
 import { importFile, type ImportDeps, type ImportResult } from './run';
 import type { Sample } from './samples';
-import { importSample, importText } from './text';
+import { importSample, importText, refreshStaleSamples } from './text';
 
 /** A file the app can read: from the picker, the share sheet or "Open with". */
 export interface IncomingFile {
@@ -132,6 +132,11 @@ const textDeps = {
 /** Adds pasted or typed text to the library. */
 export function importPasted(db: Db, input: { text: string; title?: string }): Promise<ImportResult> {
   return importText(db, input, textDeps);
+}
+
+/** Brings samples added by an older version up to the current importer (see refreshStaleSamples). */
+export function refreshBundledSamples(db: Db): Promise<string[]> {
+  return refreshStaleSamples(db, textDeps);
 }
 
 /** Adds one of the bundled samples (or finds the copy already there). */
