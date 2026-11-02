@@ -394,6 +394,8 @@ export const en = {
     sounds: 'Subtle sounds',
     clearCache: 'Clear prepared audio',
     clearCacheConfirm: 'Clear {size} of prepared audio? Your books and positions stay.',
+    cacheDesc:
+      'Sentences you’ve heard are kept so they play at once next time, up to 2 GB. Clearing doesn’t touch your books.',
     cacheSize: 'Prepared audio: {size}',
     version: 'Version {version}',
   },

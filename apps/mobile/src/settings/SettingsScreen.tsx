@@ -10,6 +10,7 @@ import { useServices } from '@/services/context';
 import type { CastModePreference, QualityPreference } from '@/state/settings';
 import { READER_FONTS, type ReaderFont } from '@/theme/fonts';
 import { nearest, READER_LINE_HEIGHTS, READER_SIZES } from './reading';
+import { StorageSection } from './StorageSection';
 import { useTheme } from '@/theme/theme';
 import { IconButton } from '@/ui/IconButton';
 import { OptionRow } from '@/ui/OptionRow';
@@ -58,10 +59,13 @@ export function SettingsScreen({
   onBack,
   onPronunciation,
   onDiagnostics,
+  storage,
 }: {
   onBack(): void;
   onPronunciation(): void;
   onDiagnostics(): void;
+  /** The engine's cache of prepared audio (Storage); left out where there is no engine. */
+  storage?: { cacheBytes(): Promise<number>; clearCache(): Promise<void> };
 }) {
   const { settings } = useServices();
   const s = useStore(settings);
@@ -269,6 +273,12 @@ export function SettingsScreen({
             </View>
           ))}
         </Section>
+
+        {storage ? (
+          <Section title={t('settings.storage')}>
+            <StorageSection cacheBytes={storage.cacheBytes} clearCache={storage.clearCache} />
+          </Section>
+        ) : null}
 
         <Section title={t('settings.language')}>
           <ChoiceRow

@@ -394,6 +394,8 @@ export const es: Catalog = {
     sounds: 'Sonidos sutiles',
     clearCache: 'Borrar audio preparado',
     clearCacheConfirm: '¿Borrar {size} de audio preparado? Tus libros y posiciones se conservan.',
+    cacheDesc:
+      'Las frases que ya escuchaste se guardan para que suenen al instante la próxima vez, hasta 2 GB. Borrarlas no afecta a tus libros.',
     cacheSize: 'Audio preparado: {size}',
     version: 'Versión {version}',
   },
