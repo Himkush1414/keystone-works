@@ -110,6 +110,11 @@ class PlaybackController private constructor(private val context: Context) : Str
         }
     }
 
+    // A cache filled by earlier sessions is brought under its cap once, off the main thread.
+    init {
+        cacheWriter.execute { cache.trim() }
+    }
+
     // Started last, once everything it touches exists.
     private val renderThread = Thread(::renderLoop, "lamplight-render").apply {
         priority = Thread.NORM_PRIORITY + 1
