@@ -156,19 +156,20 @@ The build downloads the voice-model asset pack and refuses it unless its SHA-256
 
 - [x] Import of EPUB, PDF, DOCX, HTML, text and paste · library, shelves and full-text search
 - [x] On-device voices with read-along, sleep timer, contents, background playback and resume
+- [x] Gap-free reading, with sentences prepared ahead · Hindi and English switching within a line
 - [x] Clean Read with a per-document review · pronunciation dictionary
 - [x] Cast: speakers in English, Hindi and Hinglish; voices cast by age and temperament and kept for the whole book
 - [x] Expressive reading: emotion, deliberate pauses and natural breaths
 - [x] Hindi numbers, dates and times · Hinglish read by the Hindi voice · language quality tiers
+- [x] "What does this word mean here?" while listening
+- [x] Bookmarks, line focus, every speed from 0.5× to 3× · audio export to M4A chapters with a playlist
+- [x] Website with live demos
 
 **Planned**
 
-- [ ] Seamless, gap-free reading, with sentences prepared further ahead
-- [ ] Natural switching between Hindi and English within a sentence
-- [ ] "What does this word mean here?" while listening
+- [ ] Highlights with notes
 - [ ] Backup and restore · import from the share sheet and from web links
-- [ ] Bookmarks and highlights · audio export
-- [ ] Website and store release
+- [ ] Store release
 
 ## Credits
 
